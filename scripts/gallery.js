@@ -8,6 +8,8 @@ function showSlide(index) {
   const slides = document.querySelectorAll('.slide');
   const thumbnails = document.querySelectorAll('.thumbnail');
 
+  if (slides.length === 0) return;
+
   slides.forEach((slide, i) => {
     slide.classList.toggle('active', i === index);
   });
@@ -42,16 +44,18 @@ function loadImages(start = 1) {
   function tryLoad() {
     const src = `images/${index}.jpg`;
     const img = new Image();
+
     img.onload = () => {
       images.push(src);
       addImage(src, images.length - 1);
       index++;
       tryLoad();
     };
+
     img.onerror = () => {
-      // Файл не найден — прекращаем загрузку
       initGallery();
     };
+
     img.src = src;
   }
 
