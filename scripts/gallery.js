@@ -1,10 +1,13 @@
+const thumbnailsContainer = document.querySelector('.thumbnails');
+const sliderContainer = document.querySelector('.slider');
+
 let currentSlide = 0;
-const slides = document.querySelectorAll('.slide');
-const thumbnails = document.querySelectorAll('.thumbnail');
-const prevBtn = document.querySelector('.prev');
-const nextBtn = document.querySelector('.next');
+const images = [];
 
 function showSlide(index) {
+  const slides = document.querySelectorAll('.slide');
+  const thumbnails = document.querySelectorAll('.thumbnail');
+
   slides.forEach((slide, i) => {
     slide.classList.toggle('active', i === index);
   });
@@ -16,23 +19,65 @@ function showSlide(index) {
   currentSlide = index;
 }
 
-prevBtn.addEventListener('click', () => {
-  const newIndex = (currentSlide - 1 + slides.length) % slides.length;
-  showSlide(newIndex);
-});
+function addImage(src, index) {
+  // Миниатюра
+  const thumb = document.createElement('img');
+  thumb.src = src;
+  thumb.className = 'thumbnail';
+  if (index === 0) thumb.classList.add('active');
+  thumb.dataset.index = index;
+  thumbnailsContainer.appendChild(thumb);
 
-nextBtn.addEventListener('click', () => {
-  const newIndex = (currentSlide + 1) % slides.length;
-  showSlide(newIndex);
-});
+  // Слайд
+  const slide = document.createElement('img');
+  slide.src = src;
+  slide.className = 'slide';
+  if (index === 0) slide.classList.add('active');
+  sliderContainer.insertBefore(slide, sliderContainer.querySelector('.prev'));
+}
 
-thumbnails.forEach(thumb => {
-  thumb.addEventListener('click', () => {
-    const index = parseInt(thumb.dataset.index);
-    showSlide(index);
+function loadImages(start = 1) {
+  let index = start;
+
+  function tryLoad() {
+    const src = `images/${index}.jpg`;
+    const img = new Image();
+    img.onload = () => {
+      images.push(src);
+      addImage(src, images.length - 1);
+      index++;
+      tryLoad();
+    };
+    img.onerror = () => {
+      // Файл не найден — прекращаем загрузку
+      initGallery();
+    };
+    img.src = src;
+  }
+
+  tryLoad();
+}
+
+function initGallery() {
+  const prevBtn = document.querySelector('.prev');
+  const nextBtn = document.querySelector('.next');
+
+  prevBtn.addEventListener('click', () => {
+    showSlide((currentSlide - 1 + images.length) % images.length);
   });
-});
 
-// Initial display
-showSlide(currentSlide);
+  nextBtn.addEventListener('click', () => {
+    showSlide((currentSlide + 1) % images.length);
+  });
 
+  thumbnailsContainer.addEventListener('click', (e) => {
+    if (e.target.classList.contains('thumbnail')) {
+      const index = parseInt(e.target.dataset.index, 10);
+      showSlide(index);
+    }
+  });
+
+  showSlide(0);
+}
+
+loadImages(1);
