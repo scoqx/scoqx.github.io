@@ -10,22 +10,33 @@ document.addEventListener("DOMContentLoaded", () => {
       btn1.href = `/assets/zz-osp-pak8be.pk3`;
       btn2.href = `/assets/whitelist/zz-osp-pak8be.pk3`;
 
-      btn1.addEventListener("click", () => {
+      btn1.addEventListener("click", (e) => {
+        e.preventDefault(); // Остановить переход
         gtag('event', 'download', {
           event_category: 'Files',
           event_label: 'Main download',
           value: 1
         });
+        setTimeout(() => {
+          window.location.href = btn1.href; // Перейти вручную
+        }, 150); // 100–300 мс обычно достаточно
       });
 
-      btn2.addEventListener("click", () => {
+      btn2.addEventListener("click", (e) => {
+        e.preventDefault();
         gtag('event', 'download', {
           event_category: 'Files',
           event_label: 'Whitelist download',
           value: 1
         });
+        setTimeout(() => {
+          window.location.href = btn2.href;
+        }, 150);
       });
     })
+
+
+    
     .catch(error => {
       document.getElementById("version-text").textContent = "Error loading version";
       console.error(error);
