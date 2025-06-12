@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const version = data.version;
       document.getElementById("version-text").textContent = `${version}`;
       document.getElementById("downloadBtn").href =
-        `https://github.com/scoqx/OSP2-BE/releases/download/latest/zz-osp-pak8.pk3`;
+        `/assets/zz-osp-pak8be.pk3`;
     })
     .catch(error => {
       document.getElementById("version-text").textContent = "Ошибка загрузки версии";
