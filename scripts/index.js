@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  fetch("docs/version.json")
+  fetch("version.json")
     .then(response => response.json())
     .then(data => {
       const version = data.version;
