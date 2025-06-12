@@ -1,0 +1,279 @@
+27.05.2025 be v 0.01
+
++ cg_itemsRespawnAnimation
++ cg_drawDamage (3/4)
++ cg_enemyLightning
++ cg_uniqueColorTable
++ cg_noVoteBeep
+* cg_drawGun (reworked)
+
+* SHUD: 
+  + Border (border, borderColor)
+  * Background for text elements (reworked)
+  + Background for client events in obituaries
+  + Temporal LG accuracy
+  + Item pickup style 2
+  + Color E/T transparency via color2
+  + Armor bar over HP bar
+
+03.04.2025 be v0.02
+
+*cg_drawDamage (3/4) reworked to:
+    + cg_damageDrawFrame;
+    + cg_damageFrameSize;
+    + cg_damageFrameOpaque;
+
++ cg_shud_currentWeapons;
+
+* SHUD: 
+  + Current Weapon Stats shows accuracy
+      + CurrentWeaponStats
+      + CurrentWeaponStats_icon
+
+* tempAcc reworked:
+    * fixed calc
+    - tempAcc_last
+    
+
+* weaponlist:
+    + border for choosen weapon
+
++ various fixes
+
+05.04.2025 be v0.03
+
+* cg_drawHitBox enabled. Server permission required
+    + cg_hitBoxColor <color>
+    * HQ shader (lol)
+
+* cg_damageDrawFrame options
+  + 1 gradient
+  + 2 old solid border
+
+05.04.2025 be v0.031
+
+  + cg_drawGunForceAspect
+  * clientconfig
+    + Hitbox permission from server
+
+06.04.2025 be v0.032
+
+  + cg_drawHitBox 2
+
+07.04.2025 be v0.032
+
+  + cg_drawHitBox 3
+    
+08.04.2025 be v0.04
+
++ cg_drawOutline
++ cg_enemyOutlineColor
++ cg_teamOutlineColor
++ cg_enemyOutlineColorUnique
++ cg_enemyOutlineSize
++ cg_teamOutlineSize
+
+09.04.2025 be v0.041
+  
++ belist
+
+09.04.2025 be v0.042
+
++ cg_underwaterFovWarp
+
+10.04.2025 be v0.05
+
++ cg_altBlood
++ cg_altBloodColor
+* cg_altPlasma 
+  + option 2
+
+12.04.2025 be v0.051
+
+* cg_drawOutline team colors fixed
+
+* SHUD: 
+  + tempAcc styles options
+  + CurrentWeaponStats styles options
+  + scoresScore_NME	style
+  + Configs (m1rqlstyle, AGENT, diwoc_light, cybra, RTG, zoti)
+
+12.04.2025 be v0.052
+
+* cg_drawRewards 2
+
+13.04.2025 be v0.053
+
++ cg_noSlidingWindow
+
+15.04.2025 be v0.054t1
++ cg_gunPos
++ cg_shotGunTracer
++ cg_railStaticRings
++ cg_railRingsSize 
+  
+* cg_railTrailRadius -> cg_railRingsRadius
+* cg_railTrailRotation -> cg_railRingsRotation
+* cg_railTrailSpacing -> cg_railRingsSpacing
+
+16.04.2025 be v0.054t2
+* gun pos fixed
+
+17.04.2025 be v0.055t
+* +wstats additional data
+  + Kill/death ratio (K/D)
+  + Damage given/recieved Ratio
+
+21.04.2025 be v0.056x
++ cg_noSlidingWindow 2 option 
+  * 1 disable MoTD
+  * 2 disable any sliding window
++ cg_shadows 2 option - static player shadow
+
+* SHUD: 
+  + weaponStats_## - accuracy
+  + weaponStats_##_icon
+
+  + playerStats_DG
+  + playerStats_DR
+  + playerStats_DG_icon
+  + playerStats_DR_icon
+  
+  * visflags: showempty only for weapon/playerStats
+
+22.04.2025 be v0.057
+
+* SHUD: 
+  + hud/California.cfg (by Musin)
+  + hud resourses (gfx/2d/hudres/)
+
+22.04.2025 be v0.058
+
+* cg_shadows 2 -> -1
++ cg_altShadow
++ cg_altShadowColor
++ cg_scoreboardShowId
+
+23.04.2025 be v0.059t
+
+* cg_altShadows/cg_altBlood multiply shaders support
+  + cg_altShadow 2
+  * markShadowNew, markShadowNew2, markShadowNew3...
+  * bloodExplosionNew, bloodExplosionNew2, bloodExplosionNew3...
+* SHUD: 
+  + playerStats_damage_ratio
+  + shadowColor for text
+  * visflags: showempty for enemyscore, tempAcc
+
+24.04.2025 be v.0.059e
+
++ StatusBar_AmmoCount shading when realoading
+  * dark grey by default, or color2 is set
+  * disable by style (any)
+
+24.04.2025 be v.0.059j
+
+* crosshairNames
+  + teammates names in fog
+  + ignore fog on maps: Asylum, Quarantine, oxodm32, oxodm90, rjldm3, gen_q1dm1
+
+27.04.2025 be v0.059o
+
+* cg_drawRewards bitmask
+  * 2 - disable icon, 4 - disable float sprite, 8 - disable sound
+* restricted names in scoreboard
+* restricted strings have "." instead of "..." at the end
+
+27.04.2025 be v0.059q
+
+* tempAcc 1 sec timeout restored
+
+28.04.2025 be v0.06
+
+* SHUD:
+  + grid
+  + tempAcc_icon
+  - tempAcc_last
+
+30.04.2025 be v0.06a
+
+* SHUD:
+  * Player/Weapon stats fix
+  * StatusBar_ArmorCount 
+    + visflags: showempty
+    + color works for '0'
+
+03.05.2025 be v0.06c2
+
++ cg_teamIndicator;
++ cg_teamIndicatorAdjust;
++ cg_teamIndicatorColor;
++ cg_teamIndicatorOpaque;
++ cg_teamIndicatorBgColor;
++ cg_teamIndicatorBgOpaque;
++ cg_teamIndicatorOffset;
++ cg_teamIndicatorMaxLength;
+* cg_drawFriend
+  + option 2 (draw only freeze foe)
+
+04.05.2025 be v0.06d
+
++ cg_scoreboardBE - alt default scoreboard
++ cg_scoreboardFont - font for alt scoreboard
+* cg_teamIndicator: 
+  + 8 bitmask (show icons (only for dead now))
+  + show all names while spectating
++ cg_teamIndicatorFont
++ cg_centerMesagesFont
+* cg_drawCrosshairNames:
+  + 2 option - teammates
+  + 3 option - enemies
+
+* SHUD: StatusBar_ArmorCount fix
+
+05.05.2025 be v0.06d3
+
+* scoreboard fixes
+* reduced spacing in obituaries
+* superhud/hud/ diwocfull.cfg -> diwoc2.cfg 
+
+07.05.2025 be v0.06d7
+
+* cg_teamIndicator bitmask:
+  * 8 show data for frozen player
+  * 16 enable icons
+* Replace OSP2 net.png image
+* various fixes
+* huds updated
+
+31.05.2025 be v0.07
++ Description for commands. Requires Q3E version dated April 14, 2025 or later
++ cg_railCustomChamber
+  * 1 - reloading color = core color
+  * 2 - standing color = rings color
+* Rail chamber color in other player hands/in world have green color by default (QL-like), if cg_railCustomChamber = 2 - using this color 
+* ScoreboardBE parse info fix
+* updated diwoc's hud
+* small fixes
+
+* SHUD:
+  + element 'localdate'
+  + style 3 for StatusBar_HealthBar/StatusBar_ArmorBar 
+  * StatusBar_AmmoCount/WeaponList -  shows ammo in red when it's 0
+
+06.06.2025 be v0.08
++ Fullbright player models support (use /fb. e.g. keel/fb)
++ cg_drawBrightWeapons
+* rail chamber default color is white
+* various fixes
+
+08.06.2025 be v0.081
++ cg_scoreboardBE 3 - old style team scores
++ outline optimisation
+* hitbox shaders renamed
+
+12.06.2025 be v0.083
++ cg_altGrenades 2
++ cg_altGrenadesColor (cg_altGrenades 2 only)
++ cg_enemyGrenadesColor (cg_altGrenades 2 only)
++ cg_altBattleSuit

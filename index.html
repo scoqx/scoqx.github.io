@@ -18,6 +18,7 @@
       <a id="nav-home" href="index.html">Home</a>
       <a id="nav-gallery" href="gallery.html">Gallery</a>
       <a id="nav-commands" href="commands.html">Console Commands</a>
+      <!-- <a id="nav-info" href="info.html">Info</a> -->
       <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
       <!-- <a id="nav-contact" href="contact.html">Contact</a> -->
     </nav>
@@ -26,24 +27,39 @@
       <button id="langBtn">RU</button>
     </div>
   </header>
+  
+<main>
+  <div class="content-wrapper">
+    <div class="main-text">
+      <h2 id="subtitle">Quake 3 Arena mod</h2>
+      <p id="desc">
+        Extended edition of the OSP2.<br/>
+        OSP2 is an attempt to recover the old OSP mod source code and improve upon it.<br/>
+        Based on vanilla Q3 and OSP files analysis.
+      </p>
+    </div>
 
-  <main>
-    <div class="content-wrapper">
-      <div class="main-text">
-        <h2 id="subtitle">Quake 3 Arena mod</h2>
-        <p id="desc">
-          Extended edition of the OSP2.<br/>
-          OSP2 is an attempt to recover the old OSP mod source code and improve upon it.<br/>
-          Based on vanilla Q3 and OSP files analysis.
-        </p>
-      </div>
+    <div class="downloads-wrapper">
       <div class="download-card">
         <h3 id="lastVersion">Latest version</h3>
         <p id="version-text">. . .</p>
-        <a class="download-button" id="downloadBtn"  href="#" target="_blank">Download</a>
+        <a class="download-button" id="downloadBtn" href="#" target="_blank">Download</a>
+      </div>
+      <div class="download-card">
+        <h3 id="secondVersion">Q3MSK Whitelist</h3>
+        <p id="version-text-2">be-0.06e-whitelist</p>
+        <a class="download-button" id="downloadBtn2" href="#" target="_blank">Download</a>
       </div>
     </div>
-  </main>
+  </div>
+<section class="changelog-section">
+  <h2 id="changeLog">Changelog</h2>
+  <div class="changelog-container">
+    <pre id="changelog-content" style="white-space: pre-wrap;"></pre>
+  </div>
+</section>
+</main>
+
   
   
 </body>

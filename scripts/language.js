@@ -4,7 +4,10 @@ const texts = {
     subtitle: "Quake 3 Arena mod",
     desc: "Extended edition of the OSP2.<br/>OSP2 is an attempt to recover the old OSP mod source code and improve upon it.<br/>Based on vanilla Q3 and OSP files analysis.",
     downloadBtn: "Download",
+    downloadBtn2: "Download",
     lastVersion: "Latest version",
+    secondVersion: "Q3MSK Whitelist",
+    changeLog: "Changelog",
     nav: {
       home: "Home",
       gallery: "Gallery",
@@ -18,7 +21,10 @@ const texts = {
     subtitle: "Quake 3 Arena мод",
     desc: "Расширенная версия мода OSP2.<br/>OSP2 — это попытка восстановить исходный код старого мода OSP и улучшить его.<br/>Основано на анализе файлов ванильного Q3 и OSP.",
     downloadBtn: "Скачать",
+    downloadBtn2: "Скачать",
     lastVersion: "Последняя версия",
+    secondVersion: "Q3MSK Вайтлист",
+    changeLog: "Список изменений",
     nav: {
       home: "Главная",
       gallery: "Галерея",
@@ -37,7 +43,10 @@ document.addEventListener("DOMContentLoaded", () => {
     subtitle: "subtitle",
     desc: "desc", // innerHTML
     downloadBtn: "downloadBtn",
+    downloadBtn2: "downloadBtn2",
     lastVersion: "lastVersion",
+    secondVersion: "secondVersion",
+    changeLog: "changeLog",
     downloadsTitle: "nav.downloads",
     galleryTitle: "nav.gallery",
     contactTitle: "nav.contact",
