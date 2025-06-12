@@ -38,6 +38,8 @@ function addImage(src, index) {
   sliderContainer.insertBefore(slide, sliderContainer.querySelector('.prev'));
 }
 
+let initialized = false;
+
 function loadImages(start = 1) {
   let index = start;
 
@@ -48,12 +50,17 @@ function loadImages(start = 1) {
     img.onload = () => {
       images.push(src);
       addImage(src, images.length - 1);
+
+      if (!initialized) {
+        initGallery();
+        initialized = true;
+      }
+
       index++;
       tryLoad();
     };
 
     img.onerror = () => {
-      initGallery();
     };
 
     img.src = src;
@@ -61,6 +68,7 @@ function loadImages(start = 1) {
 
   tryLoad();
 }
+
 
 function initGallery() {
   const prevBtn = document.querySelector('.prev');
