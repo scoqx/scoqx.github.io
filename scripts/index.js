@@ -1,48 +1,18 @@
+// download buttons
 document.addEventListener("DOMContentLoaded", () => {
   fetch("version.json")
     .then(response => response.json())
     .then(data => {
       const version = data.version;
       document.getElementById("version-text").textContent = `${version}`;
-      const btn1 = document.getElementById("downloadBtn");
-      const btn2 = document.getElementById("downloadBtn2");
-
-      btn1.href = `/assets/zz-osp-pak8be.pk3`;
-      btn2.href = `/assets/whitelist/zz-osp-pak8be.pk3`;
-
-      btn1.addEventListener("click", (e) => {
-        e.preventDefault(); // Остановить переход
-        gtag('event', 'download', {
-          event_category: 'Files',
-          event_label: 'Main download',
-          value: 1
-        });
-        setTimeout(() => {
-          window.location.href = btn1.href; // Перейти вручную
-        }, 150); // 100–300 мс обычно достаточно
-      });
-
-      btn2.addEventListener("click", (e) => {
-        e.preventDefault();
-        gtag('event', 'download', {
-          event_category: 'Files',
-          event_label: 'Whitelist download',
-          value: 1
-        });
-        setTimeout(() => {
-          window.location.href = btn2.href;
-        }, 150);
-      });
+      document.getElementById("downloadBtn").href = `/assets/zz-osp-pak8be.pk3`;
+      document.getElementById("downloadBtn2").href = `/assets/whitelist/zz-osp-pak8be.pk3`;
     })
-
-
-    
     .catch(error => {
       document.getElementById("version-text").textContent = "Error loading version";
       console.error(error);
     });
 });
-
 
 
 // changelog
