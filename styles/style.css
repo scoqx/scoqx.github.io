@@ -37,6 +37,26 @@ header {
   border-bottom: var(--slider-border);
 }
 
+header h1 {
+  max-width: 40vw;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 1024px) {
+  #galleryTitle,
+  #title {
+    display: none;
+  }
+}
+
+@media (max-width: 1512px) {
+  #commandsTitle {
+    display: none;
+  }
+}
+
 .logo-title {
   display: flex;
   align-items: center;
