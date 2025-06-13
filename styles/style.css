@@ -51,7 +51,7 @@ header h1 {
   }
 }
 
-@media (max-width: 1512px) {
+@media (max-width: 1800px) {
   #commandsTitle {
     display: none;
   }
