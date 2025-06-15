@@ -46,7 +46,8 @@ header h1 {
 
 @media (max-width: 1024px) {
   #galleryTitle,
-  #title {
+  #title,
+  #contactTitle {
     display: none;
   }
 }
@@ -71,8 +72,8 @@ header h1 {
   object-fit: contain;
 }
 
-#title, #galleryTitle, #commandsTitle {
-  font-size: 3rem;
+#title, #galleryTitle, #commandsTitle, #contactTitle {
+  font-size: 2.5rem;
   font-weight: bold;
   color: var(--text-color);
 }
@@ -102,13 +103,13 @@ nav a {
 }
 
 .language-switch button {
-  display: inline-block; /* Чтобы кнопка вела себя как инлайн-блок */
+  display: inline-block;
   padding: 10px 15px;
   background-color: whitesmoke;
   color: black;
   font-weight: bold;
   border-radius: 5px;
-  border: none; /* Убираем стандартную границу */
+  border: none;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 }
@@ -145,45 +146,40 @@ h1 .icon {
 
 .command-block {
   margin-bottom: 20px;
-  padding: 10px 10px 10px 15px; /* Отступ слева чуть больше, чтобы линия не сливалась */
-  border-left: 3px solid white; /* Белая вертикальная линия, короче по высоте (будем задавать через псевдоэлемент) */
+  padding: 10px 10px 10px 15px;
+  border-left: 3px solid white;
   position: relative;
-  line-height: 1.6; /* Увеличиваем межстрочный интервал */
+  line-height: 1.6;
 }
 
-/* Чтобы линия была короче по высоте, используем псевдоэлемент */
 .command-block::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 15px;   /* отступ сверху, чтобы линия не на всю высоту */
-  height: calc(100% - 30px); /* высота линии короче */
+  top: 15px;
+  height: calc(100% - 30px);
   width: 3px;
   background-color: white;
 }
 
-/* Саму border-left скрываем, т.к. линия теперь через псевдоэлемент */
 .command-block {
   border-left: none;
 }
 
-/* Имя команды — желтым */
 .command-block code.command-name {
-  color: #ffcc00; /* желтый */
+  color: #ffcc00;
   font-weight: bold;
 }
 
-/* Аргументы — зелёным */
 .command-block code.command-arg {
   color: #00ff00;
 }
 
-/* Остальной код (общий для code) */
 code {
   background-color: #333;
   padding: 5px;
   font-family: monospace;
-  color: inherit; /* Цвет теперь задаётся конкретно */
+  color: inherit;
 }
 
 
@@ -252,20 +248,48 @@ ul {
 }
 
 .changelog-block {
-  margin-bottom: 0.3em; /* небольшой отступ между блоками */
+  margin-bottom: 0.3em;
 }
 
 .changelog-title {
-  font-size: 1.25em; /* на 25% больше */
-  margin-bottom: 0;   /* убираем отступы снизу */
+  font-size: 1.25em;
+  margin-bottom: 0;
 }
 
 .changelog-content-pre {
   margin: 0;
   padding: 0;
-  white-space: pre-wrap; /* сохраняет переносы */
+  white-space: pre-wrap;
   font-size: 1em;
   line-height: 1.1;
 }
 
+
+/* Contact */
+.contact-list {
+  list-style: none;
+  padding: 0;
+}
+
+.contact-list a {
+  color: white;
+  text-decoration: underline;
+}
+
+.contact-list a:hover {
+  color: #777777;
+}
+
+.contact-list li {
+  margin: 0.75em 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.contact-list i {
+  width: 20px;
+  text-align: center;
+  color: #ffffff;
+}
 
