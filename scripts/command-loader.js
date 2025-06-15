@@ -2,7 +2,7 @@ async function loadConfig() {
   const currentLang = localStorage.getItem("language") || "en";
   const filename = currentLang === "ru" ? "/assets/OSP2.cfg" : "/assets/OSP2English.cfg";
 
-  const response = await fetch(filename);
+  const response = await fetch(filename + "?v=" + Date.now());
   const text = await response.text();
 
   const lines = text.split("\n");

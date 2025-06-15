@@ -1,6 +1,6 @@
 // download buttons
 document.addEventListener("DOMContentLoaded", () => {
-  fetch("version.json")
+  fetch("version.json?v=" + Date.now())
     .then(response => response.json())
     .then(data => {
       const version = data.version;
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener('DOMContentLoaded', () => {
   const changelogEl = document.getElementById('changelog-content');
 
-  fetch('/assets/changelog_be.txt')
+  fetch('/assets/changelog_be.txt?v=' + Date.now())
     .then(response => {
       if (!response.ok) throw new Error('Failed to load changelog');
       return response.text();
@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       changelogEl.innerHTML = blocks.map(block => {
         const lines = block.split('\n');
-        // Убираем пустые строки в начале блока
         while (lines.length && lines[0].trim() === '') {
           lines.shift();
         }
@@ -63,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="changelog-title">${title}</div>
   <pre class="changelog-content-pre">${content}</pre>
 </div>`;
-      }).join('');  // без добавочных переносов между блоками
+      }).join('');
     })
     .catch(err => {
       changelogEl.textContent = 'Error loading changelog: ' + err.message;
