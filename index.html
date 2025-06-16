@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OSP2-BE</title>
   <link rel="icon" href="/assets/blender_180.png" type="image/png">
   <link rel="stylesheet" href="/styles/style.css" />
   <script defer src="scripts/language.js"></script>
   <script src="scripts/index.js"></script>
 </head>
-<body>
+
+<body data-page="home">
   <header>
     <div class="logo-title">
-      <img src="/assets/blender_180.png" alt="Logo" class="logo-icon">
+      <a href="index.html" style="display: flex; align-items: center; gap: 12px; height: 100%;">
+        <img src="/assets/blender_180.png" alt="Logo" class="logo-icon" />
+      </a>
       <span id="title">OSP2-BE</span>
     </div>
     <nav>
@@ -23,50 +27,46 @@
       <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
       <a id="nav-contact" href="contacts.html">Contact</a>
     </nav>
-  
+
     <div class="language-switch">
       <button id="langBtn">RU</button>
     </div>
   </header>
-  
-<main>
-  <div class="content-wrapper">
-    <div class="main-text">
-      <h2 id="subtitle">Quake 3 Arena mod</h2>
-      <p id="desc">
-        Extended edition of the OSP2.<br/>
-        OSP2 is an attempt to recover the old OSP mod source code and improve upon it.<br/>
-        Based on vanilla Q3 and OSP files analysis.
-      </p>
-    </div>
 
-    <div class="downloads-wrapper">
-      <div class="download-card">
-        <h3 id="lastVersion">Latest version</h3>
-        <p id="version-text">. . .</p>
-        <a class="download-button" id="downloadBtn" href="#" target="_blank">Download</a>
+  <main>
+    <div class="content-wrapper">
+      <div class="main-text">
+        <h2 id="subtitle">Quake 3 Arena mod</h2>
+        <p id="desc">
+          Extended edition of the OSP2.<br />
+          OSP2 is an attempt to recover the old OSP mod source code and improve upon it.<br />
+          Based on vanilla Q3 and OSP files analysis.
+        </p>
       </div>
-      <div class="download-card">
-        <h3 id="secondVersion">Q3MSK Whitelist</h3>
-        <p id="version-text-2">be-0.06e-whitelist</p>
-        <a class="download-button" id="downloadBtn2" href="#" target="_blank">Download</a>
+
+      <div class="downloads-wrapper">
+        <div class="download-card">
+          <h3 id="lastVersion">Latest version</h3>
+          <p id="version-text">. . .</p>
+          <a class="download-button" id="downloadBtn" href="#" target="_blank">Download</a>
+        </div>
+        <div class="download-card">
+          <h3 id="secondVersion">Q3MSK Whitelist</h3>
+          <p id="version-text-2">be-0.06e-whitelist</p>
+          <a class="download-button" id="downloadBtn2" href="#" target="_blank">Download</a>
+        </div>
       </div>
     </div>
-  </div>
-<section class="changelog-section">
-  <h2 id="changeLog">Changelog</h2>
-  <div class="changelog-container">
-    <pre id="changelog-content" style="white-space: pre-wrap;"></pre>
-  </div>
-</section>
-</main>
-<script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
-<script
-  async
-  data-collect="downloads"
-  data-extensions="pk3"
-  data-use-title="true"
-  data-full-urls="false"
-  src="https://scripts.simpleanalyticscdn.com/auto-events.js"></script>
+    <section class="changelog-section">
+      <h2 id="changeLog">Changelog</h2>
+      <div class="changelog-container">
+        <pre id="changelog-content" style="white-space: pre-wrap;"></pre>
+      </div>
+    </section>
+  </main>
+  <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+  <script async data-collect="downloads" data-extensions="pk3" data-use-title="true" data-full-urls="false"
+    src="https://scripts.simpleanalyticscdn.com/auto-events.js"></script>
 </body>
+
 </html>

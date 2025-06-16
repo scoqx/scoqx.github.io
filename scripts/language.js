@@ -70,9 +70,9 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("language", currentLang);
       updateLanguage(currentLang);
 
-  if (typeof window.loadConfig === "function") {
-    window.loadConfig();
-    }
+      if (typeof window.loadConfig === "function") {
+        window.loadConfig();
+      }
 
     });
   }
@@ -86,6 +86,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("Смена языка на:", lang);
     if (langBtn) langBtn.innerText = lang === "en" ? "RU" : "EN";
+
+    const page = document.body.getAttribute("data-page");
+    let pageTitlePart = "";
+
+    if (page && langData.nav[page]) {
+      pageTitlePart = ` - ${langData.nav[page]}`;
+    }
+
+    document.title = langData.title + pageTitlePart;
+
 
     Object.entries(bindings).forEach(([id, keyPath]) => {
       const element = document.getElementById(id);
@@ -106,5 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
         navLinks[key].innerText = langData.nav[key];
       }
     });
+
   }
 });

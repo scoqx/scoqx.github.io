@@ -6,9 +6,13 @@
   --slider-border: 2px solid white;
   --transition-speed: 0.3s;
   --font-family: Arial, sans-serif;
+
+  --command-name-color: #ffcc00;
+  --command-arg-color: #00ff00;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
@@ -38,24 +42,16 @@ header {
 }
 
 header h1 {
+  position: absolute;
+  top: 4px;
+  z-index: 1100;
   max-width: 40vw;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-}
-
-@media (max-width: 1024px) {
-  #galleryTitle,
-  #title,
-  #contactTitle {
-    display: none;
-  }
-}
-
-@media (max-width: 1800px) {
-  #commandsTitle {
-    display: none;
-  }
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--text-color);
 }
 
 .logo-title {
@@ -67,25 +63,27 @@ header h1 {
 
 .logo-icon {
   height: 100%;
-  width: auto;
   max-height: 64px;
+  width: auto;
   object-fit: contain;
 }
 
-#title, #galleryTitle, #commandsTitle, #contactTitle {
+#title,
+#galleryTitle,
+#commandsTitle,
+#contactTitle {
   font-size: 2.5rem;
   font-weight: bold;
   color: var(--text-color);
 }
 
 nav {
-  display: flex;
-  gap: 30px;
   position: absolute;
   top: 50%;
-  transform: translateY(-50%);
   left: 50%;
-  transform: translateX(-50%) translateY(-50%);
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 30px;
 }
 
 nav a {
@@ -112,11 +110,37 @@ nav a {
   border: none;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
+  outline: none;
 }
 
+.language-switch button {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: whitesmoke;
+  color: black;
+  font-weight: bold;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  outline: none;
+  /* убираем стандартную обводку */
+}
+
+/* При наведении мышью */
 .language-switch button:hover {
   background-color: black;
   color: white;
+}
+
+/* При нажатии (кнопка физически "вдавлена") */
+.language-switch button:active {
+  background-color: black;
+  color: white;
+  outline: 2px solid white;
+  /* белая рамка */
+  outline-offset: 2px;
+  /* отступ рамки от края кнопки — чтобы не слипалась */
 }
 
 
@@ -129,25 +153,16 @@ main {
   margin: 0 auto;
 }
 
-p, h1, h2 {
+p,
+h1,
+h2 {
   text-align: left;
-}
-
-h1 {
-  position: absolute;
-  top: 4px;
-  z-index: 1100;
-}
-
-h1 .icon {
-  width: 32px;
-  height: 32px;
 }
 
 .command-block {
   margin-bottom: 20px;
   padding: 10px 10px 10px 15px;
-  border-left: 3px solid white;
+  border-left: 3px solid var(--text-color);
   position: relative;
   line-height: 1.6;
 }
@@ -159,20 +174,16 @@ h1 .icon {
   top: 15px;
   height: calc(100% - 30px);
   width: 3px;
-  background-color: white;
-}
-
-.command-block {
-  border-left: none;
+  background-color: var(--text-color);
 }
 
 .command-block code.command-name {
-  color: #ffcc00;
+  color: var(--command-name-color);
   font-weight: bold;
 }
 
 .command-block code.command-arg {
-  color: #00ff00;
+  color: var(--command-arg-color);
 }
 
 code {
@@ -181,7 +192,6 @@ code {
   font-family: monospace;
   color: inherit;
 }
-
 
 ul {
   padding-left: 20px;
@@ -202,7 +212,7 @@ ul {
 }
 
 .download-card {
-  border: 2px solid white;
+  border: var(--slider-border);
   padding: 20px;
   border-radius: 10px;
   width: 250px;
@@ -216,14 +226,18 @@ ul {
 
 .download-button {
   display: inline-block;
-  margin-top: 10px;
   padding: 10px 15px;
   background-color: whitesmoke;
   color: black;
-  text-decoration: none;
   font-weight: bold;
   border-radius: 5px;
-  transition: background-color 0.15s;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  outline: none;
+  /* убираем стандартную обводку */
+  text-decoration: none;
+  /* для ссылок */
 }
 
 .download-button:hover {
@@ -231,10 +245,13 @@ ul {
   color: white;
 }
 
-.downloads-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.download-button:active {
+  background-color: black;
+  color: white;
+  outline: 2px solid white;
+  /* белая рамка */
+  outline-offset: 2px;
+  /* отступ рамки от края кнопки */
 }
 
 
@@ -243,7 +260,7 @@ ul {
   overflow-y: auto;
   border: 1px solid #ccc;
   padding: 10px;
-  background-color: #000000;
+  background-color: #000;
   font-family: monospace;
 }
 
@@ -264,7 +281,6 @@ ul {
   line-height: 1.1;
 }
 
-
 /* Contact */
 .contact-list {
   list-style: none;
@@ -272,12 +288,14 @@ ul {
 }
 
 .contact-list a {
-  color: white;
+  color: var(--text-color);
   text-decoration: underline;
 }
 
-.contact-list a:hover {
-  color: #777777;
+.contact-list a:hover,
+.contact-list a:focus {
+  color: #777;
+  outline: none;
 }
 
 .contact-list li {
@@ -290,6 +308,22 @@ ul {
 .contact-list i {
   width: 20px;
   text-align: center;
-  color: #ffffff;
+  color: var(--text-color);
 }
 
+/* Responsive */
+
+@media (max-width: 1024px) {
+
+  #galleryTitle,
+  #title,
+  #contactTitle {
+    display: none;
+  }
+}
+
+@media (max-width: 1600px) {
+  #commandsTitle {
+    display: none;
+  }
+}

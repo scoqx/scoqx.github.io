@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gallery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OSP2-BE - Gallery</title>
   <link rel="icon" href="/assets/blender_180.png" type="image/png">
   <link rel="stylesheet" href="/styles/style.css" />
   <link rel="stylesheet" href="/styles/gallery.css" />
   <script defer src="scripts/language.js"></script>
   <script defer src="scripts/gallery.js"></script>
 </head>
-<body>
+
+<body data-page="gallery">
   <header>
     <div class="logo-title">
-      <img src="assets/blender_180.png" alt="Logo" class="logo-icon">
+      <a href="index.html" style="display: flex; align-items: center; gap: 12px; height: 100%;">
+        <img src="/assets/blender_180.png" alt="Logo" class="logo-icon" />
+      </a>
       <span id="galleryTitle">Gallery</span>
     </div>
     <nav>
@@ -29,12 +33,20 @@
   </header>
 
   <main>
-  <div class="thumbnails"></div>
-  <div class="slider">
-    <button class="prev">&#10094;</button>
-    <button class="next">&#10095;</button>
-  </div>
-  <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+    <div class="thumbnails"></div>
+    <div class="slider">
+      <button class="prev">&#10094;</button>
+      <button class="next">&#10095;</button>
+    </div>
+
+    <div id="fullscreenOverlay" class="fullscreen-overlay hidden">
+      <button id="closeFullscreen" class="close-btn">&times;</button>
+      <img id="fullscreenImage" src="" alt="Fullscreen view" />
+    </div>
+
+    <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
   </main>
+
 </body>
+
 </html>

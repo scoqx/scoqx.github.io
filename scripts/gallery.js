@@ -97,6 +97,39 @@ function loadImages(start = 1) {
   tryLoad();
 }
 
+const fullscreenOverlay = document.getElementById('fullscreenOverlay');
+const fullscreenImage = document.getElementById('fullscreenImage');
+const closeFullscreenBtn = document.getElementById('closeFullscreen');
+
+function openFullscreen(src) {
+  fullscreenImage.src = src;
+  fullscreenOverlay.classList.remove('hidden');
+}
+
+function closeFullscreen() {
+  fullscreenOverlay.classList.add('hidden');
+  fullscreenImage.src = '';
+}
+
+sliderContainer.addEventListener('click', (e) => {
+  if (e.target.classList.contains('slide')) {
+    openFullscreen(e.target.src);
+  }
+});
+
+closeFullscreenBtn.addEventListener('click', closeFullscreen);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !fullscreenOverlay.classList.contains('hidden')) {
+    closeFullscreen();
+  }
+});
+
+fullscreenOverlay.addEventListener('click', (e) => {
+  if (e.target === fullscreenOverlay) {
+    closeFullscreen();
+  }
+});
 
 function initGallery() {
   const prevBtn = document.querySelector('.prev');
