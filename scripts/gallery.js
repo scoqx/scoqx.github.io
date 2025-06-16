@@ -159,6 +159,22 @@ function initGallery() {
   showSlide(0);
 }
 
+const fullscreenPrev = document.getElementById('fullscreenPrev');
+const fullscreenNext = document.getElementById('fullscreenNext');
+
+fullscreenPrev.addEventListener('click', () => {
+  const newIndex = (currentSlide - 1 + images.length) % images.length;
+  showSlide(newIndex);
+  fullscreenImage.src = images[newIndex];
+});
+
+fullscreenNext.addEventListener('click', () => {
+  const newIndex = (currentSlide + 1) % images.length;
+  showSlide(newIndex);
+  fullscreenImage.src = images[newIndex];
+});
+
+
 thumbnailsContainer.addEventListener('click', (e) => {
   if (e.target.classList.contains('thumbnail')) {
     const index = parseInt(e.target.dataset.index, 10);
