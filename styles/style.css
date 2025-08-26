@@ -220,6 +220,10 @@ ul {
   text-align: center;
 }
 
+.download-card:not(:last-child) {
+  margin-bottom: 20px;
+}
+
 .download-card h3 {
   margin-top: 0;
 }
