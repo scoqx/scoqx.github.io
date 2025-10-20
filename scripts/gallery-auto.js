@@ -196,24 +196,44 @@ async function loadImages() {
     // Добавляем только первые 20 изображений для быстрой загрузки
     const initialLoad = Math.min(20, imageFiles.length);
     
-    for (let i = 0; i < initialLoad; i++) {
-      images.push(imageFiles[i].src);
-      addImage(imageFiles[i], i);
-    }
-    
-    if (!initialized) {
-      initGallery();
-      initialized = true;
-    }
-    
-    // Загружаем остальные изображения постепенно
-    if (imageFiles.length > initialLoad) {
-      loadRemainingImages(imageFiles, initialLoad);
-    }
+    // Загружаем первые изображения последовательно
+    loadImagesSequentially(imageFiles, 0, initialLoad, () => {
+      if (!initialized) {
+        initGallery();
+        initialized = true;
+      }
+      
+      // Загружаем остальные изображения постепенно
+      if (imageFiles.length > initialLoad) {
+        loadRemainingImages(imageFiles, initialLoad);
+      }
+    });
     
   } catch (error) {
     
   }
+}
+
+// Функция для последовательной загрузки изображений
+function loadImagesSequentially(imageFiles, startIndex, endIndex, callback) {
+  let currentIndex = startIndex;
+  
+  function loadNext() {
+    if (currentIndex >= endIndex) {
+      if (callback) callback();
+      return;
+    }
+    
+    const imageData = imageFiles[currentIndex];
+    images.push(imageData.src);
+    addImage(imageData, currentIndex);
+    
+    currentIndex++;
+    // Загружаем следующее изображение с небольшой задержкой
+    setTimeout(loadNext, 50);
+  }
+  
+  loadNext();
 }
 
 // Функция для постепенной загрузки остальных изображений
@@ -335,7 +355,7 @@ function showHoverImage(src) {
   };
   img.addEventListener('load', onLoad);
   img.addEventListener('error', onError);
-  img.src = src + '?v=' + Date.now();
+  img.src = src;
 }
 
 // Функция для скрытия изображения при наведении
@@ -517,83 +537,78 @@ function createPreviewGrid() {
 
 // Функция для загрузки превью изображений с низким качеством
 function loadPreviewImages(previewGrid, imageFiles) {
-  const batchSize = PREVIEW_SETTINGS.batchSize;
   let currentIndex = 0;
   
-  function loadBatch() {
-    const endIndex = Math.min(currentIndex + batchSize, images.length);
+  function loadNextPreview() {
+    if (currentIndex >= images.length) return;
     
-    for (let i = currentIndex; i < endIndex; i++) {
-      const previewItem = document.createElement('div');
-      previewItem.className = 'preview-item';
-      previewItem.dataset.index = i;
-      
-      // Создаем canvas для низкокачественного превью
-      const canvas = document.createElement('canvas');
-      canvas.className = 'preview-canvas';
-      // логические размеры канваса для рендера, визуально масштабируется через CSS
-      canvas.width = PREVIEW_SETTINGS.width;
-      canvas.height = PREVIEW_SETTINGS.height;
+    const i = currentIndex;
+    const previewItem = document.createElement('div');
+    previewItem.className = 'preview-item';
+    previewItem.dataset.index = i;
+    
+    // Создаем canvas для низкокачественного превью
+    const canvas = document.createElement('canvas');
+    canvas.className = 'preview-canvas';
+    // логические размеры канваса для рендера, визуально масштабируется через CSS
+    canvas.width = PREVIEW_SETTINGS.width;
+    canvas.height = PREVIEW_SETTINGS.height;
 
-      // Точная рамка поверх отрисованной области картинки
-      const border = document.createElement('div');
-      border.className = 'preview-border';
-      
-      const label = document.createElement('div');
-      label.className = 'preview-label';
-      const imageData = imageFiles[i];
-      label.textContent = imageData ? imageData.description : `Screenshot ${i + 1}`;
-      // уважаем настройку показа текста
-      label.style.display = showPreviewText ? 'block' : 'none';
-      
-      previewItem.appendChild(canvas);
-      previewItem.appendChild(border);
-      previewItem.appendChild(label);
-      previewGrid.appendChild(previewItem);
-      
-      // Обработчик клика: в превью открываем собственный fullscreen, не переключая режим
-      previewItem.addEventListener('click', () => {
-        currentSlide = i;
-        openFullscreenFromPreview(images[i]);
-      });
-      
-      // Обработчики для показа полного изображения при наведении
-      previewItem.addEventListener('mouseenter', () => {
-        // Очищаем предыдущий таймаут если есть
-        if (hoverTimeout) {
-          clearTimeout(hoverTimeout);
-        }
-        
-        // Устанавливаем новый таймаут на 0.5 секунды
-        hoverTimeout = setTimeout(() => {
-          showHoverImage(images[i]);
-        }, 500);
-      });
-      
-      previewItem.addEventListener('mouseleave', () => {
-        // Очищаем таймаут при уходе мыши
-        if (hoverTimeout) {
-          clearTimeout(hoverTimeout);
-          hoverTimeout = null;
-        }
-        
-        // Скрываем изображение
-        hideHoverImage();
-      });
-      
-      // Загружаем изображение в фоне и создаем превью
-      loadLowQualityPreview(images[i], canvas, border);
-    }
+    // Точная рамка поверх отрисованной области картинки
+    const border = document.createElement('div');
+    border.className = 'preview-border';
     
-    currentIndex = endIndex;
+    const label = document.createElement('div');
+    label.className = 'preview-label';
+    const imageData = imageFiles[i];
+    label.textContent = imageData ? imageData.description : `Screenshot ${i + 1}`;
+    // уважаем настройку показа текста
+    label.style.display = showPreviewText ? 'block' : 'none';
     
-    // Загружаем следующий батч с небольшой задержкой
-    if (currentIndex < images.length) {
-      setTimeout(loadBatch, 50);
-    }
+    previewItem.appendChild(canvas);
+    previewItem.appendChild(border);
+    previewItem.appendChild(label);
+    previewGrid.appendChild(previewItem);
+    
+    // Обработчик клика: в превью открываем собственный fullscreen, не переключая режим
+    previewItem.addEventListener('click', () => {
+      currentSlide = i;
+      openFullscreenFromPreview(images[i]);
+    });
+    
+    // Обработчики для показа полного изображения при наведении
+    previewItem.addEventListener('mouseenter', () => {
+      // Очищаем предыдущий таймаут если есть
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+      
+      // Устанавливаем новый таймаут на 0.5 секунды
+      hoverTimeout = setTimeout(() => {
+        showHoverImage(images[i]);
+      }, 500);
+    });
+    
+    previewItem.addEventListener('mouseleave', () => {
+      // Очищаем таймаут при уходе мыши
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = null;
+      }
+      
+      // Скрываем изображение
+      hideHoverImage();
+    });
+    
+    // Загружаем изображение в фоне и создаем превью
+    loadLowQualityPreview(images[i], canvas, border);
+    
+    currentIndex++;
+    // Загружаем следующее превью с небольшой задержкой
+    setTimeout(loadNextPreview, 50);
   }
   
-  loadBatch();
+  loadNextPreview();
 }
 
 // Функция для создания низкокачественного превью
