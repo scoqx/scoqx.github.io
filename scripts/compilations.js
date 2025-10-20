@@ -115,18 +115,50 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Shuffle order on every load
   normalized.sort(() => Math.random() - 0.5);
 
+  // Сначала скрываем все карточки
   grid.innerHTML = normalized.map(renderCard).join('');
+  const cards = grid.querySelectorAll('.compilation-card');
+  cards.forEach(card => {
+    card.style.opacity = '0';
+    card.style.transition = 'opacity 0.3s ease';
+  });
 
-  // Generate low-quality previews (~50%) for card thumbnails
+  // Generate low-quality previews sequentially to avoid blocking
   (function generateLowQualityPreviews(){
-    const thumbs = grid.querySelectorAll('.card-images img');
-    thumbs.forEach((imgEl) => {
+    const thumbs = Array.from(grid.querySelectorAll('.card-images img'));
+    let currentIndex = 0;
+    
+    function loadNextThumbnail() {
+      if (currentIndex >= thumbs.length) return;
+      
+      const imgEl = thumbs[currentIndex];
       const fullSrc = imgEl.getAttribute('data-fullsrc') || imgEl.src;
-      if (!fullSrc) return;
+      if (!fullSrc) {
+        currentIndex++;
+        setTimeout(loadNextThumbnail, 0);
+        return;
+      }
+      
       // ensure we store original
       imgEl.setAttribute('data-fullsrc', fullSrc);
-      makeLowQualityPreview(fullSrc, imgEl, 120, 0.5);
-    });
+      // Загружаем превью и показываем карточку когда готово
+      const card = imgEl.closest('.compilation-card');
+      makeLowQualityPreview(fullSrc, imgEl, 120, 0.7, () => {
+        // Показываем карточку только когда все её изображения загружены
+        const cardImages = card.querySelectorAll('.card-images img');
+        const loadedImages = card.querySelectorAll('.card-images img[src]:not([src=""])');
+        if (loadedImages.length === cardImages.length) {
+          card.style.opacity = '1';
+        }
+      });
+      
+      currentIndex++;
+      // Load next thumbnail after a short delay to prevent blocking
+      setTimeout(loadNextThumbnail, 50);
+    }
+    
+    // Start loading thumbnails
+    loadNextThumbnail();
   })();
 
   // Wire fullscreen openers for card images
@@ -267,7 +299,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     img.addEventListener('load', onLoad);
     img.addEventListener('error', onError);
-    img.src = src + '?v=' + Date.now();
+    img.src = src;
   }
 
   function hideHoverImage() {
@@ -340,7 +372,7 @@ function renderCard(item) {
 }
 
 // Create a low-quality preview using canvas and assign to the target <img>
-function makeLowQualityPreview(src, targetImgEl, targetHeight = 120, quality = 0.5) {
+function makeLowQualityPreview(src, targetImgEl, targetHeight = 240, quality = 1, callback) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function() {
@@ -361,14 +393,17 @@ function makeLowQualityPreview(src, targetImgEl, targetHeight = 120, quality = 0
     try {
       const dataUrl = canvas.toDataURL('image/jpeg', Math.max(0.1, Math.min(quality, 1)));
       targetImgEl.src = dataUrl;
+      if (callback) callback();
     } catch (_) {
       // Fallback: use original if toDataURL fails
       targetImgEl.src = src;
+      if (callback) callback();
     }
   };
   img.onerror = function() {
     // On error, use original src as fallback
     targetImgEl.src = src;
+    if (callback) callback();
   };
   img.src = src;
 }
