@@ -6,14 +6,14 @@ const texts = {
     downloadBtn: "Download",
     downloadBtn2: "Download",
     lastVersion: "Latest version",
-    secondVersion: "Q3MSK Whitelist",
     changeLog: "Changelog",
     nav: {
       home: "Home",
       gallery: "Gallery",
+      compilations: "Compilations",
+      mode: "Mode",
       commands: "Console Commands",
-      downloads: "Downloads",
-      contact: "Contacts"
+      downloads: "Downloads"
     }
   },
   ru: {
@@ -23,14 +23,14 @@ const texts = {
     downloadBtn: "Скачать",
     downloadBtn2: "Скачать",
     lastVersion: "Последняя версия",
-    secondVersion: "Q3MSK Вайтлист",
     changeLog: "Список изменений",
     nav: {
       home: "Главная",
       gallery: "Галерея",
+      compilations: "Сборки",
+      mode: "Режим",
       commands: "Консольные команды",
-      downloads: "Загрузки",
-      contact: "Контакты"
+      downloads: "Загрузки"
     }
   }
 };
@@ -49,16 +49,16 @@ document.addEventListener("DOMContentLoaded", () => {
     changeLog: "changeLog",
     downloadsTitle: "nav.downloads",
     galleryTitle: "nav.gallery",
-    contactTitle: "nav.contact",
     commandsTitle: "nav.commands"
   };
 
   const navLinks = {
     home: document.getElementById("nav-home"),
     gallery: document.getElementById("nav-gallery"),
+    compilations: document.getElementById("nav-compilations"),
     commands: document.getElementById("nav-commands"),
     downloads: document.getElementById("nav-downloads"),
-    contact: document.getElementById("nav-contact")
+    
   };
 
   let currentLang = localStorage.getItem("language") || "en";
@@ -74,6 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
         window.loadConfig();
       }
 
+      if (typeof window.renderContactInfo === "function") {
+        window.renderContactInfo();
+      }
+
     });
   }
 
@@ -85,6 +89,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     console.log("Смена языка на:", lang);
+    
+    // Add transition class to body for smooth transitions
+    document.body.classList.add('language-transition');
+    
     if (langBtn) langBtn.innerText = lang === "en" ? "RU" : "EN";
 
     const page = document.body.getAttribute("data-page");
@@ -96,13 +104,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.title = langData.title + pageTitlePart;
 
-
+    // Update elements with smooth transition
     Object.entries(bindings).forEach(([id, keyPath]) => {
       const element = document.getElementById(id);
       if (!element) return;
 
       const value = keyPath.split('.').reduce((acc, key) => acc?.[key], langData);
       if (value) {
+        // Add transition class to element
+        element.classList.add('language-transition');
+        
         if (id === "desc") {
           element.innerHTML = value;
         } else {
@@ -112,10 +123,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     Object.keys(navLinks).forEach(key => {
-      if (navLinks[key]) {
-        navLinks[key].innerText = langData.nav[key];
+      const linkEl = navLinks[key];
+      if (!linkEl) return;
+      linkEl.classList.add('language-transition');
+
+      if (key === 'gallery') {
+        const modeTextEl = linkEl.querySelector('.mode-toggle__text');
+        if (modeTextEl) {
+          // Переводим текст у переключателя режима и сохраняем разметку
+          modeTextEl.innerText = langData.nav.mode || 'Mode';
+          return; // не затираем содержимое ссылки
+        }
+      }
+
+      // Обычная логика для остальных ссылок
+      if (langData.nav[key]) {
+        linkEl.innerText = langData.nav[key];
       }
     });
 
+    // Remove transition class after animation completes
+    setTimeout(() => {
+      document.body.classList.remove('language-transition');
+      document.querySelectorAll('.language-transition').forEach(el => {
+        el.classList.remove('language-transition');
+      });
+    }, 300);
   }
 });

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compilations</title>
+  <link rel="icon" href="/assets/blender_180.png" type="image/png">
+  <link rel="stylesheet" href="/styles/style.css" />
+  <link rel="stylesheet" href="/styles/gallery.css" />
+  <link rel="stylesheet" href="/styles/compilations.css" />
+  <script defer src="scripts/language.js"></script>
+  <script defer src="scripts/compilations.js"></script>
+  <script defer src="scripts/navigation.js"></script>
+</head>
+
+<body data-page="compilations">
+  <header>
+    <div class="logo-title">
+      <a href="index.html" style="display: flex; align-items: center; gap: 12px; height: 100%;">
+        <img src="/assets/blender_180.png" alt="Logo" class="logo-icon" />
+      </a>
+    </div>
+    <nav>
+      <a id="nav-gallery" href="gallery.html">Gallery</a>
+      <a id="nav-commands" href="commands.html">Console Commands</a>
+      <a id="nav-compilations" href="compilations.html">Compilations</a>
+      <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
+    </nav>
+    <div class="language-switch">
+      <button id="langBtn">RU</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="compilationsGrid" class="compilations-grid"></div>
+  </main>
+  <div id="fullscreenOverlay" class="fullscreen-overlay hidden">
+    <button id="fullscreenPrev" class="fullscreen-nav prev">&#10094;</button>
+    <button id="fullscreenNext" class="fullscreen-nav next">&#10095;</button>
+    <button id="closeFullscreen" class="close-btn">&times;</button>
+    <img id="fullscreenImage" src="" alt="Fullscreen view" />
+  </div>
+  <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+</body>
+
+</html>
+
+

@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/styles/style.css" />
   <script defer src="scripts/language.js"></script>
   <script defer src="scripts/command-loader.js"></script>
+  <script defer src="scripts/navigation.js"></script>
 </head>
 
 <body data-page="commands">
@@ -17,14 +18,12 @@
       <a href="index.html" style="display: flex; align-items: center; gap: 12px; height: 100%;">
         <img src="/assets/blender_180.png" alt="Logo" class="logo-icon" />
       </a>
-      <span id="commandsTitle">Console Commands</span>
     </div>
     <nav>
-      <a id="nav-home" href="index.html">Home</a>
       <a id="nav-gallery" href="gallery.html">Gallery</a>
       <a id="nav-commands" href="commands.html">Console Commands</a>
+      <a id="nav-compilations" href="compilations.html">Compilations</a>
       <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
-      <a id="nav-contact" href="contacts.html">Contact</a>
     </nav>
     <div class="language-switch">
       <button id="langBtn">RU</button>
@@ -32,6 +31,7 @@
   </header>
 
   <main>
+    <div id="copyHint" class="copy-hint"></div>
     <div id="content"></div>
   </main>
   <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>

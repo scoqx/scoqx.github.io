@@ -4,7 +4,7 @@
   --highlight-color: #00ff00;
   --button-bg-color: white;
   --slider-border: 2px solid white;
-  --transition-speed: 0.3s;
+  --transition-speed: 0s;
   --font-family: Arial, sans-serif;
 
   --command-name-color: #ffcc00;
@@ -24,6 +24,14 @@ body {
 
 body {
   padding-top: 80px;
+}
+
+/* Блокируем прокрутку под фуллскрин-оверлеем */
+body.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  overscroll-behavior: none; /* отключаем резиновую прокрутку */
 }
 
 header {
@@ -56,9 +64,11 @@ header h1 {
 
 .logo-title {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   height: 100%;
+  justify-content: center;
 }
 
 .logo-icon {
@@ -68,14 +78,16 @@ header h1 {
   object-fit: contain;
 }
 
-#title,
-#galleryTitle,
-#commandsTitle,
-#contactTitle {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: var(--text-color);
+/* Logo background for home page */
+body[data-page="home"] .logo-icon {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 0px;
+  padding: -5px;
 }
+
+
+
+/* Заголовки страниц убраны - теперь используется активная ссылка в навигации */
 
 nav {
   position: absolute;
@@ -89,8 +101,56 @@ nav {
 nav a {
   text-decoration: none;
   color: inherit;
-  font-size: 1.2rem;
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
   font-weight: bold;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: auto; /* высота адаптируется под содержимое */
+}
+
+/* Стилизация активной ссылки */
+nav a {
+  padding: 0.5em 0.9em; /* паддинги зависят от размера шрифта */
+  border-radius: 20px;
+}
+.mode-toggle__switch { height: 24px; }
+
+.mode-toggle__switch::after { top: 50%; transform: translateY(-50%); }
+
+.mode-toggle__text { line-height: 1; }
+
+/* Автоматическое уменьшение подписи в тумблере, если не помещается */
+.mode-toggle__text {
+  font-size: clamp(0.8rem, 2.2vw, 1rem);
+  white-space: nowrap;
+}
+
+/* Подгоняем размеры самого тумблера под уменьшение текста */
+.mode-toggle__switch {
+  transform: scale(clamp(0.85, 2.2vw/3, 1));
+}
+
+nav a.active {
+  color: black;
+  background-color: white;
+}
+
+/* Обеспечиваем, что внутри активной ссылки переключатель визуально вписывается */
+nav a.active .mode-toggle__switch {
+  background: black;
+  border-color: black;
+}
+
+nav a.active .mode-toggle__checkbox:checked ~ .mode-toggle__switch {
+  background: black;
+  border-color: black;
+}
+
+nav a.active .mode-toggle__switch::after {
+  background: white;
 }
 
 .language-switch {
@@ -98,6 +158,50 @@ nav a {
   top: 50%;
   right: 80px;
   transform: translateY(-50%);
+}
+
+/* Mode toggle inside nav Gallery link */
+.mode-toggle-nav { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+
+.mode-toggle__checkbox {
+  display: none;
+}
+
+.mode-toggle__switch {
+  width: 44px;
+  height: 24px;
+  background: #333;
+  border: 2px solid #777;
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.mode-toggle__switch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background: #bbb;
+  border-radius: 50%;
+  transition: left 0.2s ease, background 0.2s ease;
+}
+
+.mode-toggle__checkbox:checked ~ .mode-toggle__switch {
+  background: rgb(255, 255, 255);
+  border-color: rgb(157, 157, 157);
+}
+
+.mode-toggle__checkbox:checked ~ .mode-toggle__switch::after {
+  left: 22px;
+  background: #fff;
+}
+
+.mode-toggle__text {
+  font-weight: bold;
 }
 
 .language-switch button {
@@ -111,6 +215,7 @@ nav a {
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
   outline: none;
+  -webkit-tap-highlight-color: transparent; /* убираем синий хайлайт на мобильных */
 }
 
 .language-switch button {
@@ -143,6 +248,14 @@ nav a {
   /* отступ рамки от края кнопки — чтобы не слипалась */
 }
 
+/* После тапа на мобильных возвращаем базовые цвета при фокусе */
+.language-switch button:focus,
+.language-switch button:focus-visible {
+  background-color: whitesmoke;
+  color: black;
+  outline: none;
+}
+
 
 main {
   display: flex;
@@ -153,6 +266,26 @@ main {
   margin: 0 auto;
 }
 
+.copy-hint {
+  margin-bottom: 10px;
+  color: #bbb;
+  font-size: 0.95rem;
+}
+
+.copy-toast {
+  position: fixed;
+  z-index: 20000;
+  background: rgba(0,0,0,0.9);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  pointer-events: none;
+  box-shadow: 0 0 15px rgb(80, 80, 80);
+  transform: translate(10px, -10px);
+}
+
 p,
 h1,
 h2 {
@@ -161,29 +294,67 @@ h2 {
 
 .command-block {
   margin-bottom: 20px;
-  padding: 10px 10px 10px 15px;
-  border-left: 3px solid var(--text-color);
+  padding: 15px;
+  line-height: 1.2;
+  overflow: visible;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+}
+
+.command-line {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0;
+  align-items: start;
+}
+
+.command-part {
+  grid-column: 1;
+  white-space: nowrap;
+}
+
+.command-separator {
+  grid-column: 2;
+  white-space: nowrap;
+  margin-right: 0.5em;
+}
+
+.command-description {
+  grid-column: 3;
   position: relative;
-  line-height: 1.6;
 }
 
-.command-block::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 15px;
-  height: calc(100% - 30px);
-  width: 3px;
-  background-color: var(--text-color);
+.description-text {
+  display: block;
+  /* Висячий отступ для переносов */
+  padding-left: calc(var(--command-width) + 1ch);
+  margin-left: calc(-1 * (var(--command-width) + 1ch));
 }
-
 .command-block code.command-name {
   color: var(--command-name-color);
   font-weight: bold;
+  border: 2px solid transparent; /* рамка вокруг текста по умолчанию скрыта */
+  border-radius: 6px;
+  padding: 0 4px; /* немного места для рамки */
+  cursor: pointer; /* кликабельно для копирования */
 }
 
 .command-block code.command-arg {
   color: var(--command-arg-color);
+}
+
+/* Наведение/фокус на тексте команды — как в галерее (цвет/тень/углы) */
+code.command-name:hover,
+code.command-name:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 15px rgb(80, 80, 80);
+  outline: none;
+}
+
+/* Вспышка при копировании без перезаписи постоянного фона */
+code.command-name.copied-flash {
+  background-color: rgba(255,255,255,0.1);
+  transition: background-color 0.2s ease;
 }
 
 code {
@@ -285,10 +456,99 @@ ul {
   line-height: 1.1;
 }
 
+/* Language switching improvements */
+.language-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Fixed heights for elements that might cause layout shift */
+.main-text h2 {
+  min-height: 1.5em;
+  transition: all 0.3s ease-in-out;
+}
+
+.main-text p {
+  min-height: 4.5em;
+  transition: all 0.3s ease-in-out;
+}
+
+.download-card h3 {
+  min-height: 1.5em;
+  transition: all 0.3s ease-in-out;
+}
+
+.download-card p {
+  min-height: 1.2em;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Navigation links with fixed width to prevent shifting */
+nav a {
+  min-width: 120px;
+  text-align: center;
+  transition: all 0.3s ease-in-out;
+}
+
+/* На узких экранах разрешаем кнопкам быть уже */
+@media (max-width: 640px) {
+  nav a {
+    min-width: auto;
+    padding: 0.4em 0.7em; /* немного меньше паддинги */
+  }
+}
+
+/* Language button with fixed size */
+.language-switch button {
+  min-width: 50px;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Language link styling for static pages */
+.language-switch .lang-link {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: whitesmoke;
+  color: black;
+  font-weight: bold;
+  border-radius: 5px;
+  text-decoration: none;
+  min-width: 50px;
+  text-align: center;
+  transition: all 0.3s ease-in-out;
+}
+
+.language-switch .lang-link:hover {
+  background-color: black;
+  color: white;
+}
+
+.language-switch .lang-link:active {
+  background-color: black;
+  color: white;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
 /* Contact */
 .contact-list {
   list-style: none;
   padding: 0;
+}
+
+/* Contact info block on home page */
+.contact-info {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+}
+.contact-info .contact-row a {
+  color: var(--text-color);
+  text-decoration: underline;
+}
+.contact-info .contact-row a:hover,
+.contact-info .contact-row a:focus {
+  color: #777;
+  outline: none;
 }
 
 .contact-list a {
@@ -317,17 +577,88 @@ ul {
 
 /* Responsive */
 
-@media (max-width: 1024px) {
+/* Медиа-запросы для заголовков больше не нужны */
 
-  #galleryTitle,
-  #title,
-  #contactTitle {
+/* Отключаем висячий отступ на мобильных устройствах */
+@media (max-width: 768px) {
+  main {
+    padding: 0;
+  }
+  /* В вертикальном/узком виде добавим небольшой левый отступ на главной */
+  body[data-page="home"] main { padding-left: 3%; }
+  
+  /* Перепозиционируем и уменьшаем кнопку языка на мобильных */
+  .language-switch { top: 12px; right: -5px; transform: none; }
+  .language-switch button { padding: 6px 10px; font-size: 0.85rem; min-width: 40px; border-radius: 4px; }
+  
+  .command-block {
+    padding: 15px;
+    border-radius: 8px;
+    margin-left: 5%;
+    margin-right: 5%;
+  }
+  
+  .command-line {
+    display: block;
+  }
+  
+  .command-part {
+    display: block;
+    margin-bottom: 0.5em;
+  }
+  
+  .command-separator {
     display: none;
+  }
+  
+  .command-description {
+    display: block;
+  }
+  
+  .description-text {
+    padding-left: 0;
+    margin-left: 0;
   }
 }
 
-@media (max-width: 1600px) {
-  #commandsTitle {
+/* Отключаем висячий отступ в портретной ориентации */
+@media (orientation: portrait) and (max-width: 1024px) {
+  main {
+    padding: 0;
+  }
+  /* В портретной ориентации добавим левый отступ на главной */
+  body[data-page="home"] main { padding-left: 3%; }
+  
+  /* Чуть компактнее кнопка языка и выше/правее размещение */
+  .language-switch { top: 14px; right: 14px; transform: none; }
+  .language-switch button { padding: 7px 12px; font-size: 0.9rem; min-width: 44px; }
+  
+  .command-block {
+    padding: 15px;
+    border-radius: 8px;
+    margin-left: 5%;
+    margin-right: 5%;
+  }
+  
+  .command-line {
+    display: block;
+  }
+  
+  .command-part {
+    display: block;
+    margin-bottom: 0.5em;
+  }
+  
+  .command-separator {
     display: none;
+  }
+  
+  .command-description {
+    display: block;
+  }
+  
+  .description-text {
+    padding-left: 0;
+    margin-left: 0;
   }
 }

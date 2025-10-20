@@ -1,0 +1,70 @@
+{
+  "images": [
+    {
+      "src": "images/1.jpg",
+      "title": "FullBright",
+      "description": "FullBright models with outline",
+      "order": 1
+    },
+    {
+      "src": "images/2.jpg", 
+      "title": "Gameplay Action",
+      "description": "Combat Scene",
+      "order": 2
+    },
+    {
+      "src": "images/3.jpg",
+      "title": "Gameplay Action 2",
+      "description": "Team Combat Scene",
+      "order": 3
+    },
+    {
+      "src": "images/4.jpg",
+      "title": "Gameplay Action 3",
+      "description": "Team Combat Scene 2",
+      "order": 4
+    },
+    {
+      "src": "images/5.jpg",
+      "title": "UI Interface",
+      "description": "HUD Elements",
+      "order": 5
+    },
+    {
+      "src": "images/6.jpg",
+      "title": "Special Effects",
+      "description": "Particle System",
+      "order": 6
+    },
+    {
+      "src": "images/7.jpg",
+      "title": "Team Battle",
+      "description": "Multiplayer Match",
+      "order": 7
+    },
+    {
+      "src": "images/8.jpg",
+      "title": "Victory Screen",
+      "description": "Match Results",
+      "order": 8
+    },
+    {
+      "src": "images/9.jpg",
+      "title": "Settings Panel",
+      "description": "Configuration Menu",
+      "order": 9
+    },
+    {
+      "src": "images/10.jpg",
+      "title": "Character Model",
+      "description": "Player Appearance",
+      "order": 10
+    }
+  ],
+  "settings": {
+    "autoScan": false,
+    "supportedFormats": ["jpg", "jpeg", "png", "webp", "gif"],
+    "thumbnailSize": 150,
+    "maxImages": 100
+  }
+}

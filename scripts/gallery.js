@@ -120,8 +120,17 @@ sliderContainer.addEventListener('click', (e) => {
 closeFullscreenBtn.addEventListener('click', closeFullscreen);
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !fullscreenOverlay.classList.contains('hidden')) {
-    closeFullscreen();
+  if (fullscreenOverlay.classList.contains('hidden')) return;
+  if (e.key === 'Escape') closeFullscreen();
+  if (e.key === 'ArrowLeft') {
+    const newIndex = (currentSlide - 1 + images.length) % images.length;
+    showSlide(newIndex);
+    fullscreenImage.src = images[newIndex];
+  }
+  if (e.key === 'ArrowRight') {
+    const newIndex = (currentSlide + 1) % images.length;
+    showSlide(newIndex);
+    fullscreenImage.src = images[newIndex];
   }
 });
 

@@ -1,3 +1,58 @@
+// Функция для определения ширины текста в пикселях
+function getTextWidth(text, font) {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  context.font = font || getComputedStyle(document.body).font;
+  return context.measureText(text).width;
+}
+
+// Функция для определения ширины имени команды с учетом CSS стилей
+function getCommandNameWidth(commandName, prefix = "") {
+  const fullName = prefix + commandName;
+  
+  // Создаем временный элемент для измерения
+  const tempElement = document.createElement('code');
+  tempElement.className = 'command-name';
+  tempElement.style.visibility = 'hidden';
+  tempElement.style.position = 'absolute';
+  tempElement.style.top = '-9999px';
+  tempElement.textContent = fullName;
+  
+  document.body.appendChild(tempElement);
+  
+  try {
+    const computedStyle = getComputedStyle(tempElement);
+    const fontFamily = computedStyle.fontFamily;
+    const fontSize = computedStyle.fontSize;
+    const fontWeight = computedStyle.fontWeight;
+    const font = `${fontWeight} ${fontSize} ${fontFamily}`;
+    
+    const width = getTextWidth(fullName, font);
+    return width;
+  } finally {
+    document.body.removeChild(tempElement);
+  }
+}
+
+// Функция для получения максимальной ширины среди всех команд
+function getMaxCommandNameWidth(entries) {
+  let maxWidth = 0;
+  
+  for (const entry of entries) {
+    let prefix = "";
+    if (entry.type === "command" && !/^[\/+\-]/.test(entry.name)) {
+      prefix = "/";
+    }
+    
+    const width = getCommandNameWidth(entry.name, prefix);
+    if (width > maxWidth) {
+      maxWidth = width;
+    }
+  }
+  
+  return maxWidth;
+}
+
 async function loadConfig() {
   const currentLang = localStorage.getItem("language") || "en";
   const filename = currentLang === "ru" ? "/assets/OSP2.cfg" : "/assets/OSP2English.cfg";
@@ -90,6 +145,10 @@ async function loadConfig() {
     return a.name.localeCompare(b.name);
   });
 
+  // Получаем максимальную ширину имени команды
+  const maxCommandWidth = getMaxCommandNameWidth(entries);
+  console.log(`Максимальная ширина имени команды: ${maxCommandWidth.toFixed(2)}px`);
+
   // Генерация HTML
   let html = "";
   for (const entry of entries) {
@@ -97,21 +156,87 @@ async function loadConfig() {
     if (entry.type === "command" && !/^[\/+\-]/.test(entry.name)) {
       prefix = "/";
     }
-    let cmdHtml = `<code class="command-name">${prefix}${entry.name}</code>`;
+    
+    // Получаем ширину текущей команды
+    const currentWidth = getCommandNameWidth(entry.name, prefix);
+    
+    let cmdHtml = `<code class="command-name" data-width="${currentWidth.toFixed(2)}">${prefix}${entry.name}</code>`;
     if (entry.value !== null) {
       cmdHtml += ` <code class="command-arg">"${entry.value}"</code>`;
     }
+    
+    // Создаем структуру с висячим отступом
     html += `
       <div class="command-block">
-        <p>${cmdHtml} — ${entry.description}</p>
+        <div class="command-line">
+          <span class="command-part">${cmdHtml}</span>
+          <span class="command-separator"> — </span>
+          <span class="command-description" style="--command-width: ${currentWidth.toFixed(2)}px">
+            <span class="description-text">${entry.description}</span>
+          </span>
+        </div>
       </div>
     `;
   }
 
-
   document.getElementById("content").innerHTML = html;
+  // Локализованный хинт над списком
+  try {
+    const copyHintEl = document.getElementById('copyHint');
+    if (copyHintEl) {
+      const lang = (localStorage.getItem('language') || 'en').toLowerCase();
+      copyHintEl.textContent = lang === 'ru'
+        ? 'Подсказка: нажмите на команду, чтобы скопировать'
+        : 'Hint: click a command to copy';
+    }
+  } catch (_) {}
+  
+  // Выводим статистику в консоль
+  console.log(`Всего команд: ${entries.length}`);
+  console.log(`Максимальная ширина: ${maxCommandWidth.toFixed(2)}px`);
+
+  // Клик по имени команды — копирование команды (с аргументом если есть)
+  const container = document.getElementById('content');
+  container.addEventListener('click', (e) => {
+    const codeEl = e.target.closest('code.command-name');
+    if (!codeEl) return;
+    const line = codeEl.closest('.command-line');
+    if (!line) return;
+    const nameText = codeEl.textContent.trim(); // копируем только команду
+    try {
+      navigator.clipboard.writeText(nameText);
+    } catch (_) {
+      const ta = document.createElement('textarea');
+      ta.value = nameText;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    // Визуальная обратная связь: краткая подсветка и тост у курсора
+    codeEl.classList.add('copied-flash');
+    setTimeout(() => { codeEl.classList.remove('copied-flash'); }, 250);
+
+    const toast = document.createElement('div');
+    toast.className = 'copy-toast';
+    const lang = (localStorage.getItem('language') || 'en').toLowerCase();
+    toast.textContent = lang === 'ru' ? 'Скопировано' : 'Copied';
+    // позиция справа-сверху от курсора
+    const x = (e.clientX || 0) + 12;
+    const y = (e.clientY || 0) - 12;
+    toast.style.left = `${x}px`;
+    toast.style.top = `${y}px`;
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast && toast.parentNode) toast.parentNode.removeChild(toast); }, 800);
+  });
 }
 
+// Экспортируем функции в глобальную область видимости
 window.loadConfig = loadConfig;
+window.getTextWidth = getTextWidth;
+window.getCommandNameWidth = getCommandNameWidth;
+window.getMaxCommandNameWidth = getMaxCommandNameWidth;
 
 document.addEventListener("DOMContentLoaded", loadConfig);

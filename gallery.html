@@ -9,7 +9,8 @@
   <link rel="stylesheet" href="/styles/style.css" />
   <link rel="stylesheet" href="/styles/gallery.css" />
   <script defer src="scripts/language.js"></script>
-  <script defer src="scripts/gallery.js"></script>
+  <script defer src="scripts/gallery-auto.js"></script>
+  <script defer src="scripts/navigation.js"></script>
 </head>
 
 <body data-page="gallery">
@@ -18,14 +19,18 @@
       <a href="index.html" style="display: flex; align-items: center; gap: 12px; height: 100%;">
         <img src="/assets/blender_180.png" alt="Logo" class="logo-icon" />
       </a>
-      <span id="galleryTitle">Gallery</span>
     </div>
     <nav>
-      <a id="nav-home" href="index.html">Home</a>
-      <a id="nav-gallery" href="gallery.html">Gallery</a>
+      <a id="nav-gallery" href="gallery.html">
+        <label class="mode-toggle-nav">
+          <input id="modeToggle" type="checkbox" class="mode-toggle__checkbox" />
+          <span class="mode-toggle__text">Режим</span>
+          <span class="mode-toggle__switch" aria-hidden="true"></span>
+        </label>
+      </a>
       <a id="nav-commands" href="commands.html">Console Commands</a>
+      <a id="nav-compilations" href="compilations.html">Compilations</a>
       <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
-      <a id="nav-contact" href="contacts.html">Contact</a>
     </nav>
     <div class="language-switch">
       <button id="langBtn">RU</button>
