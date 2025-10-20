@@ -481,5 +481,5 @@ SHUD:
 * hitbox 3 disabled
 
 20.10.2025 be v1.00-beta-7
-+ cg_myTeam - select team for HUD colors (red/blueTeamColors/scoreboardRt/BtColors)
+cg_myTeam
 * cg_altGrenades 3 - ignore cg_drawBrightWeapons

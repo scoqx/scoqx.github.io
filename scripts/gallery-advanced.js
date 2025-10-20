@@ -240,4 +240,3 @@ fullscreenNext.addEventListener('click', () => {
 loadImages();
 
 
-
