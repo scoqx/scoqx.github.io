@@ -5,12 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSP2-BE</title>
     <link rel="icon" href="/assets/blender_180.png" type="image/png">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <script>
-        // Redirect to English version
-        window.location.href = '/en/index.html';
+        // Clear cache and redirect to English version
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names) {
+                    caches.delete(name);
+                }
+            });
+        }
+        
+        // Force redirect with cache busting
+        const timestamp = new Date().getTime();
+        window.location.replace('/en/index.html?v=' + timestamp);
     </script>
 </head>
 <body>
     <p>Redirecting to English version...</p>
+    <noscript>
+        <p>Please enable JavaScript or go to <a href="/en/index.html">English version</a> or <a href="/ru/index.html">Russian version</a></p>
+    </noscript>
 </body>
 </html>

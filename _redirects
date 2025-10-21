@@ -1,0 +1,6 @@
+# Netlify redirects (if using Netlify)
+# Redirect root to English version
+/ /en/index.html 302
+
+# Handle missing language prefix
+/* /en/:splat 302
