@@ -1,66 +1,23 @@
-// Simple CSS-based language switching
+// Pure CSS language switching with minimal JS for localStorage
 document.addEventListener('DOMContentLoaded', () => {
   const langToggle = document.getElementById('langToggle');
+  const langButton = document.querySelector('.lang-button');
   
-  if (!langToggle) return;
+  if (!langToggle || !langButton) return;
   
-  // Load saved language preference - DISABLED FOR TESTING
-  /*
+  // Load saved language preference
   const savedLang = localStorage.getItem('language');
   if (savedLang === 'ru') {
     langToggle.checked = true;
-    document.body.classList.add('lang-ru');
+    langButton.textContent = 'EN'; // Показываем язык, на который переключаемся
+  } else {
+    langToggle.checked = false;
+    langButton.textContent = 'RU'; // Показываем язык, на который переключаемся
   }
-  */
   
-  // Handle toggle change - DISABLED FOR TESTING
-  /*
+  // Save language preference on change
   langToggle.addEventListener('change', () => {
-    console.log('🔍 Language change detected!');
-    
-    // Capture sizes BEFORE change
-    const h2 = document.querySelector('h2');
-    const h3 = document.querySelector('h3');
-    const navLinks = document.querySelectorAll('nav a');
-    
-    console.log('📏 BEFORE language change:');
-    if (h2) {
-      const style = getComputedStyle(h2);
-      console.log(`  H2: ${style.fontSize}`);
-    }
-    if (h3) {
-      const style = getComputedStyle(h3);
-      console.log(`  H3: ${style.fontSize}`);
-    }
-    navLinks.forEach((link, index) => {
-      const style = getComputedStyle(link);
-      console.log(`  Nav ${index}: ${style.fontSize}`);
-    });
-    
-    if (langToggle.checked) {
-      document.body.classList.add('lang-ru');
-      localStorage.setItem('language', 'ru');
-    } else {
-      document.body.classList.remove('lang-ru');
-      localStorage.setItem('language', 'en');
-    }
-    
-    // Check sizes AFTER change
-    setTimeout(() => {
-      console.log('📏 AFTER language change:');
-      if (h2) {
-        const style = getComputedStyle(h2);
-        console.log(`  H2: ${style.fontSize}`);
-      }
-      if (h3) {
-        const style = getComputedStyle(h3);
-        console.log(`  H3: ${style.fontSize}`);
-      }
-      navLinks.forEach((link, index) => {
-        const style = getComputedStyle(link);
-        console.log(`  Nav ${index}: ${style.fontSize}`);
-      });
-    }, 100);
+    langButton.textContent = langToggle.checked ? 'EN' : 'RU'; // Показываем язык, на который переключаемся
+    localStorage.setItem('language', langToggle.checked ? 'ru' : 'en');
   });
-  */
 });

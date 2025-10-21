@@ -8,6 +8,7 @@
   <link rel="icon" href="/assets/blender_180.png" type="image/png">
   <link rel="stylesheet" href="/styles/style.css" />
   <link rel="stylesheet" href="/styles/gallery.css" />
+  <script src="scripts/auto-clear-sw.js"></script>
   <script src="scripts/debug-simple.js?v=1"></script>
   <script defer src="scripts/language-css.js"></script>
   <script defer src="scripts/gallery-auto.js"></script>
@@ -15,39 +16,35 @@
 </head>
 
 <body data-page="gallery">
-  <header>
-    <div class="logo-title">
-      <a href="index.html" style="display: flex; align-items: center; gap: 12px; height: 100%;">
-        <img src="/assets/blender_180.png" alt="Logo" class="logo-icon" />
-      </a>
-    </div>
-    <nav>
-      <a id="nav-gallery" href="gallery.html">
-        <label class="mode-toggle-nav">
-          <input id="modeToggle" type="checkbox" class="mode-toggle__checkbox" />
-          <span class="mode-toggle__text">
-            <span class="lang-en">Mode</span>
-            <span class="lang-ru">Режим</span>
-          </span>
-          <span class="mode-toggle__switch" aria-hidden="true"></span>
-        </label>
-      </a>
-      <a id="nav-commands" href="commands.html">
-        <span class="lang-en">Console Commands</span>
-        <span class="lang-ru">Консольные команды</span>
-      </a>
-      <a id="nav-compilations" href="compilations.html">
-        <span class="lang-en">Compilations</span>
-        <span class="lang-ru">Сборки</span>
-      </a>
-      <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
-    </nav>
-    <div class="language-switch">
-      <label class="language-toggle">
-        <input type="checkbox" id="langToggle" />
-        <span class="language-toggle__text">RU</span>
-        <span class="language-toggle__switch"></span>
-      </label>
+  <header class="navigation-header">
+    <div class="nav-container">
+      <!-- Логотип и иконка -->
+      <div class="nav-logo">
+        <a href="index.html" class="logo-link">
+          <img src="/assets/blender_180.png" alt="Logo" class="nav-icon" />
+        </a>
+      </div>
+      
+      <!-- Навигационные ссылки -->
+      <nav class="nav-menu">
+        <a id="nav-gallery" href="gallery.html" class="nav-link">
+          <span class="lang-en">Gallery</span>
+          <span class="lang-ru">Галерея</span>
+        </a>
+        <a id="nav-commands" href="commands.html" class="nav-link">
+          <span class="lang-en">Console Commands</span>
+          <span class="lang-ru">Консольные команды</span>
+        </a>
+        <a id="nav-compilations" href="compilations.html" class="nav-link">
+          <span class="lang-en">Compilations</span>
+          <span class="lang-ru">Сборки</span>
+        </a>
+      </nav>
+      
+      <!-- Переключатель языка -->
+      <div class="nav-language">
+        <button id="langToggle" class="lang-switch">RU</button>
+      </div>
     </div>
   </header>
 

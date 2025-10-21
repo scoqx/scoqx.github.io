@@ -54,7 +54,8 @@ function getMaxCommandNameWidth(entries) {
 }
 
 async function loadConfig() {
-  const currentLang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
+  const langToggle = document.getElementById('langToggle');
+  const currentLang = langToggle && langToggle.checked ? 'ru' : 'en';
   const filename = currentLang === "ru" ? "/assets/OSP2.cfg" : "/assets/OSP2English.cfg";
 
   const response = await fetch(filename + "?v=" + Date.now());
@@ -184,7 +185,8 @@ async function loadConfig() {
   try {
     const copyHintEl = document.getElementById('copyHint');
     if (copyHintEl) {
-      const lang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
+      const langToggle = document.getElementById('langToggle');
+      const lang = langToggle && langToggle.checked ? 'ru' : 'en';
       copyHintEl.textContent = lang === 'ru'
         ? 'Подсказка: нажмите на команду, чтобы скопировать'
         : 'Hint: click a command to copy';
@@ -221,7 +223,8 @@ async function loadConfig() {
 
     const toast = document.createElement('div');
     toast.className = 'copy-toast';
-    const lang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
+    const langToggle = document.getElementById('langToggle');
+    const lang = langToggle && langToggle.checked ? 'ru' : 'en';
     toast.textContent = lang === 'ru' ? 'Скопировано' : 'Copied';
     // позиция справа-сверху от курсора
     const x = (e.clientX || 0) + 12;
@@ -240,3 +243,14 @@ window.getCommandNameWidth = getCommandNameWidth;
 window.getMaxCommandNameWidth = getMaxCommandNameWidth;
 
 document.addEventListener("DOMContentLoaded", loadConfig);
+
+// Добавляем обработчик изменения языка
+document.addEventListener('DOMContentLoaded', () => {
+  const langToggle = document.getElementById('langToggle');
+  if (langToggle) {
+    langToggle.addEventListener('change', () => {
+      // Перезагружаем контент при смене языка
+      loadConfig();
+    });
+  }
+});

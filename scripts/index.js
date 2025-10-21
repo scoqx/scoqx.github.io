@@ -25,7 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
 window.renderContactInfo = function renderContactInfo() {
   const el = document.getElementById('contactInfo');
   if (!el) return;
-  const lang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
+  const langToggle = document.getElementById('langToggle');
+  const lang = langToggle && langToggle.checked ? 'ru' : 'en';
 
   const labels = {
     en: { moddb: 'ModDB', source: 'Source code', by: 'by' },

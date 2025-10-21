@@ -17,21 +17,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       images: n8mareImages
     },
     {
-      title: 'Quake 3 Elite',
-      author: 'Mus1n',
-      authorHref: 'https://t.me/Mus1nQ3',
-      link: 'https://mus1n.github.io/',
-      description: `
-        <ul>
-          <li>Custom Weapons, Textures, Models, HUD, FX, Fonts, Sounds</li>
-          <li>Cinematic ReShade (Sharpen, DOF, Film Grain, Volumetric Fog)</li>
-          <li>Low/High Graphics Presets</li>
-          <li>XQ3E MSK Client</li.
-        </ul>
-      `,
-      images: Array.from({ length: 20 }, (_, i) => `/images/elite/${i + 1}.png`)
-    },
-    {
       title: 'Quake III Arena Remastered 1.32e - [Runo] Edition',
       author: '[Runo]',
       authorHref: 'https://t.me/abyss_wanderer1708',

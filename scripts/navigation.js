@@ -1,4 +1,4 @@
-// Скрипт для выделения активной ссылки в навигации
+// Скрипт для новой навигации
 document.addEventListener('DOMContentLoaded', function() {
   // Получаем текущую страницу из data-page атрибута body
   const currentPage = document.body.getAttribute('data-page');
@@ -34,6 +34,33 @@ document.addEventListener('DOMContentLoaded', function() {
         activeLink.classList.add('active');
       }
     }
+  }
+  
+  // Обработка переключателя языка
+  const langToggle = document.getElementById('langToggle');
+  if (langToggle) {
+    // Загружаем сохраненное состояние языка
+    const savedLang = localStorage.getItem('language');
+    if (savedLang === 'ru') {
+      document.body.classList.add('lang-ru');
+      langToggle.textContent = 'EN';
+    } else {
+      document.body.classList.remove('lang-ru');
+      langToggle.textContent = 'RU';
+    }
+    
+    // Обработчик изменения языка
+    langToggle.addEventListener('click', function() {
+      if (document.body.classList.contains('lang-ru')) {
+        document.body.classList.remove('lang-ru');
+        localStorage.setItem('language', 'en');
+        this.textContent = 'RU';
+      } else {
+        document.body.classList.add('lang-ru');
+        localStorage.setItem('language', 'ru');
+        this.textContent = 'EN';
+      }
+    });
   }
 });
 
