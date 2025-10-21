@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSP2-BE - Галерея</title>
+    <link rel="icon" href="/assets/blender_180.png" type="image/png">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body data-page="gallery">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/ru/index.html" class="logo-link">
+                    <img src="/assets/blender_180.png" alt="Logo" class="logo-img">
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="/ru/gallery.html" class="nav-link active">Галерея</a>
+                <a href="/ru/commands.html" class="nav-link">Консольные команды</a>
+                <a href="/ru/compilations.html" class="nav-link">Сборки</a>
+            </div>
+            
+            <div class="nav-language">
+                <a href="/en/gallery.html" class="lang-link">EN</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="gallery-container">
+            <div class="gallery-header">
+                <div class="view-mode-toggle">
+                    <span class="toggle-label-text">Режим</span>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="modeToggle" class="toggle-input">
+                        <label for="modeToggle" class="toggle-label">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Gallery View -->
+            <div id="mainGallery" class="main-gallery">
+                <div class="gallery-slider">
+                    <button id="prevBtn" class="slider-btn prev-btn">‹</button>
+                    <div class="gallery-image-container">
+                        <img id="mainImage" class="gallery-main-image" alt="Gallery image">
+                        <div class="image-info">
+                            <h3 id="imageTitle" class="image-title"></h3>
+                            <p id="imageDescription" class="image-description"></p>
+                        </div>
+                    </div>
+                    <button id="nextBtn" class="slider-btn next-btn">›</button>
+                </div>
+                
+                <!-- Thumbnails -->
+                <div id="thumbnails" class="thumbnails-container"></div>
+            </div>
+            
+            <!-- Thumbnail Grid View -->
+            <div id="thumbnailGrid" class="thumbnail-grid hidden">
+                <div class="grid-container" id="gridContainer"></div>
+            </div>
+            
+            <!-- Fullscreen Overlay -->
+            <div id="fullscreenOverlay" class="fullscreen-overlay hidden">
+                <div class="fullscreen-controls">
+                    <button id="fullscreenPrev" class="fullscreen-btn">‹</button>
+                    <button id="closeFullscreen" class="fullscreen-btn">×</button>
+                    <button id="fullscreenNext" class="fullscreen-btn">›</button>
+                </div>
+                <img id="fullscreenImage" class="fullscreen-image" alt="Fullscreen image">
+            </div>
+        </div>
+    </main>
+
+    <script src="/scripts/thumbnail-optimizer.js"></script>
+    <script src="/scripts/fullscreen-module.js"></script>
+    <script src="/scripts/preview-module.js"></script>
+    <script src="/scripts/swipe-module.js"></script>
+    <script src="/scripts/gallery.js"></script>
+</body>
+</html>

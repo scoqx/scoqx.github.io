@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSP2-BE</title>
+    <link rel="icon" href="/assets/blender_180.png" type="image/png">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body data-page="home">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="/en/index.html" class="logo-link">
+                    <img src="/assets/blender_180.png" alt="Logo" class="logo-img">
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="/en/gallery.html" class="nav-link">Gallery</a>
+                <a href="/en/commands.html" class="nav-link">Console Commands</a>
+                <a href="/en/compilations.html" class="nav-link">Compilations</a>
+            </div>
+            
+            <div class="nav-language">
+                <a href="/ru/index.html" class="lang-link">RU</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-container">
+            <div class="text-section">
+                <h1 class="main-title">OSP2-BE</h1>
+                <h2 class="subtitle">Quake 3 Arena mod</h2>
+                <p class="description">
+                    Extended edition of the OSP2.<br>
+                    OSP2 is an attempt to recover the old OSP mod source code and improve upon it.<br>
+                    Based on vanilla Q3 and OSP files analysis.
+                </p>
+                
+                <div id="contactInfo" class="contact-info">
+                    <div class="contact-row">
+                        <img src="/assets/blender_180_osp2.png" alt="OSP2 icon" />
+                        <strong>OSP2:</strong>
+                        <a href="https://www.moddb.com/mods/osp2" target="_blank" rel="noopener noreferrer">ModDB</a>
+                        - <a href="https://github.com/snems/OSP2" target="_blank" rel="noopener noreferrer">Source code</a>
+                        - by Snems
+                    </div>
+                    <div class="contact-row">
+                        <img src="/assets/blender_180.png" alt="OSP2-BE icon" />
+                        <strong>OSP2-BE:</strong>
+                        <a href="https://www.moddb.com/mods/osp2-be" target="_blank" rel="noopener noreferrer">ModDB</a>
+                        - <a href="https://github.com/scoqx/OSP2-BE" target="_blank" rel="noopener noreferrer">Source code</a>
+                        - by <a href="https://t.me/diwoc" target="_blank" rel="noopener noreferrer">diwoc</a>
+                    </div>
+                    <div class="contact-row">
+                        <img src="/assets/telegram.png" alt="Telegram icon" />
+                        <strong>Community:</strong>
+                        <a href="https://t.me/q3_osp2" target="_blank" rel="noopener noreferrer">OSP2 Chat</a>
+                        - <a href="https://t.me/osp2be" target="_blank" rel="noopener noreferrer">OSP2-BE News</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="download-section">
+                <div class="download-card">
+                    <h3 class="download-title">Latest version</h3>
+                    <p id="version-text" class="version-text">be-1.00-beta-7</p>
+                    <a class="download-button" id="downloadBtn" href="/assets/zz-osp-pak8be.pk3" target="_blank">Download</a>
+                </div>
+            </div>
+        </div>
+
+        <section class="changelog-section">
+            <h2 class="changelog-title">Changelog</h2>
+            <div class="changelog-container">
+                <pre id="changelog-content" class="changelog-content"></pre>
+            </div>
+        </section>
+    </main>
+
+    <script src="/scripts/index.js"></script>
+</body>
+</html>

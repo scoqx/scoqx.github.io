@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>OSP2-BE - Console Commands</title>
+    <link rel="icon" href="/assets/blender_180.png" type="image/png">
+    <link rel="stylesheet" href="/styles/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html" class="logo-link">
+                    <img src="/assets/blender_180.png" alt="Logo" class="logo-img">
+                </a>
+            </div>
+            
+            <div class="nav-menu">
+                <a href="gallery.html" class="nav-link">
+                    <span class="lang-en">Gallery</span>
+                    <span class="lang-ru">Галерея</span>
+                </a>
+                <a href="commands.html" class="nav-link active">
+                    <span class="lang-en">Console Commands</span>
+                    <span class="lang-ru">Консольные команды</span>
+                </a>
+                <a href="compilations.html" class="nav-link">
+                    <span class="lang-en">Compilations</span>
+                    <span class="lang-ru">Сборки</span>
+                </a>
+            </div>
+            
+            <div class="nav-language">
+                <button id="langToggle" class="lang-toggle">RU</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="commands-container">
+            <h1 class="commands-title">
+                <span class="lang-en">Console Commands</span>
+                <span class="lang-ru">Консольные команды</span>
+            </h1>
+            <div id="commands-content" class="commands-content">
+                <!-- Commands content will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <script src="scripts/auto-clear-sw.js"></script>
+    <script src="scripts/language.js"></script>
+    <script src="scripts/command-loader.js"></script>
+</body>
+</html>
