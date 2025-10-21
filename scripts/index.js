@@ -1,5 +1,12 @@
 // Simple app functionality
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if nocache parameter is present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('nocache')) {
+        console.log('🚫 No-cache mode detected, clearing all caches...');
+        clearCache();
+    }
+    
     loadChangelog();
 });
 
@@ -25,12 +32,33 @@ async function clearCache() {
         sessionStorage.clear();
         console.log('✅ SessionStorage cleared');
         
+        // Clear IndexedDB if available
+        if ('indexedDB' in window) {
+            try {
+                const databases = await indexedDB.databases();
+                await Promise.all(
+                    databases.map(db => {
+                        return new Promise((resolve, reject) => {
+                            const deleteReq = indexedDB.deleteDatabase(db.name);
+                            deleteReq.onsuccess = () => resolve();
+                            deleteReq.onerror = () => reject(deleteReq.error);
+                        });
+                    })
+                );
+                console.log('✅ IndexedDB cleared');
+            } catch (e) {
+                console.log('⚠️ IndexedDB clear failed:', e);
+            }
+        }
+        
         // Show success message
         showMessage('Cache cleared successfully! Page will reload...', 'success');
         
-        // Reload page after a short delay
+        // Force reload with cache busting
         setTimeout(() => {
-            window.location.reload(true);
+            const timestamp = new Date().getTime();
+            const currentUrl = window.location.href.split('?')[0];
+            window.location.href = currentUrl + '?v=' + timestamp + '&nocache=1';
         }, 1500);
         
     } catch (error) {

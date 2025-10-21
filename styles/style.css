@@ -37,6 +37,7 @@ html, body {
     background-color: var(--primary-bg);
     color: var(--text-color);
     line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 
@@ -48,11 +49,13 @@ html, body {
   position: fixed;
   top: 0;
   left: 0;
-    right: 0;
+  right: 0;
   height: 60px;
-    background-color: var(--primary-bg);
-    border-bottom: 2px solid var(--border-color);
+  background-color: var(--primary-bg);
+  border-bottom: 2px solid var(--border-color);
   z-index: 1000;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .nav-container {
@@ -259,13 +262,16 @@ body[data-page="index"] .logo-link {
 
 .contact-info {
     margin-top: var(--spacing-lg);
+    position: relative;
+    z-index: 1;
 }
 
 .contact-info .contact-row {
   display: flex;
   align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
 }
 
 .contact-info .contact-row img {
@@ -579,13 +585,126 @@ code {
     .subtitle {
         font-size: 1.25rem;
     }
+    
+    /* Commands page mobile styles */
+    .commands-container {
+        padding: var(--spacing-md);
+    }
+    
+    .commands-title {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .command-block {
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    /* Compilations page mobile styles */
+    .compilations-container {
+        padding: var(--spacing-md);
+    }
+    
+    .compilations-title {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .compilations-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-lg);
+    }
+    
+    .compilation-card {
+        padding: var(--spacing-lg);
+    }
+    
+    .compilation-title {
+        font-size: 1.6rem;
+    }
+    
+    .screenshots-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: var(--spacing-md);
+    }
+    
+    /* Gallery page mobile styles */
+    .gallery-container {
+        padding: var(--spacing-md);
+    }
+    
+    .gallery-title {
+        font-size: 2rem;
+    }
+    
+    .gallery-slider {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .slider-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .thumbnails-container {
+        max-height: 120px;
+    }
+    
+    .thumbnail {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .grid-container {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: var(--spacing-sm);
+    }
+    
+    .grid-container .thumbnail {
+        height: 120px;
+    }
+    
+    .fullscreen-controls {
+        top: 10px;
+        right: 10px;
+        gap: var(--spacing-sm);
+    }
+    
+    .fullscreen-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    /* Mobile touch improvements */
+    .gallery-main-image {
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+    }
+    
+    .fullscreen-image {
+        touch-action: pan-y;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+    }
+    
+    /* Hide slider buttons on mobile in main view */
+    .gallery-slider .slider-btn {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
     .navbar {
-    height: 50px;
-  }
-  
+        height: 50px;
+    }
+    
     .nav-container {
         padding: 0 var(--spacing-sm);
         gap: var(--spacing-sm);
@@ -599,23 +718,84 @@ code {
         font-size: 0.8rem;
         padding: var(--spacing-sm) var(--spacing-md);
     }
-  
+    
     .main-content {
         margin-top: 50px;
         padding: var(--spacing-sm);
-  }
-  
+    }
+    
     .logo-img {
-    width: 32px;
-    height: 32px;
-  }
-  
-    .lang-toggle {
-    font-size: 12px;
+        width: 32px;
+        height: 32px;
+    }
+    
+    .lang-link {
+        font-size: 12px;
         padding: var(--spacing-sm);
-    min-width: 32px;
-    height: 28px;
-  }
+        min-width: 32px;
+        height: 28px;
+    }
+    
+    /* Commands page mobile styles */
+    .commands-container {
+        padding: var(--spacing-sm);
+    }
+    
+    .commands-title {
+        font-size: 1.8rem;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .command-block {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .command-line {
+        display: block;
+    }
+    
+    .command-line .command-part {
+        display: block;
+        margin-bottom: 0.5em;
+    }
+    
+    .command-line .command-separator {
+        display: none;
+    }
+    
+    .command-line .command-description {
+        display: block;
+        margin-left: 0;
+    }
+    
+    /* Compilations page mobile styles */
+    .compilations-container {
+        padding: var(--spacing-sm);
+    }
+    
+    .compilations-title {
+        font-size: 1.8rem;
+        margin-bottom: var(--spacing-lg);
+    }
+    
+    .compilations-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .compilation-card {
+        padding: var(--spacing-md);
+    }
+    
+    .compilation-title {
+        font-size: 1.4rem;
+    }
+    
+    .screenshots-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: var(--spacing-sm);
+    }
 }
 
 @media (max-width: 360px) {
@@ -626,6 +806,35 @@ code {
     
     .nav-menu {
         gap: var(--spacing-sm);
+    }
+    
+    /* Ensure content is visible on very small screens */
+    .main-content {
+        padding: var(--spacing-sm);
+        margin-top: 50px;
+    }
+    
+    .commands-container,
+    .compilations-container,
+    .gallery-container {
+        padding: var(--spacing-sm);
+    }
+    
+    .contact-info {
+        font-size: 0.9rem;
+    }
+    
+    .contact-info .contact-row {
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+    }
+    
+    .compilation-card {
+        padding: var(--spacing-sm);
+    }
+    
+    .compilation-title {
+        font-size: 1.2rem;
     }
 }
 
@@ -1257,91 +1466,4 @@ code {
     display: none !important;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-    .gallery-container {
-        padding: var(--spacing-md);
-    }
-    
-    .gallery-title {
-        font-size: 2rem;
-    }
-    
-    .gallery-slider {
-        flex-direction: column;
-        gap: var(--spacing-md);
-    }
-    
-    .slider-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-    }
-    
-    .thumbnails-container {
-        max-height: 120px;
-    }
-    
-    .thumbnail {
-        width: 60px;
-        height: 60px;
-    }
-    
-    .grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: var(--spacing-sm);
-    }
-    
-    .grid-container .thumbnail {
-        height: 120px;
-    }
-    
-    .fullscreen-controls {
-        top: 10px;
-        right: 10px;
-        gap: var(--spacing-sm);
-    }
-    
-    .fullscreen-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-    }
-    
-    /* Mobile touch improvements */
-    .gallery-main-image {
-        touch-action: pan-y; /* Allow vertical scroll, prevent horizontal */
-        user-select: none;
-        -webkit-user-select: none;
-        -webkit-touch-callout: none;
-    }
-    
-    .fullscreen-image {
-        touch-action: pan-y; /* Allow vertical scroll, prevent horizontal */
-        user-select: none;
-        -webkit-user-select: none;
-        -webkit-touch-callout: none;
-    }
-    
-    /* Hide slider buttons on mobile in main view */
-    .gallery-slider .slider-btn {
-        display: none;
-    }
-    
-    /* Show swipe hint */
-    .gallery-main-image::after {
-        content: "← Swipe to navigate →";
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 5px 10px;
-        border-radius: 15px;
-        font-size: 12px;
-        opacity: 0.8;
-        pointer-events: none;
-        z-index: 10;
-    }
-}
+/* Gallery mobile styles - integrated into main responsive block above */
