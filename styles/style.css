@@ -320,6 +320,31 @@ body[data-page="index"] .logo-link {
     transform: scale(1.05);
 }
 
+.clear-cache-button {
+    background: #000000;
+    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid #000000;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.8rem;
+    transition: var(--transition);
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: var(--spacing-md) auto 0;
+    cursor: pointer;
+    width: fit-content;
+}
+
+.clear-cache-button:hover {
+    background: #ffffff;
+    border-color: #6f6f6f;
+    transform: scale(1.05);
+    color: black;
+}
+
 .download-title {
     font-size: 18px;
     margin-bottom: var(--spacing-md);
