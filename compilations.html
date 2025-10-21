@@ -9,10 +9,10 @@
   <link rel="stylesheet" href="/styles/style.css" />
   <link rel="stylesheet" href="/styles/gallery.css" />
   <link rel="stylesheet" href="/styles/compilations.css" />
-  <script defer src="scripts/language.js"></script>
+  <script src="scripts/debug-simple.js?v=1"></script>
+  <script defer src="scripts/language-css.js"></script>
   <script defer src="scripts/compilations.js"></script>
   <script defer src="scripts/navigation.js"></script>
-  <script defer src="scripts/sw-register.js"></script>
 </head>
 
 <body data-page="compilations">
@@ -23,13 +23,26 @@
       </a>
     </div>
     <nav>
-      <a id="nav-gallery" href="gallery.html">Gallery</a>
-      <a id="nav-commands" href="commands.html">Console Commands</a>
-      <a id="nav-compilations" href="compilations.html">Compilations</a>
+      <a id="nav-gallery" href="gallery.html">
+        <span class="lang-en">Gallery</span>
+        <span class="lang-ru">Галерея</span>
+      </a>
+      <a id="nav-commands" href="commands.html">
+        <span class="lang-en">Console Commands</span>
+        <span class="lang-ru">Консольные команды</span>
+      </a>
+      <a id="nav-compilations" href="compilations.html">
+        <span class="lang-en">Compilations</span>
+        <span class="lang-ru">Сборки</span>
+      </a>
       <!-- <a id="nav-downloads" href="downloads.html">Downloads</a> -->
     </nav>
     <div class="language-switch">
-      <button id="langBtn">RU</button>
+      <label class="language-toggle">
+        <input type="checkbox" id="langToggle" />
+        <span class="language-toggle__text">RU</span>
+        <span class="language-toggle__switch"></span>
+      </label>
     </div>
   </header>
 
@@ -43,6 +56,8 @@
     <img id="fullscreenImage" src="" alt="Fullscreen view" />
   </div>
   <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
+  <script async data-collect="outbound,emails,downloads" data-extensions="pk3" data-use-title="true" data-full-urls="false"
+    src="https://scripts.simpleanalyticscdn.com/auto-events.js"></script>
 </body>
 
 </html>

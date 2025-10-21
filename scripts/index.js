@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 window.renderContactInfo = function renderContactInfo() {
   const el = document.getElementById('contactInfo');
   if (!el) return;
-  const lang = (localStorage.getItem('language') || 'en').toLowerCase();
+  const lang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
 
   const labels = {
     en: { moddb: 'ModDB', source: 'Source code', by: 'by' },
@@ -68,6 +68,14 @@ window.renderContactInfo = function renderContactInfo() {
 
 document.addEventListener('DOMContentLoaded', () => {
   window.renderContactInfo();
+  
+  // Добавляем обработчик изменения языка
+  const langToggle = document.getElementById('langToggle');
+  if (langToggle) {
+    langToggle.addEventListener('change', () => {
+      window.renderContactInfo();
+    });
+  }
 });
 
 

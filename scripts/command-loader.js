@@ -54,7 +54,7 @@ function getMaxCommandNameWidth(entries) {
 }
 
 async function loadConfig() {
-  const currentLang = localStorage.getItem("language") || "en";
+  const currentLang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
   const filename = currentLang === "ru" ? "/assets/OSP2.cfg" : "/assets/OSP2English.cfg";
 
   const response = await fetch(filename + "?v=" + Date.now());
@@ -184,7 +184,7 @@ async function loadConfig() {
   try {
     const copyHintEl = document.getElementById('copyHint');
     if (copyHintEl) {
-      const lang = (localStorage.getItem('language') || 'en').toLowerCase();
+      const lang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
       copyHintEl.textContent = lang === 'ru'
         ? 'Подсказка: нажмите на команду, чтобы скопировать'
         : 'Hint: click a command to copy';
@@ -221,7 +221,7 @@ async function loadConfig() {
 
     const toast = document.createElement('div');
     toast.className = 'copy-toast';
-    const lang = (localStorage.getItem('language') || 'en').toLowerCase();
+    const lang = document.body.classList.contains('lang-ru') ? 'ru' : 'en';
     toast.textContent = lang === 'ru' ? 'Скопировано' : 'Copied';
     // позиция справа-сверху от курсора
     const x = (e.clientX || 0) + 12;

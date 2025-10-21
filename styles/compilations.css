@@ -1,3 +1,7 @@
+/* ==========================================================================
+   Compilations Grid
+   ========================================================================== */
+
 .compilations-grid {
   display: block;
   padding: 12px 0;
@@ -5,6 +9,10 @@
   margin: 0 auto;
   width: 100%;
 }
+
+/* ==========================================================================
+   Compilation Cards
+   ========================================================================== */
 
 .compilation-card {
   background: var(--card-bg, #161616);
@@ -17,12 +25,15 @@
   box-sizing: border-box;
 }
 
-/* Hover state similar to gallery styling */
 .compilation-card:hover {
-  outline: 2px solid #ffffff; /* как у активного thumbnail */
+  outline: 2px solid #ffffff;
   box-shadow: 0 0 15px rgb(80, 80, 80);
-  outline-offset: -2px; /* рисуем рамку внутри, чтобы не выбивалась */
+  outline-offset: -2px;
 }
+
+/* ==========================================================================
+   Card Content
+   ========================================================================== */
 
 .card-header {
   display: flex;
@@ -44,32 +55,6 @@
   line-height: 1.5;
 }
 
-/* Responsive adjustments for narrow/portrait screens */
-@media (max-width: 768px) {
-  .compilations-grid {
-    max-width: 100%;
-    padding: 8px 12px;
-  }
-  .compilation-card {
-    padding: 10px;
-    border-radius: 8px;
-  }
-  .card-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .card-title { font-size: 16px; }
-  .card-meta { font-size: 12px; gap: 8px; }
-  .card-images { gap: 4px; }
-  .card-images img { height: 90px; }
-  .img-wrap .img-border { inset: 2px; }
-}
-
-@media (orientation: portrait) and (max-width: 1024px) {
-  .compilations-grid { max-width: 100%; }
-}
-
 .card-meta {
   display: flex;
   align-items: center;
@@ -78,64 +63,136 @@
   color: #aaa;
 }
 
-/* Links: white default, grey on hover */
+/* ==========================================================================
+   Card Links
+   ========================================================================== */
+
 .compilation-card a {
   color: #ffffff;
-  text-decoration: underline; /* всегда подчёркнуты */
+  text-decoration: underline;
 }
+
 .compilation-card a:hover,
 .compilation-card a:focus {
   color: #bbbbbb;
 }
 
+/* ==========================================================================
+   Card Images
+   ========================================================================== */
+
 .card-images {
   display: flex;
-  flex-wrap: nowrap; /* как в галерее — одна полоса */
+  flex-wrap: nowrap;
   gap: 6px;
-  overflow-x: auto; /* горизонтальная прокрутка при избытке */
-  overflow-y: hidden; /* не допускаем вертикальный скролл */
-  -ms-overflow-style: none; /* IE/Edge */
-  scrollbar-width: none;    /* Firefox */
+  overflow-x: auto;
+  overflow-y: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
 }
-.card-images::-webkit-scrollbar { display: none; } /* WebKit */
+
+.card-images::-webkit-scrollbar {
+  display: none;
+}
+
 .img-wrap {
   position: relative;
-  flex: 0 0 auto; /* не сжимать */
-  display: inline-block; /* подстраиваемся под ширину изображения */
+  flex: 0 0 auto;
+  display: inline-block;
 }
+
 .card-images img {
-  width: auto; /* сохраняем соотношение сторон */
-  height: 120px; /* фиксируем высоту превью */
+  width: auto;
+  height: 120px;
   object-fit: contain;
   border-radius: 6px;
   display: block;
 }
 
-/* Hover preview helpers */
-.img-wrap {
-  position: relative;
-}
 .img-wrap .img-border {
   position: absolute;
-  inset: 2px; /* одинаковые отступы со всех сторон, без обрезания снизу */
-  border: 2px solid rgba(255,255,255,0.6); /* как preview-border в галерее */
+  inset: 2px;
+  border: 2px solid rgba(255,255,255,0.6);
   border-radius: 6px;
   display: none;
   pointer-events: none;
   box-sizing: border-box;
 }
+
 .img-wrap:hover .img-border {
   display: block;
 }
 
-/* Slider mode for many images */
-.card-scroll { display: block; }
-.slider-track { display: contents; }
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
 
-/* Reuse fullscreen overlay styles via gallery.css import */
+@media (max-width: 768px) {
+  .compilations-grid {
+    max-width: 100%;
+    padding: 8px 12px;
+    box-sizing: border-box;
+  }
+  
+  .compilation-card {
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+  
+  .card-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .card-title {
+    font-size: 16px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  .card-meta {
+    font-size: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .card-description {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  .card-images {
+    gap: 4px;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .card-images img {
+    height: 70px;
+    max-width: none;
+  }
+  
+  .img-wrap .img-border {
+    inset: 1px;
+  }
+}
 
-
-
-
+@media (orientation: portrait) and (max-width: 1024px) {
+  .compilations-grid {
+    max-width: 100%;
+    padding: 8px 16px;
+  }
+  
+  .compilation-card {
+    margin-bottom: 16px;
+  }
+  
+  .card-images img {
+    height: 80px;
+  }
+}

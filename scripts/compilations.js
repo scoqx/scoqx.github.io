@@ -115,15 +115,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Shuffle order on every load
   normalized.sort(() => Math.random() - 0.5);
 
-  // Сначала скрываем все карточки
+  // Сразу показываем карточки без ожидания загрузки изображений
   grid.innerHTML = normalized.map(renderCard).join('');
   const cards = grid.querySelectorAll('.compilation-card');
   cards.forEach(card => {
-    card.style.opacity = '0';
+    card.style.opacity = '1';
     card.style.transition = 'opacity 0.3s ease';
   });
 
-  // Generate low-quality previews sequentially to avoid blocking
+  // Generate low-quality previews in background without blocking UI
   (function generateLowQualityPreviews(){
     const thumbs = Array.from(grid.querySelectorAll('.card-images img'));
     let currentIndex = 0;
@@ -141,20 +141,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       // ensure we store original
       imgEl.setAttribute('data-fullsrc', fullSrc);
-      // Загружаем превью и показываем карточку когда готово
-      const card = imgEl.closest('.compilation-card');
-      makeLowQualityPreview(fullSrc, imgEl, 120, 0.7, () => {
-        // Показываем карточку только когда все её изображения загружены
-        const cardImages = card.querySelectorAll('.card-images img');
-        const loadedImages = card.querySelectorAll('.card-images img[src]:not([src=""])');
-        if (loadedImages.length === cardImages.length) {
-          card.style.opacity = '1';
-        }
+      // Загружаем превью в фоне, не блокируя UI
+      makeLowQualityPreview(fullSrc, imgEl, 120, 0.5, () => {
+        // Просто обновляем изображение, карточка уже видна
       });
       
       currentIndex++;
       // Load next thumbnail after a short delay to prevent blocking
-      setTimeout(loadNextThumbnail, 50);
+      setTimeout(loadNextThumbnail, 20);
     }
     
     // Start loading thumbnails
@@ -372,26 +366,33 @@ function renderCard(item) {
 }
 
 // Create a low-quality preview using canvas and assign to the target <img>
-function makeLowQualityPreview(src, targetImgEl, targetHeight = 240, quality = 1, callback) {
+function makeLowQualityPreview(src, targetImgEl, targetHeight = 120, quality = 0.3, callback) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function() {
     const iw = img.naturalWidth || img.width;
     const ih = img.naturalHeight || img.height;
     if (!iw || !ih) return;
+    
+    // Более агрессивное сжатие для мобильных
     const scale = targetHeight / ih;
     const tw = Math.max(1, Math.floor(iw * scale));
     const th = Math.max(1, Math.floor(targetHeight));
+    
     const canvas = document.createElement('canvas');
     canvas.width = tw;
     canvas.height = th;
     const ctx = canvas.getContext('2d');
+    
+    // Настройки для быстрого рендеринга
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'low';
     ctx.clearRect(0, 0, tw, th);
     ctx.drawImage(img, 0, 0, iw, ih, 0, 0, tw, th);
+    
     try {
-      const dataUrl = canvas.toDataURL('image/jpeg', Math.max(0.1, Math.min(quality, 1)));
+      // Более низкое качество для быстрой загрузки
+      const dataUrl = canvas.toDataURL('image/jpeg', Math.max(0.1, Math.min(quality, 0.5)));
       targetImgEl.src = dataUrl;
       if (callback) callback();
     } catch (_) {

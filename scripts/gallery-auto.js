@@ -11,13 +11,13 @@ let hoverTimeout = null;
 let hoveredImage = null;
 let scrollLockY = 0;
 
-// Настройки качества превью
+// Настройки качества превью - единообразные с compilations
 const PREVIEW_SETTINGS = {
-  width: 640,           // Ширина превью
-  height: 480,          // Высота превью
+  width: 320,           // Ширина превью (уменьшено для мобильных)
+  height: 240,          // Высота превью (уменьшено для мобильных)
   blur: 0,              // Размытие (0 = нет, 1 = легкое, 2 = сильное)
-  quality: 0.5,         // Качество сжатия (0.1-1.0)
-  batchSize: 20         // Количество превью за раз
+  quality: 0.3,         // Качество сжатия (0.1-1.0) - более агрессивное сжатие
+  batchSize: 15         // Количество превью за раз (уменьшено для мобильных)
 };
 
 // Список поддерживаемых форматов изображений
@@ -668,15 +668,17 @@ function loadLowQualityPreview(src, canvas, borderEl) {
       ctx.filter = 'none';
     }
     
-    // Дополнительное снижение качества через пикселизацию
+    // Дополнительное снижение качества через пикселизацию - как в compilations
     if (PREVIEW_SETTINGS.quality < 1.0) {
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
-      const scale = PREVIEW_SETTINGS.quality;
+      const scale = Math.max(0.1, Math.min(PREVIEW_SETTINGS.quality, 0.5));
       
-      tempCanvas.width = cw * scale;
-      tempCanvas.height = ch * scale;
+      tempCanvas.width = Math.max(1, Math.floor(cw * scale));
+      tempCanvas.height = Math.max(1, Math.floor(ch * scale));
       
+      tempCtx.imageSmoothingEnabled = true;
+      tempCtx.imageSmoothingQuality = 'low';
       tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
       ctx.clearRect(0, 0, cw, ch);
       ctx.drawImage(tempCanvas, 0, 0, cw, ch);

@@ -1,3 +1,7 @@
+/* ==========================================================================
+   Gallery Slider
+   ========================================================================== */
+
 .slider {
   position: relative;
   width: 90vw;
@@ -8,7 +12,6 @@
   overflow: hidden;
 }
 
-/* На странице галереи, когда режим слайдера (не превью), поднимаем выше */
 body[data-page="gallery"]:not(.preview-mode) main {
   padding-top: 0px;
 }
@@ -33,19 +36,6 @@ body[data-page="gallery"]:not(.preview-mode) main {
   transform: translate(-50%, -50%);
 }
 
-/* Улучшаем центрирование в портретной ориентации и на мобильных */
-@media (max-width: 768px) and (orientation: portrait) {
-  .slider {
-    width: 100vw;
-    height: calc(100vh - 180px); /* учитываем шапку и миниатюры */
-  }
-  .slide,
-  .slide.active {
-    max-width: calc(100vw - 24px);
-    max-height: calc(100vh - 220px);
-  }
-}
-
 .slider button {
   position: absolute;
   top: 50%;
@@ -67,6 +57,10 @@ body[data-page="gallery"]:not(.preview-mode) main {
   right: 12px;
 }
 
+/* ==========================================================================
+   Thumbnails
+   ========================================================================== */
+
 .thumbnails {
   display: flex;
   gap: 20px;
@@ -75,9 +69,7 @@ body[data-page="gallery"]:not(.preview-mode) main {
   overflow-x: auto;
   padding: 10px;
   scrollbar-width: none;
-  /* Firefox */
   -ms-overflow-style: none;
-  /* IE и Edge */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -88,14 +80,13 @@ body[data-page="gallery"]:not(.preview-mode) main {
 .thumbnail {
   height: 84px;
   width: auto;
-  object-fit: contain; /* сохраняем пропорции, без обрезки */
+  object-fit: contain;
   border: 2px solid transparent;
   cursor: pointer;
   opacity: 0.6;
   transition: opacity var(--transition-speed), border var(--transition-speed);
   user-select: none;
   -webkit-user-drag: none;
-  user-drag: none;
   border-radius: 8px;
 }
 
@@ -104,6 +95,10 @@ body[data-page="gallery"]:not(.preview-mode) main {
   opacity: 1;
   box-shadow: 0 0 15px rgb(80, 80, 80);
 }
+
+/* ==========================================================================
+   Fullscreen Overlay
+   ========================================================================== */
 
 .fullscreen-overlay {
   position: fixed;
@@ -117,9 +112,9 @@ body[data-page="gallery"]:not(.preview-mode) main {
   align-items: center;
   z-index: 9999;
   will-change: opacity, transform;
-  padding: 0; /* по умолчанию без отступов, зададим адаптивно ниже */
-  overflow: hidden; /* запрет прокрутки внутри оверлея */
-  touch-action: none; /* гасим жесты прокрутки внутри оверлея */
+  padding: 0;
+  overflow: hidden;
+  touch-action: none;
 }
 
 .fullscreen-overlay.hidden {
@@ -128,7 +123,7 @@ body[data-page="gallery"]:not(.preview-mode) main {
 
 .fullscreen-overlay img {
   max-width: 100vw;
-  max-height: calc(100vh - 80px); /* оставляем место под кнопки на мобильных */
+  max-height: calc(100vh - 80px);
   object-fit: contain;
   border-radius: 0;
   box-shadow: none;
@@ -180,53 +175,10 @@ body[data-page="gallery"]:not(.preview-mode) main {
   right: 20px;
 }
 
-/* Мобильная адаптация для fullscreen: кнопки в безопасной зоне, картинка центрирована */
-@media (max-width: 768px) {
-  .fullscreen-overlay {
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-  }
+/* ==========================================================================
+   Preview Grid
+   ========================================================================== */
 
-  .fullscreen-overlay img {
-    max-height: calc(100vh - 112px); /* больше места под кнопки и статус-бары */
-    max-width: calc(100vw - 24px);
-  }
-
-  .fullscreen-nav {
-    padding: 10px; /* чуть больше зона касания */
-    font-size: 28px;
-  }
-  .fullscreen-nav.prev {
-    left: calc(8px + env(safe-area-inset-left));
-  }
-  .fullscreen-nav.next {
-    right: calc(8px + env(safe-area-inset-right));
-  }
-
-  .close-btn {
-    top: calc(10px + env(safe-area-inset-top));
-    right: calc(10px + env(safe-area-inset-right));
-    width: 36px;
-    height: 36px;
-    font-size: 24px;
-  }
-}
-
-/* Портретная ориентация — аккуратнее центрируем картинку и кнопки */
-@media (orientation: portrait) {
-  .fullscreen-overlay img {
-    max-width: calc(100vw - 24px);
-    max-height: calc(100vh - 128px);
-  }
-  .fullscreen-nav.prev {
-    left: calc(12px + env(safe-area-inset-left));
-  }
-  .fullscreen-nav.next {
-    right: calc(12px + env(safe-area-inset-right));
-  }
-}
-
-
-/* Контейнер превью */
 .preview-container {
   position: fixed;
   top: 80px;
@@ -239,13 +191,11 @@ body[data-page="gallery"]:not(.preview-mode) main {
   margin: 0;
   z-index: 1000;
   overflow-y: auto;
-  overflow-x: hidden; /* убираем горизонтальную прокрутку */
-  box-sizing: border-box; /* учитываем padding в ширине */
-  max-width: 100vw; /* не шире экрана */
+  overflow-x: hidden;
+  box-sizing: border-box;
+  max-width: 100vw;
 }
 
-
-/* Сетка превью */
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -255,23 +205,22 @@ body[data-page="gallery"]:not(.preview-mode) main {
   box-sizing: border-box;
 }
 
-/* Элемент превью */
 .preview-item {
   position: relative;
   cursor: pointer;
-  border-radius: 10px; /* как у кнопок в слайдере */
+  border-radius: 10px;
   overflow: hidden;
   background-color: rgba(255, 255, 255, 0.1);
   border: none;
-  height: 120px; /* фиксируем высоту, чтобы канвас заполнял полностью */
-  transform: scale(0.98); /* уменьшаем превью на 2%, чтобы влезала рамка */
+  height: 120px;
+  transform: scale(0.98);
   transform-origin: center;
 }
 
 .preview-item:hover {
-  outline: none; /* убрали общую рамку на весь блок */
-  border-radius: 0; /* у активного (при наведении) скругления нет */
-  transform: scale(1); /* убираем скейл у активного */
+  outline: none;
+  border-radius: 0;
+  transform: scale(1);
 }
 
 .preview-item.active {
@@ -279,7 +228,6 @@ body[data-page="gallery"]:not(.preview-mode) main {
   box-shadow: none;
 }
 
-/* Изображение превью */
 .preview-image {
   width: 100%;
   height: 120px;
@@ -287,16 +235,14 @@ body[data-page="gallery"]:not(.preview-mode) main {
   display: block;
 }
 
-/* Canvas превью */
 .preview-canvas {
   width: 100%;
-  height: 100%; /* во всю высоту карточки превью */
+  height: 100%;
   display: block;
-  background-color: #000; /* как фон слайдера */
-  border-radius: inherit; /* скругляем углы как у контейнера */
+  background-color: #000;
+  border-radius: inherit;
 }
 
-/* Точная рамка поверх изображения в превью */
 .preview-border {
   position: absolute;
   display: none;
@@ -304,10 +250,9 @@ body[data-page="gallery"]:not(.preview-mode) main {
   border: 2px solid rgba(255, 255, 255, 0.6);
   pointer-events: none;
   box-shadow: none;
-  border-radius: inherit; /* те же скругления */
+  border-radius: inherit;
 }
 
-/* Метка с номером */
 .preview-label {
   position: absolute;
   bottom: 0;
@@ -321,15 +266,106 @@ body[data-page="gallery"]:not(.preview-mode) main {
   font-weight: bold;
 }
 
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
 
-/* Адаптивность для превью */
 @media (max-width: 768px) {
-  .preview-grid {
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 10px;
+  .slider {
+    width: 100vw;
+    height: calc(100vh - 140px);
+    padding: 0 8px;
+    box-sizing: border-box;
   }
   
-  .preview-item { height: 60px; }
-  .preview-image { height: 60px; }
+  .slide, .slide.active {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 160px);
+  }
   
+  .thumbnails {
+    width: 100vw;
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .thumbnail {
+    height: 60px;
+  }
+  
+  .preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 6px;
+    padding: 6px;
+  }
+  
+  .preview-item {
+    height: 50px;
+    transform: scale(0.9);
+  }
+  
+  .preview-image {
+    height: 50px;
+  }
+  
+  .preview-canvas {
+    height: 50px;
+  }
+  
+  .fullscreen-overlay {
+    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  }
+
+  .fullscreen-overlay img {
+    max-height: calc(100vh - 112px);
+    max-width: calc(100vw - 24px);
+  }
+
+  .fullscreen-nav {
+    padding: 10px;
+    font-size: 28px;
+  }
+  
+  .fullscreen-nav.prev {
+    left: calc(8px + env(safe-area-inset-left));
+  }
+  
+  .fullscreen-nav.next {
+    right: calc(8px + env(safe-area-inset-right));
+  }
+
+  .close-btn {
+    top: calc(10px + env(safe-area-inset-top));
+    right: calc(10px + env(safe-area-inset-right));
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 1024px) {
+  .slider {
+    height: calc(100vh - 120px);
+  }
+  
+  .slide, .slide.active {
+    max-height: calc(100vh - 140px);
+  }
+  
+  .preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+    gap: 8px;
+  }
+  
+  .preview-item {
+    height: 55px;
+  }
+  
+  .preview-image {
+    height: 55px;
+  }
+  
+  .preview-canvas {
+    height: 55px;
+  }
 }
