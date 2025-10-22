@@ -40,6 +40,13 @@ class ThumbnailOptimizer {
     }
     
     /**
+     * Проверяет, является ли браузер Firefox
+     */
+    isFirefox() {
+        return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    }
+
+    /**
      * Создает оптимизированную миниатюру из исходного изображения
      * @param {string} imageSrc - Путь к исходному изображению
      * @param {string} size - Размер миниатюры ('small', 'medium', 'large')
@@ -54,6 +61,11 @@ class ThumbnailOptimizer {
         }
         
         try {
+            // Для Firefox используем упрощенный подход
+            if (this.isFirefox()) {
+                return await this.createFirefoxThumbnail(imageSrc, size);
+            }
+            
             const thumbnailSize = this.thumbnailSizes[size];
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -142,6 +154,17 @@ class ThumbnailOptimizer {
         img.className = className + ' loading';
         img.loading = 'lazy';
         
+        // Для Firefox используем упрощенный подход
+        if (this.isFirefox()) {
+            // Для Firefox просто используем оригинальное изображение с параметром
+            const timestamp = Date.now();
+            img.src = `${originalSrc}?v=${timestamp}&firefox=1`;
+            img.classList.remove('loading');
+            img.classList.add('loaded');
+            console.log('🦊 Firefox image element created:', img.src);
+            return img;
+        }
+        
         // Для превью (small) используем оптимизированные изображения
         // Для остальных размеров используем оригиналы
         if (size === 'small') {
@@ -210,6 +233,35 @@ class ThumbnailOptimizer {
             size: this.thumbnailCache.size,
             keys: Array.from(this.thumbnailCache.keys())
         };
+    }
+    
+    /**
+     * Создает миниатюру специально для Firefox
+     * Firefox имеет проблемы с canvas и изображениями, поэтому используем упрощенный подход
+     */
+    async createFirefoxThumbnail(imageSrc, size) {
+        const cacheKey = `${imageSrc}_${size}_firefox`;
+        
+        // Проверяем кэш
+        if (this.thumbnailCache.has(cacheKey)) {
+            return this.thumbnailCache.get(cacheKey);
+        }
+        
+        try {
+            // Для Firefox просто возвращаем оригинальное изображение
+            // с добавлением параметра для принудительной перезагрузки
+            const timestamp = Date.now();
+            const optimizedSrc = `${imageSrc}?v=${timestamp}&firefox=1`;
+            
+            // Кэшируем результат
+            this.thumbnailCache.set(cacheKey, optimizedSrc);
+            
+            console.log('🦊 Firefox thumbnail created:', optimizedSrc);
+            return optimizedSrc;
+        } catch (error) {
+            console.warn('Failed to create Firefox thumbnail for:', imageSrc, error);
+            return imageSrc;
+        }
     }
 }
 

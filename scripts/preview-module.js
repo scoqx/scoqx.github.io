@@ -65,13 +65,23 @@ class PreviewModule {
         const previewDescription = preview.querySelector('.preview-description');
         
         if (previewImage) {
-            // Используем оптимизированное изображение для превью
-            try {
-                const optimizedSrc = await window.thumbnailOptimizer.createOptimizedThumbnail(image.src, 'medium');
-                previewImage.src = optimizedSrc;
-            } catch (error) {
-                console.warn('Failed to create optimized preview, using original:', error);
-                previewImage.src = image.src;
+            // Для Firefox используем упрощенный подход
+            const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+            
+            if (isFirefox) {
+                // Для Firefox просто используем оригинальное изображение с параметром
+                const timestamp = Date.now();
+                previewImage.src = `${image.src}?v=${timestamp}&preview=1`;
+                console.log('🦊 Firefox preview using original image');
+            } else {
+                // Для других браузеров используем оптимизированное изображение
+                try {
+                    const optimizedSrc = await window.thumbnailOptimizer.createOptimizedThumbnail(image.src, 'medium');
+                    previewImage.src = optimizedSrc;
+                } catch (error) {
+                    console.warn('Failed to create optimized preview, using original:', error);
+                    previewImage.src = image.src;
+                }
             }
             previewImage.alt = image.title;
         }
