@@ -374,6 +374,16 @@ body[data-page="index"] .logo-link {
     font-size: 18px;
     margin-bottom: var(--spacing-md);
     color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.download-title-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
 }
 
 .version-text {
