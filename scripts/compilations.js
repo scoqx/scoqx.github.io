@@ -2,80 +2,94 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Randomize compilation cards order
     randomizeCompilationCards();
     
+    // Load compilations config
+    let compilationsConfig = {};
+    try {
+        const response = await fetch('/images/compilations-config.json');
+        compilationsConfig = await response.json();
+        console.log('Compilations config loaded:', compilationsConfig);
+    } catch (error) {
+        console.error('Failed to load compilations config:', error);
+        return;
+    }
+    
     const n8mareContainer = document.getElementById('n8mare-screenshots');
     const runoContainer = document.getElementById('runo-screenshots');
     const eliteContainer = document.getElementById('elite-screenshots');
     
-    // Load n8mare screenshots (up to 12 images)
-    if (n8mareContainer) {
-        await loadCompilationScreenshots('n8mare', n8mareContainer, 8);
+    // Load screenshots asynchronously in batches
+    const loadPromises = [];
+    
+    if (n8mareContainer && compilationsConfig.n8mare) {
+        loadPromises.push(loadCompilationScreenshotsAsync('n8mare', n8mareContainer, compilationsConfig.n8mare));
     }
     
-    // Load runo screenshots (up to 30 images)
-    if (runoContainer) {
-        await loadCompilationScreenshots('runo', runoContainer, 8);
+    if (runoContainer && compilationsConfig.runo) {
+        loadPromises.push(loadCompilationScreenshotsAsync('runo', runoContainer, compilationsConfig.runo));
     }
     
-    // Load elite screenshots (up to 10 images)
-    if (eliteContainer) {
-        await loadCompilationScreenshots('elite', eliteContainer, 8);
+    if (eliteContainer && compilationsConfig.elite) {
+        loadPromises.push(loadCompilationScreenshotsAsync('elite', eliteContainer, compilationsConfig.elite));
     }
+    
+    // Wait for all screenshots to load
+    await Promise.all(loadPromises);
 });
 
-async function loadCompilationScreenshots(compilationName, container, maxImages) {
-    const screenshots = [];
-    const extensions = ['jpg', 'png', 'jpeg', 'webp']; // Оптимизированный порядок
+async function loadCompilationScreenshotsAsync(compilationName, container, config) {
+    console.log(`🔄 Loading ${compilationName} screenshots asynchronously`);
     
-    console.log(`Starting ${compilationName} screenshots scan`);
+    const maxImages = config.count;
+    const extension = config.extension;
     
-    // Try to load numbered images
-    for (let i = 1; i <= maxImages; i++) {
-        let screenshotFound = false;
+    // Load screenshots in batches for better performance
+    const batchSize = 3; // Load 3 screenshots at a time
+    
+    for (let i = 1; i <= maxImages; i += batchSize) {
+        const batch = [];
         
-        for (const ext of extensions) {
-            const imagePath = `/images/${compilationName}/${i}.${ext}`;
-            const exists = await checkImageExists(imagePath);
-            if (exists) {
-                console.log(`Found ${compilationName} screenshot: ${imagePath}`);
-                screenshots.push({
-                    src: imagePath,
-                    alt: `${compilationName} screenshot ${i}`,
-                    index: i
-                });
-                screenshotFound = true;
-                break; // Found image with this number, move to next
-            }
+        // Create batch of screenshots to load
+        for (let j = i; j < i + batchSize && j <= maxImages; j++) {
+            batch.push(createScreenshotAsync(compilationName, j, extension, container));
         }
         
-        // Если не нашли скриншот с текущим номером, прекращаем поиск сразу
-        if (!screenshotFound) {
-            console.log(`${compilationName} screenshot ${i} not found, stopping scan`);
-            break;
+        // Wait for this batch to complete
+        await Promise.all(batch);
+        
+        // Small delay between batches
+        if (i + batchSize <= maxImages) {
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
     
-    if (screenshots.length > 0) {
-        screenshots.forEach((screenshot, index) => {
-            const screenshotElement = createScreenshotElement(screenshot, index);
-            container.appendChild(screenshotElement);
-        });
-    } else {
-        container.innerHTML = '<p class="no-screenshots">Screenshots coming soon...</p>';
-    }
+    console.log(`✅ ${compilationName} screenshots loaded`);
 }
 
-async function checkImageExists(imagePath) {
-    try {
-        const response = await fetch(imagePath, { method: 'HEAD' });
-        return response.ok;
-    } catch (error) {
-        return false;
-    }
+async function createScreenshotAsync(compilationName, index, extension, container) {
+    return new Promise((resolve) => {
+        const imagePath = `/images/${compilationName}/${index}.${extension}`;
+        
+        const screenshot = {
+            src: imagePath,
+            alt: `${compilationName} screenshot ${index}`,
+            index: index
+        };
+        
+        const screenshotElement = createScreenshotElement(screenshot, index - 1);
+        container.appendChild(screenshotElement);
+        
+        resolve();
+    });
 }
+
 
 function createScreenshotElement(screenshot, index) {
     const screenshotDiv = document.createElement('div');
     screenshotDiv.className = 'screenshot-item';
+    
+    // Create loading spinner
+    const spinner = document.createElement('div');
+    spinner.className = 'loading-spinner';
     
     // Создаем оптимизированное изображение для скриншота
     const optimizedImg = window.thumbnailOptimizer.createOptimizedImageElement(
@@ -95,10 +109,12 @@ function createScreenshotElement(screenshot, index) {
     optimizedImg.onload = () => {
         optimizedImg.classList.remove('loading');
         optimizedImg.classList.add('loaded');
+        spinner.remove(); // Remove spinner when image loads
     };
     
     optimizedImg.onerror = () => {
         optimizedImg.classList.remove('loading');
+        spinner.remove(); // Remove spinner on error
         // Show placeholder for failed screenshots
         optimizedImg.style.background = '#333';
         optimizedImg.style.display = 'flex';
@@ -113,7 +129,8 @@ function createScreenshotElement(screenshot, index) {
         </div>
     `;
     
-    // Вставляем оптимизированное изображение
+    // Вставляем спиннер и оптимизированное изображение
+    screenshotDiv.insertBefore(spinner, screenshotDiv.firstChild);
     screenshotDiv.insertBefore(optimizedImg, screenshotDiv.firstChild);
     
     // Add click to open in fullscreen

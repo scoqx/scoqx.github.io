@@ -12,10 +12,12 @@ class Gallery {
     }
     
     async init() {
+        this.showLoadingState();
         await this.loadImages();
         this.setupModules();
         this.setupEventListeners();
         this.renderGallery();
+        this.hideLoadingState();
     }
     
     setupModules() {
@@ -28,7 +30,7 @@ class Gallery {
     async loadImages() {
         this.images = [];
         
-        // First, try to load from JSON config
+        // Load only from JSON config (no auto-detection for better performance)
         try {
             const response = await fetch('/images/gallery-config.json');
             if (response.ok) {
@@ -42,155 +44,65 @@ class Gallery {
                 }));
                 this.images = [...jsonImages];
                 console.log('Processed JSON images:', this.images);
+            } else {
+                console.log('No config file found, using fallback images');
+                // Fallback to a few known images if no config
+                this.images = [
+                    { src: '/images/1.jpg', title: 'Image 1', description: 'Description 1', order: 1 },
+                    { src: '/images/2.jpg', title: 'Image 2', description: 'Description 2', order: 2 },
+                    { src: '/images/3.jpg', title: 'Image 3', description: 'Description 3', order: 3 }
+                ];
             }
         } catch (error) {
-            console.log('No config file found or error loading config');
+            console.log('Error loading config, using fallback images');
+            // Fallback to a few known images if error
+            this.images = [
+                { src: '/images/1.jpg', title: 'Image 1', description: 'Description 1', order: 1 },
+                { src: '/images/2.jpg', title: 'Image 2', description: 'Description 2', order: 2 },
+                { src: '/images/3.jpg', title: 'Image 3', description: 'Description 3', order: 3 }
+            ];
         }
-        
-        // Then, auto-detect additional images not in JSON
-        console.log('Auto-detecting additional images...');
-        await this.loadAdditionalImages();
         
         console.log(`Total images loaded: ${this.images.length}`);
     }
     
-    async loadAdditionalImages() {
-        // Get existing image paths from JSON to avoid duplicates
-        const existingPaths = this.images.map(img => img.src);
-        console.log(`Starting additional images scan. Existing images: ${existingPaths.length}`);
+    showLoadingState() {
+        const galleryContainer = document.querySelector('.gallery-container');
+        if (!galleryContainer) return;
         
-        // Try to detect additional images by checking if they exist
-        // Проверяем самые популярные расширения сначала
-        const imageExtensions = ['jpg', 'png', 'jpeg', 'webp', 'gif'];
-        const maxImages = 100; // Reasonable limit
+        // Create loading overlay
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.id = 'galleryLoadingOverlay';
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading gallery</div>
+        `;
         
-        for (let i = 1; i <= maxImages; i++) {
-            let imageFound = false;
-            
-            for (const ext of imageExtensions) {
-                const imagePath = `/images/${i}.${ext}`;
-                
-                // Skip if already in JSON
-                if (existingPaths.includes(imagePath)) {
-                    imageFound = true;
-                    break;
-                }
-                
-                const exists = await this.checkImageExists(imagePath);
-                if (exists) {
-                    console.log(`Found additional image: ${imagePath}`);
-                    this.images.push({
-                        src: imagePath,
-                        title: `Image ${i}`,
-                        description: `Description for image ${i}`,
-                        order: this.images.length + 1000 // Put additional images after JSON ones
-                    });
-                    imageFound = true;
-                    break; // Found image with this number, move to next
-                }
-            }
-            
-            // Если не нашли изображение с текущим номером, прекращаем поиск сразу
-            if (!imageFound) {
-                console.log(`Image ${i} not found, stopping scan (no more images expected)`);
-                break;
-            }
-        }
+        // Add styles
+        loadingOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        `;
         
-        // Try common names if no numbered images found
-        if (this.images.length === existingPaths.length) {
-            const commonNames = ['image', 'photo', 'pic', 'img', 'gallery', 'screenshot'];
-            for (const name of commonNames) {
-                let nameFound = false;
-                
-                for (const ext of imageExtensions) {
-                    const imagePath = `/images/${name}.${ext}`;
-                    
-                    // Skip if already in JSON
-                    if (existingPaths.includes(imagePath)) {
-                        nameFound = true;
-                        break;
-                    }
-                    
-                    const exists = await this.checkImageExists(imagePath);
-                    if (exists) {
-                        this.images.push({
-                            src: imagePath,
-                            title: name.charAt(0).toUpperCase() + name.slice(1),
-                            description: `Description for ${name}`,
-                            order: this.images.length + 1000
-                        });
-                        nameFound = true;
-                        break; // Found image with this name, move to next
-                    }
-                }
-                
-                // Если не нашли изображение с текущим именем, переходим к следующему
-                if (!nameFound) {
-                    continue;
-                }
-            }
-        }
-        
-        // Sort by order to maintain JSON images first, then additional ones
-        this.images.sort((a, b) => a.order - b.order);
-        
-        const additionalCount = this.images.length - existingPaths.length;
-        console.log(`Found ${additionalCount} additional images not in JSON`);
+        document.body.appendChild(loadingOverlay);
+        console.log('🔄 Gallery loading started');
     }
     
-    async loadImagesFromDirectory() {
-        // Fallback method to load images if config fails
-        this.images = [];
-        
-        // Try to detect images by checking if they exist
-        const imageExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-        const maxImages = 50; // Reasonable limit
-        
-        for (let i = 1; i <= maxImages; i++) {
-            for (const ext of imageExtensions) {
-                const imagePath = `/images/${i}.${ext}`;
-                const exists = await this.checkImageExists(imagePath);
-                if (exists) {
-                    this.images.push({
-                        src: imagePath,
-                        title: `Image ${i}`,
-                        description: `Description for image ${i}`,
-                        order: i
-                    });
-                    break; // Found image with this number, move to next
-                }
-            }
-        }
-        
-        // If no numbered images found, try common names
-        if (this.images.length === 0) {
-            const commonNames = ['image', 'photo', 'pic', 'img'];
-            for (const name of commonNames) {
-                for (const ext of imageExtensions) {
-                    const imagePath = `/images/${name}.${ext}`;
-                    const exists = await this.checkImageExists(imagePath);
-                    if (exists) {
-                        this.images.push({
-                            src: imagePath,
-                            title: name.charAt(0).toUpperCase() + name.slice(1),
-                            description: `Description for ${name}`,
-                            order: this.images.length + 1
-                        });
-                    }
-                }
-            }
-        }
-        
-        console.log(`Auto-detected ${this.images.length} images`);
-    }
-    
-    async checkImageExists(imagePath) {
-        try {
-            const response = await fetch(imagePath, { method: 'HEAD' });
-            return response.ok;
-        } catch (error) {
-            return false;
+    hideLoadingState() {
+        const loadingOverlay = document.getElementById('galleryLoadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.remove();
+            console.log('✅ Gallery loading completed');
         }
     }
     
@@ -231,9 +143,9 @@ class Gallery {
         }
     }
     
-    renderGallery() {
+    async renderGallery() {
         this.renderMainImage();
-        this.renderThumbnails();
+        await this.renderThumbnailsAsync();
         this.updateViewModeButton();
         this.applySavedViewMode();
     }
@@ -572,6 +484,127 @@ class Gallery {
         }
         
         this.updateViewModeButton();
+    }
+    
+    // Async version of renderThumbnails for better performance
+    async renderThumbnailsAsync() {
+        const thumbnailsContainer = document.getElementById('thumbnails');
+        const gridContainer = document.getElementById('gridContainer');
+        
+        if (!thumbnailsContainer && !gridContainer) return;
+        
+        const container = this.isThumbnailMode ? gridContainer : thumbnailsContainer;
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        // Load thumbnails in batches for better performance
+        const batchSize = 5; // Load 5 thumbnails at a time
+        const totalImages = this.images.length;
+        
+        console.log(`🔄 Loading ${totalImages} thumbnails in batches of ${batchSize}`);
+        
+        for (let i = 0; i < totalImages; i += batchSize) {
+            const batch = this.images.slice(i, i + batchSize);
+            
+            // Create thumbnails for this batch
+            const batchPromises = batch.map((image, batchIndex) => {
+                const index = i + batchIndex;
+                return this.createThumbnailAsync(image, index, container);
+            });
+            
+            // Wait for this batch to complete before loading next
+            await Promise.all(batchPromises);
+            
+            // Small delay between batches to prevent blocking
+            if (i + batchSize < totalImages) {
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+        }
+        
+        console.log('✅ All thumbnails loaded');
+    }
+    
+    async createThumbnailAsync(image, index, container) {
+        return new Promise((resolve) => {
+            const thumbnail = document.createElement('div');
+            thumbnail.className = `thumbnail ${index === this.currentIndex ? 'active' : ''}`;
+            
+            // Создаем оптимизированное изображение для миниатюры
+            const optimizedImg = window.thumbnailOptimizer.createOptimizedImageElement(
+                image.src, 
+                image.title, 
+                'small', 
+                'thumbnail-img'
+            );
+            
+            // Add loading state to thumbnail
+            optimizedImg.classList.add('loading');
+            
+            // Set up loading handlers
+            optimizedImg.onload = () => {
+                optimizedImg.classList.remove('loading');
+                optimizedImg.classList.add('loaded');
+                resolve();
+            };
+            
+            optimizedImg.onerror = () => {
+                optimizedImg.classList.remove('loading');
+                // Show placeholder for failed thumbnails
+                optimizedImg.style.background = '#333';
+                optimizedImg.style.display = 'flex';
+                optimizedImg.style.alignItems = 'center';
+                optimizedImg.style.justifyContent = 'center';
+                optimizedImg.innerHTML = '❌';
+                resolve(); // Still resolve to continue with next batch
+            };
+            
+            thumbnail.innerHTML = `
+                <div class="thumbnail-overlay">
+                    <span class="thumbnail-title">${image.title}</span>
+                </div>
+            `;
+            
+            // Вставляем оптимизированное изображение
+            thumbnail.insertBefore(optimizedImg, thumbnail.firstChild);
+            
+            thumbnail.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (this.isThumbnailMode) {
+                    // In thumbnail mode, open fullscreen directly
+                    this.fullscreenModule.open(index);
+                } else {
+                    // In main mode, switch to image
+                    this.currentIndex = index;
+                    this.renderMainImage();
+                    this.updateThumbnailSelection();
+                }
+            });
+            
+            // Prevent context menu on mobile devices
+            thumbnail.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+            
+            // Add preview on hover (only for non-touch devices)
+            if (!('ontouchstart' in window)) {
+                thumbnail.addEventListener('mouseenter', (e) => {
+                    this.previewModule.showPreview(index, e);
+                });
+                
+                thumbnail.addEventListener('mouseleave', () => {
+                    this.previewModule.hidePreview();
+                });
+                
+                thumbnail.addEventListener('mousemove', (e) => {
+                    this.previewModule.showPreview(index, e);
+                });
+            }
+            
+            container.appendChild(thumbnail);
+        });
     }
 }
 
