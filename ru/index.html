@@ -87,11 +87,114 @@
                 <pre id="changelog-content" class="changelog-content"></pre>
             </div>
         </section>
+
+        <!-- Support Section -->
+        <div class="support-section-links">
+            <h3>Поддержать проект</h3>
+            <p class="subtitle">Выберите удобную платформу</p>
+            <div class="support-links">
+                <div class="support-link-item">
+                    <button type="button" id="openCardModal">Карта РФ</button>
+                </div>
+                <div class="support-link-item">
+                    <a href="https://donatty.com/diwoc" target="_blank" rel="noopener noreferrer">Donatty</a>
+                </div>
+                <div class="support-link-item">
+                    <button type="button" id="openDonationModal">DonationAlerts</button>
+                </div>
+                <div class="support-link-item">
+                    <button type="button" id="openCryptoModal">Крипто</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно DonationAlerts -->
+        <div class="donation-modal" id="donationModal">
+            <div class="donation-modal-content">
+                <button class="donation-modal-close" id="closeModal">&times;</button>
+                <h3>DonationAlerts</h3>
+                <img src="/assets/dalink-qr-code.png" alt="DonationAlerts QR Code" class="donation-qr-image">
+                <p style="color: #999; margin-bottom: var(--spacing-lg);">Отсканируйте QR-код камерой телефона</p>
+                <a href="https://dalink.to/diwoc" target="_blank" rel="noopener noreferrer" class="download-button" style="display: inline-block;">
+                    Или перейти по ссылке
+                </a>
+            </div>
+        </div>
+
+        <!-- Модальное окно Криптовалюты -->
+        <div class="donation-modal" id="cryptoModal">
+            <div class="donation-modal-content">
+                <button class="donation-modal-close" id="closeCryptoModal">&times;</button>
+                <h3>Поддержать криптовалютой</h3>
+                
+                <!-- Выбор криптовалюты -->
+                <div class="crypto-tabs">
+                    <button class="crypto-tab active" data-crypto="ton">TON</button>
+                    <button class="crypto-tab" data-crypto="usdt">USDT</button>
+                </div>
+
+                <!-- Контент для TON -->
+                <div class="crypto-content active" data-crypto-content="ton">
+                    <div style="text-align: center; margin: var(--spacing-lg) 0;">
+                        <h4 style="color: var(--text-color); margin-bottom: var(--spacing-md); font-size: 1.2rem;">TON</h4>
+                    </div>
+                    <div class="crypto-address" data-address="UQB8lmg6ibQ-42P35JmhKxpBLy09zyjSOSIGmZcHzqBCjWD_">
+                        UQB8lmg6ibQ-42P35JmhKxpBLy09zyjSOSIGmZcHzqBCjWD_
+                    </div>
+                </div>
+
+                <!-- Контент для USDT -->
+                <div class="crypto-content" data-crypto-content="usdt">
+                    <div style="text-align: center; margin: var(--spacing-lg) 0 var(--spacing-md) 0;">
+                        <h4 style="color: var(--text-color); margin-bottom: var(--spacing-sm); font-size: 1.2rem;">USDT</h4>
+                    </div>
+                    
+                    <!-- TRC20 -->
+                    <div style="margin-bottom: var(--spacing-lg);">
+                        <h5 style="color: var(--text-color); margin-bottom: var(--spacing-sm); font-size: 0.95rem; text-align: center;">TRC20 (TRON)</h5>
+                        <div class="crypto-address" data-address="TJs5hBLzHZEkff5hqZ81ZdtQV1ixDBwcgd">
+                            TJs5hBLzHZEkff5hqZ81ZdtQV1ixDBwcgd
+                        </div>
+                    </div>
+
+                    <!-- TON -->
+                    <div style="margin-bottom: var(--spacing-lg);">
+                        <h5 style="color: var(--text-color); margin-bottom: var(--spacing-sm); font-size: 0.95rem; text-align: center;">TON</h5>
+                        <div class="crypto-address" data-address="UQB8lmg6ibQ-42P35JmhKxpBLy09zyjSOSIGmZcHzqBCjWD_">
+                            UQB8lmg6ibQ-42P35JmhKxpBLy09zyjSOSIGmZcHzqBCjWD_
+                        </div>
+                    </div>
+
+                    <!-- ERC20 -->
+                    <div style="margin-bottom: var(--spacing-md);">
+                        <h5 style="color: var(--text-color); margin-bottom: var(--spacing-sm); font-size: 0.95rem; text-align: center;">ERC20 (Ethereum)</h5>
+                        <div class="crypto-address" data-address="0x6283Fa1D9F820919789269a96840eC46DAf417E9">
+                            0x6283Fa1D9F820919789269a96840eC46DAf417E9
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно Карты РФ -->
+        <div class="donation-modal" id="cardModal">
+            <div class="donation-modal-content">
+                <button class="donation-modal-close" id="closeCardModal">&times;</button>
+                <h3>Банковская карта</h3>
+                <div style="text-align: center; margin: var(--spacing-lg) 0;">
+                    <p style="color: #999; margin-bottom: var(--spacing-lg); font-size: 0.9rem;">Для переводов внутри России</p>
+                </div>
+                <div class="crypto-address" data-address="2204240209901984">
+                    2204 2402 0990 1984
+                </div>
+            </div>
+        </div>
     </main>
 
     <script src="/scripts/language-manager.js"></script>
     <script src="/scripts/navigation.js?v=1.2"></script>
     <script src="/scripts/index.js?v=1.2"></script>
+    <script src="/scripts/support-modal.js"></script>
     
     <!-- Simple Analytics - 100% privacy-first analytics -->
     <script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
