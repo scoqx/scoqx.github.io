@@ -251,15 +251,89 @@ class Gallery {
         const mainImage = document.getElementById('mainImage');
         const imageTitle = document.getElementById('imageTitle');
         const imageDescription = document.getElementById('imageDescription');
+        const imageContainer = document.querySelector('.gallery-image-container');
         
         if (mainImage) {
-            mainImage.src = image.src;
-            mainImage.alt = image.title;
-            console.log('Set image src to:', image.src);
+            // Show loading state
+            mainImage.classList.add('loading');
+            mainImage.classList.remove('loaded');
+            
+            // Add loading spinner
+            this.showLoadingSpinner(imageContainer);
+            
+            // Set up image loading
+            const img = new Image();
+            img.onload = () => {
+                console.log('Image loaded:', image.src);
+                mainImage.src = image.src;
+                mainImage.alt = image.title;
+                mainImage.classList.remove('loading');
+                mainImage.classList.add('loaded');
+                this.hideLoadingSpinner(imageContainer);
+            };
+            
+            img.onerror = () => {
+                console.error('Failed to load image:', image.src);
+                mainImage.classList.remove('loading');
+                this.hideLoadingSpinner(imageContainer);
+                this.showImageError(imageContainer, image.title);
+            };
+            
+            img.src = image.src;
         }
         
         if (imageTitle) imageTitle.textContent = image.title;
         if (imageDescription) imageDescription.textContent = image.description;
+    }
+    
+    showLoadingSpinner(container) {
+        if (!container) return;
+        
+        // Remove existing loading elements
+        this.hideLoadingSpinner(container);
+        
+        // Create loading spinner
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        spinner.id = 'mainImageSpinner';
+        
+        // Create loading text
+        const loadingText = document.createElement('div');
+        loadingText.className = 'loading-text';
+        loadingText.id = 'mainImageLoadingText';
+        loadingText.textContent = 'Loading';
+        
+        container.appendChild(spinner);
+        container.appendChild(loadingText);
+    }
+    
+    hideLoadingSpinner(container) {
+        if (!container) return;
+        
+        const spinner = container.querySelector('#mainImageSpinner');
+        const loadingText = container.querySelector('#mainImageLoadingText');
+        
+        if (spinner) spinner.remove();
+        if (loadingText) loadingText.remove();
+    }
+    
+    showImageError(container, imageTitle) {
+        if (!container) return;
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'loading-text';
+        errorDiv.style.color = '#f44336';
+        errorDiv.textContent = `Failed to load: ${imageTitle}`;
+        errorDiv.id = 'imageError';
+        
+        container.appendChild(errorDiv);
+        
+        // Remove error after 3 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 3000);
     }
     
     showNoImagesMessage() {
@@ -305,6 +379,25 @@ class Gallery {
                 'thumbnail-img'
             );
             
+            // Add loading state to thumbnail
+            optimizedImg.classList.add('loading');
+            
+            // Set up loading handlers
+            optimizedImg.onload = () => {
+                optimizedImg.classList.remove('loading');
+                optimizedImg.classList.add('loaded');
+            };
+            
+            optimizedImg.onerror = () => {
+                optimizedImg.classList.remove('loading');
+                // Show placeholder for failed thumbnails
+                optimizedImg.style.background = '#333';
+                optimizedImg.style.display = 'flex';
+                optimizedImg.style.alignItems = 'center';
+                optimizedImg.style.justifyContent = 'center';
+                optimizedImg.innerHTML = '❌';
+            };
+            
             thumbnail.innerHTML = `
                 <div class="thumbnail-overlay">
                     <span class="thumbnail-title">${image.title}</span>
@@ -314,7 +407,10 @@ class Gallery {
             // Вставляем оптимизированное изображение
             thumbnail.insertBefore(optimizedImg, thumbnail.firstChild);
             
-            thumbnail.addEventListener('click', () => {
+            thumbnail.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
                 if (this.isThumbnailMode) {
                     // In thumbnail mode, open fullscreen directly
                     this.fullscreenModule.open(index);
@@ -326,18 +422,28 @@ class Gallery {
                 }
             });
             
-            // Add preview on hover
-            thumbnail.addEventListener('mouseenter', (e) => {
-                this.previewModule.showPreview(index, e);
+            // Prevent context menu on mobile devices
+            thumbnail.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
             });
             
-            thumbnail.addEventListener('mouseleave', () => {
-                this.previewModule.hidePreview();
-            });
+            // Add preview on hover (only for non-touch devices)
+            if (!('ontouchstart' in window)) {
+                thumbnail.addEventListener('mouseenter', (e) => {
+                    this.previewModule.showPreview(index, e);
+                });
+                
+                thumbnail.addEventListener('mouseleave', () => {
+                    this.previewModule.hidePreview();
+                });
+            }
             
-            thumbnail.addEventListener('mousemove', (e) => {
-                this.previewModule.showPreview(index, e);
-            });
+            // Add preview on mousemove (only for non-touch devices)
+            if (!('ontouchstart' in window)) {
+                thumbnail.addEventListener('mousemove', (e) => {
+                    this.previewModule.showPreview(index, e);
+                });
+            }
             
             container.appendChild(thumbnail);
         });
@@ -348,6 +454,16 @@ class Gallery {
         thumbnails.forEach((thumb, index) => {
             thumb.classList.toggle('active', index === this.currentIndex);
         });
+        
+        // In thumbnail mode, scroll to active thumbnail
+        if (this.isThumbnailMode && thumbnails[this.currentIndex]) {
+            const activeThumbnail = thumbnails[this.currentIndex];
+            activeThumbnail.scrollIntoView({
+                behavior: 'smooth',
+                block: 'nearest',
+                inline: 'center'
+            });
+        }
     }
     
     toggleViewMode() {

@@ -3,12 +3,33 @@ class FullscreenModule {
         this.gallery = gallery;
         this.isOpen = false;
         this.currentIndex = 0;
+        this.imageCache = new Map(); // Кэш для предзагруженных изображений
         this.init();
     }
     
     init() {
         this.createFullscreenHTML();
         this.setupEventListeners();
+        this.preloadImages();
+    }
+    
+    preloadImages() {
+        if (!this.gallery.images || this.gallery.images.length === 0) return;
+        
+        console.log('🔄 Preloading fullscreen images...');
+        this.gallery.images.forEach((image, index) => {
+            if (!this.imageCache.has(image.src)) {
+                const img = new Image();
+                img.onload = () => {
+                    this.imageCache.set(image.src, true);
+                    console.log(`✅ Preloaded image ${index + 1}/${this.gallery.images.length}:`, image.src);
+                };
+                img.onerror = () => {
+                    console.warn(`❌ Failed to preload image:`, image.src);
+                };
+                img.src = image.src;
+            }
+        });
     }
     
     createFullscreenHTML() {
@@ -76,6 +97,17 @@ class FullscreenModule {
         
         // Restore body scroll
         document.body.style.overflow = '';
+        
+        // Sync current index with gallery
+        if (this.gallery) {
+            this.gallery.currentIndex = this.currentIndex;
+            this.gallery.renderMainImage();
+            
+            // Small delay to ensure DOM is updated before scrolling
+            setTimeout(() => {
+                this.gallery.updateThumbnailSelection();
+            }, 50);
+        }
     }
     
     renderImage() {
@@ -83,11 +115,119 @@ class FullscreenModule {
         
         const image = this.gallery.images[this.currentIndex];
         const fullscreenImage = document.getElementById('fullscreenImage');
+        const overlay = document.getElementById('fullscreenOverlay');
         
-        if (fullscreenImage && image) {
-            fullscreenImage.src = image.src;
-            fullscreenImage.alt = image.title;
+        if (fullscreenImage && image && overlay) {
+            // Check if image is already cached
+            if (this.imageCache.has(image.src)) {
+                // Image is preloaded, show immediately
+                fullscreenImage.src = image.src;
+                fullscreenImage.alt = image.title;
+                fullscreenImage.classList.remove('loading');
+                fullscreenImage.classList.add('loaded');
+                this.hideLoadingSpinner(overlay);
+                console.log('⚡ Fast load from cache:', image.src);
+                return;
+            }
+            
+            // Clear old image immediately to prevent flicker
+            fullscreenImage.src = '';
+            fullscreenImage.alt = '';
+            
+            // Show loading state
+            fullscreenImage.classList.add('loading');
+            fullscreenImage.classList.remove('loaded');
+            
+            // Add loading spinner
+            this.showLoadingSpinner(overlay);
+            
+            // Set up image loading
+            const img = new Image();
+            img.onload = () => {
+                console.log('Fullscreen image loaded:', image.src);
+                // Cache the image
+                this.imageCache.set(image.src, true);
+                // Only set src after image is fully loaded
+                fullscreenImage.src = image.src;
+                fullscreenImage.alt = image.title;
+                fullscreenImage.classList.remove('loading');
+                fullscreenImage.classList.add('loaded');
+                this.hideLoadingSpinner(overlay);
+            };
+            
+            img.onerror = () => {
+                console.error('Failed to load fullscreen image:', image.src);
+                fullscreenImage.classList.remove('loading');
+                this.hideLoadingSpinner(overlay);
+                this.showImageError(overlay, image.title);
+            };
+            
+            img.src = image.src;
         }
+    }
+    
+    showLoadingSpinner(container) {
+        if (!container) return;
+        
+        // Remove existing loading elements
+        this.hideLoadingSpinner(container);
+        
+        // Create loading spinner
+        const spinner = document.createElement('div');
+        spinner.className = 'loading-spinner';
+        spinner.id = 'fullscreenSpinner';
+        spinner.style.position = 'absolute';
+        spinner.style.top = '50%';
+        spinner.style.left = '50%';
+        spinner.style.zIndex = '1001';
+        
+        // Create loading text
+        const loadingText = document.createElement('div');
+        loadingText.className = 'loading-text';
+        loadingText.id = 'fullscreenLoadingText';
+        loadingText.textContent = 'Loading';
+        loadingText.style.position = 'absolute';
+        loadingText.style.top = '60%';
+        loadingText.style.left = '50%';
+        loadingText.style.transform = 'translate(-50%, -50%)';
+        loadingText.style.zIndex = '1001';
+        
+        container.appendChild(spinner);
+        container.appendChild(loadingText);
+    }
+    
+    hideLoadingSpinner(container) {
+        if (!container) return;
+        
+        const spinner = container.querySelector('#fullscreenSpinner');
+        const loadingText = container.querySelector('#fullscreenLoadingText');
+        
+        if (spinner) spinner.remove();
+        if (loadingText) loadingText.remove();
+    }
+    
+    showImageError(container, imageTitle) {
+        if (!container) return;
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'loading-text';
+        errorDiv.style.color = '#f44336';
+        errorDiv.style.position = 'absolute';
+        errorDiv.style.top = '50%';
+        errorDiv.style.left = '50%';
+        errorDiv.style.transform = 'translate(-50%, -50%)';
+        errorDiv.style.zIndex = '1001';
+        errorDiv.textContent = `Failed to load: ${imageTitle}`;
+        errorDiv.id = 'fullscreenError';
+        
+        container.appendChild(errorDiv);
+        
+        // Remove error after 3 seconds
+        setTimeout(() => {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 3000);
     }
     
     previousImage() {
@@ -120,3 +260,4 @@ class FullscreenModule {
         }
     }
 }
+

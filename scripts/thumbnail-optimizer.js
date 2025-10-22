@@ -1,12 +1,42 @@
 class ThumbnailOptimizer {
     constructor() {
         this.thumbnailCache = new Map();
+        // Адаптивные размеры для мобильных устройств
+        const isMobile = this.isMobileDevice();
         this.thumbnailSizes = {
-            small: 150,    // Для миниатюр в галерее
-            medium: 300,   // Для превью
-            large: 600     // Для полноэкранного режима
+            small: isMobile ? 200 : 150,    // Увеличенные миниатюры для мобильных
+            medium: isMobile ? 400 : 300,   // Улучшенные превью для мобильных
+            large: isMobile ? 800 : 600     // Высокое качество для мобильных
         };
-        this.quality = 0.7; // Качество сжатия JPEG
+        // Качество для превью (small) - 75%, для остальных - оригиналы
+        this.quality = 0.75; // 75% для превью
+    }
+    
+    /**
+     * Определяет мобильное устройство
+     */
+    isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (window.innerWidth <= 768) ||
+               ('ontouchstart' in window);
+    }
+    
+    /**
+     * Обновляет настройки качества при изменении размера экрана
+     */
+    updateQualityForScreenSize() {
+        const isMobile = this.isMobileDevice();
+        // Качество остается 75% для превью
+        this.quality = 0.75;
+        
+        // Обновляем размеры
+        this.thumbnailSizes = {
+            small: isMobile ? 200 : 150,
+            medium: isMobile ? 400 : 300,
+            large: isMobile ? 800 : 600
+        };
+        
+        console.log(`📱 Thumbnail quality updated: ${(this.quality * 100).toFixed(0)}% for ${isMobile ? 'mobile' : 'desktop'}`);
     }
     
     /**
@@ -32,11 +62,22 @@ class ThumbnailOptimizer {
             const img = await this.loadImage(imageSrc);
             
             // Вычисляем размеры с сохранением пропорций
-            const { width, height } = this.calculateDimensions(
-                img.width, 
-                img.height, 
-                thumbnailSize
-            );
+            // Для превью (small) используем 75% от оригинального размера
+            let width, height;
+            if (size === 'small') {
+                // Для превью берем 75% от оригинального размера
+                width = Math.round(img.width * 0.75);
+                height = Math.round(img.height * 0.75);
+            } else {
+                // Для остальных размеров используем обычное масштабирование
+                const { width: calcWidth, height: calcHeight } = this.calculateDimensions(
+                    img.width, 
+                    img.height, 
+                    thumbnailSize
+                );
+                width = calcWidth;
+                height = calcHeight;
+            }
             
             canvas.width = width;
             canvas.height = height;
@@ -77,6 +118,8 @@ class ThumbnailOptimizer {
         const aspectRatio = originalWidth / originalHeight;
         
         let width, height;
+        
+        // Обычное масштабирование с сохранением пропорций
         if (aspectRatio > 1) {
             // Широкое изображение
             width = Math.min(maxSize, originalWidth);
@@ -99,22 +142,31 @@ class ThumbnailOptimizer {
         img.className = className + ' loading';
         img.loading = 'lazy';
         
-        // Устанавливаем placeholder пока загружается оптимизированная версия
-        img.src = this.createPlaceholder(originalSrc, size);
-        
-        // Асинхронно загружаем оптимизированную версию
-        this.createOptimizedThumbnail(originalSrc, size).then(optimizedSrc => {
-            if (img.src === this.createPlaceholder(originalSrc, size)) {
-                img.src = optimizedSrc;
+        // Для превью (small) используем оптимизированные изображения
+        // Для остальных размеров используем оригиналы
+        if (size === 'small') {
+            // Устанавливаем placeholder пока загружается оптимизированная версия
+            img.src = this.createPlaceholder(originalSrc, size);
+            
+            // Асинхронно загружаем оптимизированную версию для превью
+            this.createOptimizedThumbnail(originalSrc, size).then(optimizedSrc => {
+                if (img.src === this.createPlaceholder(originalSrc, size)) {
+                    img.src = optimizedSrc;
+                    img.classList.remove('loading');
+                    img.classList.add('loaded');
+                }
+            }).catch(error => {
+                console.warn('Failed to create optimized thumbnail, using original:', error);
+                img.src = originalSrc;
                 img.classList.remove('loading');
                 img.classList.add('loaded');
-            }
-        }).catch(error => {
-            console.warn('Failed to create optimized thumbnail, using original:', error);
+            });
+        } else {
+            // Для medium и large используем оригинальные изображения
             img.src = originalSrc;
             img.classList.remove('loading');
             img.classList.add('loaded');
-        });
+        }
         
         return img;
     }
@@ -163,3 +215,12 @@ class ThumbnailOptimizer {
 
 // Создаем глобальный экземпляр
 window.thumbnailOptimizer = new ThumbnailOptimizer();
+
+// Обновляем качество при изменении размера экрана (поворот устройства)
+let resizeTimeout;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        window.thumbnailOptimizer.updateQualityForScreenSize();
+    }, 300); // Debounce resize events
+});

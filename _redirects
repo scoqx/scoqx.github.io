@@ -4,3 +4,6 @@
 
 # Handle missing language prefix
 /* /en/:splat 302
+
+# Cache clear service
+/service /service.html 200

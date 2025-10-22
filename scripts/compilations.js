@@ -1,15 +1,24 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // Randomize compilation cards order
+    randomizeCompilationCards();
+    
     const n8mareContainer = document.getElementById('n8mare-screenshots');
     const runoContainer = document.getElementById('runo-screenshots');
+    const eliteContainer = document.getElementById('elite-screenshots');
     
     // Load n8mare screenshots (up to 12 images)
     if (n8mareContainer) {
-        await loadCompilationScreenshots('n8mare', n8mareContainer, 12);
+        await loadCompilationScreenshots('n8mare', n8mareContainer, 8);
     }
     
     // Load runo screenshots (up to 30 images)
     if (runoContainer) {
-        await loadCompilationScreenshots('runo', runoContainer, 30);
+        await loadCompilationScreenshots('runo', runoContainer, 8);
+    }
+    
+    // Load elite screenshots (up to 10 images)
+    if (eliteContainer) {
+        await loadCompilationScreenshots('elite', eliteContainer, 8);
     }
 });
 
@@ -76,6 +85,28 @@ function createScreenshotElement(screenshot, index) {
         'screenshot-img'
     );
     
+    // Добавляем data-original-src для поиска
+    optimizedImg.setAttribute('data-original-src', screenshot.src);
+    
+    // Add loading state to screenshot
+    optimizedImg.classList.add('loading');
+    
+    // Set up loading handlers
+    optimizedImg.onload = () => {
+        optimizedImg.classList.remove('loading');
+        optimizedImg.classList.add('loaded');
+    };
+    
+    optimizedImg.onerror = () => {
+        optimizedImg.classList.remove('loading');
+        // Show placeholder for failed screenshots
+        optimizedImg.style.background = '#333';
+        optimizedImg.style.display = 'flex';
+        optimizedImg.style.alignItems = 'center';
+        optimizedImg.style.justifyContent = 'center';
+        optimizedImg.innerHTML = '❌';
+    };
+    
     screenshotDiv.innerHTML = `
         <div class="screenshot-overlay">
             <span class="screenshot-number">${index + 1}</span>
@@ -86,7 +117,10 @@ function createScreenshotElement(screenshot, index) {
     screenshotDiv.insertBefore(optimizedImg, screenshotDiv.firstChild);
     
     // Add click to open in fullscreen
-    screenshotDiv.addEventListener('click', () => {
+    screenshotDiv.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Screenshot clicked:', screenshot.src, index);
         openScreenshotFullscreen(screenshot.src, index);
     });
     
@@ -98,12 +132,52 @@ let currentScreenshots = [];
 let currentScreenshotIndex = 0;
 
 function openScreenshotFullscreen(imageSrc, index) {
+    console.log('Opening fullscreen for:', imageSrc, index);
+    
     // Get all screenshots from the current compilation
-    const currentCard = document.querySelector('.compilation-card:has(.screenshot-item img[src="' + imageSrc + '"])');
-    if (!currentCard) return;
+    // Try to find by exact src first, then by data attribute or class
+    let screenshotImg = document.querySelector('.screenshot-item img[src="' + imageSrc + '"]');
+    
+    if (!screenshotImg) {
+        // Try to find by data-original-src
+        screenshotImg = document.querySelector('.screenshot-item img[data-original-src="' + imageSrc + '"]');
+    }
+    
+    if (!screenshotImg) {
+        // Try to find by looking through all screenshot images and matching the source
+        const allScreenshotImgs = document.querySelectorAll('.screenshot-item img');
+        for (let img of allScreenshotImgs) {
+            if (img.src === imageSrc || img.getAttribute('data-original-src') === imageSrc) {
+                screenshotImg = img;
+                break;
+            }
+        }
+    }
+    
+    if (!screenshotImg) {
+        console.log('No screenshot image found for:', imageSrc);
+        console.log('Available images:', Array.from(document.querySelectorAll('.screenshot-item img')).map(img => img.src));
+        return;
+    }
+    
+    // Remove active class from all screenshots in current card
+    const currentCard = screenshotImg.closest('.compilation-card');
+    if (currentCard) {
+        const allScreenshots = currentCard.querySelectorAll('.screenshot-item');
+        allScreenshots.forEach(item => item.classList.remove('active'));
+        
+        // Add active class to current screenshot
+        const screenshotItem = screenshotImg.closest('.screenshot-item');
+        if (screenshotItem) {
+            screenshotItem.classList.add('active');
+        }
+    }
     
     const screenshotItems = currentCard.querySelectorAll('.screenshot-item img');
-    currentScreenshots = Array.from(screenshotItems).map(img => img.src);
+    currentScreenshots = Array.from(screenshotItems).map(img => {
+        // Используем data-original-src если доступен, иначе src
+        return img.getAttribute('data-original-src') || img.src;
+    });
     currentScreenshotIndex = currentScreenshots.indexOf(imageSrc);
     
     // Create fullscreen overlay if it doesn't exist
@@ -163,9 +237,11 @@ function openScreenshotFullscreen(imageSrc, index) {
     const fullscreenImage = document.getElementById('screenshotFullscreenImage');
     if (fullscreenImage) {
         fullscreenImage.src = imageSrc;
+        console.log('Fullscreen image set to:', imageSrc);
     }
     
     overlay.classList.remove('hidden');
+    console.log('Fullscreen overlay shown');
 }
 
 function navigateScreenshot(direction) {
@@ -183,6 +259,31 @@ function navigateScreenshot(direction) {
     const fullscreenImage = document.getElementById('screenshotFullscreenImage');
     if (fullscreenImage) {
         fullscreenImage.src = currentScreenshots[currentScreenshotIndex];
+    }
+    
+    // Update active screenshot in the grid
+    updateActiveScreenshot();
+}
+
+function updateActiveScreenshot() {
+    // Remove active class from all screenshots in current card
+    const allScreenshots = document.querySelectorAll('.screenshot-item');
+    allScreenshots.forEach(item => item.classList.remove('active'));
+    
+    // Find and activate the current screenshot
+    if (currentScreenshots.length > 0 && currentScreenshotIndex >= 0 && currentScreenshotIndex < currentScreenshots.length) {
+        const currentScreenshotSrc = currentScreenshots[currentScreenshotIndex];
+        
+        // Find the screenshot element with matching src
+        const screenshotImg = document.querySelector('.screenshot-item img[src="' + currentScreenshotSrc + '"]') ||
+                            document.querySelector('.screenshot-item img[data-original-src="' + currentScreenshotSrc + '"]');
+        
+        if (screenshotImg) {
+            const screenshotItem = screenshotImg.closest('.screenshot-item');
+            if (screenshotItem) {
+                screenshotItem.classList.add('active');
+            }
+        }
     }
 }
 
@@ -210,6 +311,7 @@ function setupSwipeNavigation(overlay) {
     let startY = 0;
     let endX = 0;
     let endY = 0;
+    let isSwipeActive = false;
     const minSwipeDistance = 50;
     const maxVerticalDistance = 100;
     
@@ -217,18 +319,30 @@ function setupSwipeNavigation(overlay) {
         if (e.touches.length === 1) {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
+            isSwipeActive = true;
         }
     }, { passive: true });
     
     overlay.addEventListener('touchmove', (e) => {
-        if (e.touches.length === 1) {
+        if (e.touches.length === 1 && isSwipeActive) {
             endX = e.touches[0].clientX;
             endY = e.touches[0].clientY;
+            
+            // Prevent default scrolling if it's a horizontal swipe
+            const deltaX = endX - startX;
+            const deltaY = endY - startY;
+            const absDeltaX = Math.abs(deltaX);
+            const absDeltaY = Math.abs(deltaY);
+            
+            if (absDeltaX > absDeltaY && absDeltaX > 10) {
+                e.preventDefault();
+            }
         }
-    }, { passive: true });
+    }, { passive: false });
     
     overlay.addEventListener('touchend', (e) => {
-        if (!startX || !startY || !endX || !endY) {
+        if (!isSwipeActive || !startX || !startY || !endX || !endY) {
+            isSwipeActive = false;
             return;
         }
         
@@ -239,6 +353,7 @@ function setupSwipeNavigation(overlay) {
         
         // Check if it's a horizontal swipe (not vertical scroll)
         if (absDeltaX > minSwipeDistance && absDeltaX > absDeltaY && absDeltaY < maxVerticalDistance) {
+            e.preventDefault();
             if (deltaX > 0) {
                 // Swipe right - previous image
                 navigateScreenshot(-1);
@@ -253,5 +368,23 @@ function setupSwipeNavigation(overlay) {
         startY = 0;
         endX = 0;
         endY = 0;
-    }, { passive: true });
+        isSwipeActive = false;
+    }, { passive: false });
+}
+
+// Function to randomize compilation cards order
+function randomizeCompilationCards() {
+    const compilationsGrid = document.querySelector('.compilations-grid');
+    if (!compilationsGrid) return;
+    
+    const cards = Array.from(compilationsGrid.children);
+    
+    // Fisher-Yates shuffle algorithm
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    
+    // Re-append cards in new random order
+    cards.forEach(card => compilationsGrid.appendChild(card));
 }
