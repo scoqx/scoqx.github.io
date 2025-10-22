@@ -22,62 +22,112 @@ document.addEventListener('DOMContentLoaded', function() {
 // Clear cache function
 async function clearCache() {
     try {
-        console.log('🧹 Clearing cache...');
+        console.log('🚀 Enhanced Cache Clear Service started');
         
         // Set flag to prevent infinite loop
         sessionStorage.setItem('cache_clearing', 'true');
         
-        // Clear service worker cache
+        // Show working status
+        showMessage('Initializing complete cache cleanup...', 'working');
+        
+        // Step 1: Clear Service Worker cache
+        console.log('🧹 Clearing Service Worker cache...');
         if ('caches' in window) {
             const cacheNames = await caches.keys();
-            await Promise.all(
-                cacheNames.map(cacheName => caches.delete(cacheName))
-            );
+            await Promise.all(cacheNames.map(cacheName => caches.delete(cacheName)));
             console.log('✅ Service Worker cache cleared');
         }
+        await delay(500);
         
-        // Clear localStorage
+        // Step 2: Clear localStorage
+        console.log('🗄️ Clearing localStorage...');
         localStorage.clear();
-        console.log('✅ LocalStorage cleared');
+        console.log('✅ localStorage cleared');
+        await delay(500);
         
-        // Clear sessionStorage (but keep our flag for now)
+        // Step 3: Clear sessionStorage
+        console.log('💾 Clearing sessionStorage...');
         const cacheClearingFlag = sessionStorage.getItem('cache_clearing');
         sessionStorage.clear();
         sessionStorage.setItem('cache_clearing', cacheClearingFlag);
-        console.log('✅ SessionStorage cleared');
+        console.log('✅ sessionStorage cleared');
+        await delay(500);
         
-        // Clear IndexedDB if available
+        // Step 4: Clear IndexedDB
+        console.log('🗃️ Clearing IndexedDB...');
         if ('indexedDB' in window) {
             try {
                 const databases = await indexedDB.databases();
-                await Promise.all(
-                    databases.map(db => {
-                        return new Promise((resolve, reject) => {
-                            const deleteReq = indexedDB.deleteDatabase(db.name);
-                            deleteReq.onsuccess = () => resolve();
-                            deleteReq.onerror = () => reject(deleteReq.error);
-                        });
-                    })
-                );
+                await Promise.all(databases.map(db => {
+                    return new Promise((resolve, reject) => {
+                        const deleteReq = indexedDB.deleteDatabase(db.name);
+                        deleteReq.onsuccess = () => resolve();
+                        deleteReq.onerror = () => reject(deleteReq.error);
+                    });
+                }));
                 console.log('✅ IndexedDB cleared');
             } catch (e) {
-                console.log('⚠️ IndexedDB clear failed:', e);
+                console.log('⚠️ IndexedDB clearing failed:', e);
             }
         }
+        await delay(500);
         
-        // Show success message
-        showMessage('Cache cleared successfully! Page will reload...', 'success');
+        // Step 5: Clear domain-specific data
+        console.log('🌐 Clearing domain-specific data...');
         
-        // Force reload with cache busting (without nocache parameter to avoid loop)
+        // Clear all cookies for the domain
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Clear any domain-specific storage
+        try {
+            // Clear all possible storage keys related to scoqx.github.io
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('osp2') || key.includes('scoqx') || key.includes('thumbnail'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            // Clear any cached data in memory
+            if (window.thumbnailOptimizer) {
+                window.thumbnailOptimizer.clearCache();
+            }
+            
+            console.log('✅ Domain-specific data cleared');
+        } catch (e) {
+            console.log('⚠️ Domain-specific clearing failed:', e);
+        }
+        await delay(500);
+        
+        // Step 6: Unregister Service Workers
+        console.log('⚙️ Unregistering Service Workers...');
+        if ('serviceWorker' in navigator) {
+            try {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                await Promise.all(registrations.map(registration => registration.unregister()));
+                console.log('✅ Service Workers unregistered');
+            } catch (e) {
+                console.log('⚠️ Service Worker unregistration failed:', e);
+            }
+        }
+        await delay(500);
+        
+        // Step 7: Redirect to updated page
+        console.log('🔄 Redirecting to updated page...');
+        showMessage('Cache cleared successfully! Redirecting...', 'success');
+        
         setTimeout(() => {
             const timestamp = new Date().getTime();
-            const currentUrl = window.location.href.split('?')[0];
-            window.location.href = currentUrl + '?v=' + timestamp + '&cleared=1';
-        }, 1500);
+            window.location.href = `/en/index.html?nocache=1&v=${timestamp}&cleared=1`;
+        }, 2000);
         
     } catch (error) {
-        console.error('Error clearing cache:', error);
-        showMessage('Error clearing cache: ' + error.message, 'error');
+        console.error('❌ Enhanced cache clearing failed:', error);
+        showMessage('Cache clearing failed: ' + error.message, 'error');
         // Clear the flag on error
         sessionStorage.removeItem('cache_clearing');
     }
@@ -113,9 +163,12 @@ function showMessage(message, type = 'info') {
     
     // Set background color based on type
     if (type === 'success') {
-        messageEl.style.backgroundColor = '#4caf50';
+        messageEl.style.backgroundColor = '#ffffff';
+        messageEl.style.color = '#000000';
     } else if (type === 'error') {
         messageEl.style.backgroundColor = '#f44336';
+    } else if (type === 'working') {
+        messageEl.style.backgroundColor = '#666666';
     } else {
         messageEl.style.backgroundColor = '#2196f3';
     }
@@ -249,4 +302,9 @@ async function loadVersion() {
         console.error('Error loading version:', error);
         // Keep default version if loading fails
     }
+}
+
+// Helper function for delays
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
