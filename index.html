@@ -9,7 +9,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script>
-        // Clear cache and redirect to English version
+        // Clear cache
         if ('caches' in window) {
             caches.keys().then(function(names) {
                 for (let name of names) {
@@ -18,15 +18,23 @@
             });
         }
         
-        // Force redirect with cache busting
+        // Check saved language preference
+        const savedLang = localStorage.getItem('preferredLanguage');
         const timestamp = new Date().getTime();
-        window.location.replace('/en/index.html?v=' + timestamp);
+        
+        // Redirect to saved language or default to English
+        if (savedLang === 'ru') {
+            window.location.replace('/ru/index.html?v=' + timestamp);
+        } else {
+            window.location.replace('/en/index.html?v=' + timestamp);
+        }
     </script>
 </head>
 <body>
-    <p>Redirecting to English version...</p>
+    <p>Redirecting... / Перенаправление...</p>
     <noscript>
         <p>Please enable JavaScript or go to <a href="/en/index.html">English version</a> or <a href="/ru/index.html">Russian version</a></p>
+        <p>Пожалуйста, включите JavaScript или перейдите на <a href="/en/index.html">английскую версию</a> или <a href="/ru/index.html">русскую версию</a></p>
     </noscript>
 </body>
 </html>
