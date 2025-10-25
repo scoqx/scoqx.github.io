@@ -68,6 +68,10 @@
                         <a href="https://t.me/q3_osp2" target="_blank" rel="noopener noreferrer">OSP2 Chat</a>
                         - <a href="https://t.me/osp2be" target="_blank" rel="noopener noreferrer">OSP2-BE News</a>
                     </div>
+                    <div class="contact-row">
+                        <img src="/assets/coin.png" alt="Coin icon" style="width: 20px; height: 20px; object-fit: contain;" />
+                        <strong><a href="#" onclick="openSupportModal(); return false;" class="donate-link">Support the Project</a></strong>
+                    </div>
                 </div>
             </div>
 
@@ -100,24 +104,6 @@
             </div>
         </section>
 
-        <!-- Support Section -->
-        <div class="support-section-links">
-            <h3>Support the Project</h3>
-            <div class="support-links">
-                <div class="support-link-item">
-                    <button type="button" id="openCardModal">RU Bank Card</button>
-                </div>
-                <div class="support-link-item">
-                    <a href="https://donatty.com/diwoc" target="_blank" rel="noopener noreferrer">Donatty</a>
-                </div>
-                <div class="support-link-item">
-                    <button type="button" id="openDonationModal">DonationAlerts</button>
-                </div>
-                <div class="support-link-item">
-                    <button type="button" id="openCryptoModal">Crypto</button>
-                </div>
-            </div>
-        </div>
 
         <!-- Модальное окно DonationAlerts -->
         <div class="donation-modal" id="donationModal">
@@ -206,6 +192,28 @@
     <script src="/scripts/navigation.js?v=1.3"></script>
     <script src="/scripts/index.js?v=1.3"></script>
     <script src="/scripts/support-modal.js?v=1.3"></script>
+    
+    <!-- Главное модальное окно поддержки -->
+    <div class="donation-modal" id="supportModal">
+        <div class="donation-modal-content">
+            <button class="donation-modal-close" id="closeSupportModal">&times;</button>
+            <h3>Support the Project</h3>
+            <div class="support-links">
+                <div class="support-link-item">
+                    <button type="button" id="openCardModal">RU Bank Card</button>
+                </div>
+                <div class="support-link-item">
+                    <a href="https://donatty.com/diwoc" target="_blank" rel="noopener noreferrer">Donatty</a>
+                </div>
+                <div class="support-link-item">
+                    <button type="button" id="openDonationModal">DonationAlerts</button>
+                </div>
+                <div class="support-link-item">
+                    <button type="button" id="openCryptoModal">Crypto</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Simple Analytics - 100% privacy-first analytics -->
     <script async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>

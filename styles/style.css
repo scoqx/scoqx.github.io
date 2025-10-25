@@ -294,14 +294,45 @@ body[data-page="index"] .logo-link {
   object-fit: contain;
 }
 
-.contact-info .contact-row a {
-  color: var(--text-color);
+
+/* Общий стиль для всех ссылок на главной странице */
+.contact-info .contact-row a,
+.donate-link {
+    color: var(--text-color);
     text-decoration: underline;
+    cursor: pointer;
 }
 
-.contact-info .contact-row a:hover {
-    color: #00ff00;
+.contact-info .contact-row a:hover,
+.donate-link:hover {
+    color: #000000;
+    text-shadow: 0 0 8px #ffffff;
+    text-decoration: none;
 }
+
+.donate-button {
+    background: var(--button-bg);
+    color: var(--button-text);
+    padding: calc(var(--spacing-sm) * 0.3) calc(var(--spacing-md) * 0.3);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.donate-button:hover {
+    background: var(--border-color);
+    color: var(--primary-bg);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.5);
+}
+
 
 /* ==========================================================================
    Download Section
@@ -476,6 +507,107 @@ body[data-page="index"] .logo-link {
    Commands Page
    ========================================================================== */
 
+/* Search Section */
+.search-section {
+    margin-bottom: var(--spacing-xl);
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-large);
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 60px;
+    background: var(--primary-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.search-container:focus-within {
+    border-color: var(--text-color);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+.search-icon {
+    width: 20px;
+    height: 20px;
+    margin: 0 var(--spacing-md);
+    opacity: 0.7;
+    object-fit: contain;
+}
+
+.search-input {
+    flex: 1;
+    height: 100%;
+    padding: 0;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--text-color);
+    border: none;
+    outline: none;
+    font-family: inherit;
+}
+
+.search-input::placeholder {
+    color: var(--text-color);
+    opacity: 0.5;
+}
+
+.clear-search-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: var(--spacing-sm);
+    margin-right: var(--spacing-sm);
+    border-radius: 50%;
+    transition: var(--transition);
+    opacity: 0.7;
+}
+
+.clear-search-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.search-stats {
+    text-align: center;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+/* Hidden command blocks */
+.command-block.hidden {
+    display: none;
+}
+
+/* Search highlight */
+.search-highlight {
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: bold;
+    padding: 0;
+    border-radius: 2px;
+}
+
+/* Browser text selection */
+::selection {
+    background-color: #ffffff;
+    color: #000000;
+}
+
+::-moz-selection {
+    background-color: #ffffff;
+    color: #000000;
+}
+
 .commands-container {
     max-width: 1400px;
     margin: 0 auto;
@@ -524,6 +656,20 @@ body[data-page="index"] .logo-link {
 .command-description {
   grid-column: 3;
   position: relative;
+  cursor: pointer;
+}
+
+.command-block {
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.command-block:hover:not(:has(.command-name:hover)) {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
 }
 
 /* Мобильная версия команд без умного отступа */

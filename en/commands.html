@@ -45,6 +45,18 @@
     <!-- Main Content -->
     <main class="main-content">
         <div class="commands-container">
+            <!-- Search Section -->
+            <div class="search-section">
+                <div class="search-container">
+                    <img src="/assets/search.png" alt="Search" class="search-icon">
+                    <input type="text" id="command-search" class="search-input" placeholder="Search commands...">
+                    <button id="clear-search" class="clear-search-btn" title="Clear search">×</button>
+                </div>
+                <div class="search-stats">
+                    <span id="search-results-count">Total commands: 0</span>
+                </div>
+            </div>
+            
             <div id="commands-content" class="commands-content">
                 <!-- Commands content will be loaded here -->
             </div>

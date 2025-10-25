@@ -209,30 +209,73 @@ async function loadConfig() {
   // Выводим статистику в консоль
   console.log(`Всего команд: ${entries.length}`);
   console.log(`Максимальная ширина: ${maxCommandWidth.toFixed(2)}px`);
+  
+  // Инициализируем поиск
+  initializeSearch(entries);
 
   // Клик по имени команды — копирование команды (с аргументом если есть)
+  // Клик по блоку команды — копирование всей строки
   const container = document.getElementById('commands-content');
   container.addEventListener('click', (e) => {
     const codeEl = e.target.closest('code.command-name');
-    if (!codeEl) return;
-    const line = codeEl.closest('.command-line');
-    if (!line) return;
-    const nameText = codeEl.textContent.trim(); // копируем только команду
-    try {
-      navigator.clipboard.writeText(nameText);
-    } catch (_) {
-      const ta = document.createElement('textarea');
-      ta.value = nameText;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+    const commandBlock = e.target.closest('.command-block');
+    
+    if (codeEl) {
+      // Клик по имени команды - копируем только команду
+      const line = codeEl.closest('.command-line');
+      if (!line) return;
+      const nameText = codeEl.textContent.trim();
+      try {
+        navigator.clipboard.writeText(nameText);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = nameText;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      // Визуальная обратная связь
+      codeEl.classList.add('copied-flash');
+      setTimeout(() => { codeEl.classList.remove('copied-flash'); }, 250);
+    } else if (commandBlock) {
+      // Клик по блоку команды - копируем всю строку
+      const line = commandBlock.querySelector('.command-line');
+      if (!line) return;
+      
+      // Собираем всю строку: команда + значение + описание
+      const commandName = line.querySelector('code.command-name')?.textContent.trim() || '';
+      const commandArg = line.querySelector('code.command-arg')?.textContent.trim() || '';
+      const description = line.querySelector('.command-description')?.textContent.trim() || '';
+      
+      let fullText = commandName;
+      if (commandArg) {
+        fullText += ' ' + commandArg;
+      }
+      if (description) {
+        fullText += ' // ' + description;
+      }
+      
+      try {
+        navigator.clipboard.writeText(fullText);
+      } catch (_) {
+        const ta = document.createElement('textarea');
+        ta.value = fullText;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      // Визуальная обратная связь
+      commandBlock.classList.add('copied-flash');
+      setTimeout(() => { commandBlock.classList.remove('copied-flash'); }, 250);
+    } else {
+      return;
     }
-    // Визуальная обратная связь: краткая подсветка и тост у курсора
-    codeEl.classList.add('copied-flash');
-    setTimeout(() => { codeEl.classList.remove('copied-flash'); }, 250);
 
     const toast = document.createElement('div');
     toast.className = 'copy-toast';
@@ -245,6 +288,114 @@ async function loadConfig() {
     document.body.appendChild(toast);
     setTimeout(() => { if (toast && toast.parentNode) toast.parentNode.removeChild(toast); }, 800);
   });
+}
+
+// Функция инициализации поиска
+function initializeSearch(entries) {
+  const searchInput = document.getElementById('command-search');
+  const clearBtn = document.getElementById('clear-search');
+  const resultsCount = document.getElementById('search-results-count');
+  
+  if (!searchInput || !clearBtn || !resultsCount) return;
+  
+  // Обновляем счетчик результатов
+  function updateResultsCount(visibleCount, totalCount) {
+    const isRussian = document.documentElement.lang === 'ru';
+    if (isRussian) {
+      resultsCount.textContent = `Найдено: ${visibleCount} из ${totalCount} команд`;
+    } else {
+      resultsCount.textContent = `Found: ${visibleCount} of ${totalCount} commands`;
+    }
+  }
+  
+  // Функция подсветки текста
+  function highlightText(element, query) {
+    if (!query || !element) return;
+    
+    const text = element.textContent;
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    const highlightedText = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+    
+    if (highlightedText !== text) {
+      element.innerHTML = highlightedText;
+    }
+  }
+  
+  // Функция очистки подсветки
+  function clearHighlight(element) {
+    if (!element) return;
+    
+    const marks = element.querySelectorAll('mark.search-highlight');
+    marks.forEach(mark => {
+      mark.outerHTML = mark.textContent;
+    });
+  }
+  
+  // Функция поиска
+  function performSearch() {
+    const query = searchInput.value.toLowerCase().trim();
+    const commandBlocks = document.querySelectorAll('.command-block');
+    let visibleCount = 0;
+    
+    if (query === '') {
+      // Показываем все команды и очищаем подсветку
+      commandBlocks.forEach(block => {
+        block.classList.remove('hidden');
+        visibleCount++;
+        
+        // Очищаем подсветку
+        const commandName = block.querySelector('code.command-name');
+        const commandArg = block.querySelector('code.command-arg');
+        const description = block.querySelector('.command-description');
+        
+        if (commandName) clearHighlight(commandName);
+        if (commandArg) clearHighlight(commandArg);
+        if (description) clearHighlight(description);
+      });
+    } else {
+      // Ищем по запросу и подсвечиваем
+      commandBlocks.forEach(block => {
+        const commandName = block.querySelector('code.command-name');
+        const commandArg = block.querySelector('code.command-arg');
+        const description = block.querySelector('.command-description');
+        
+        const commandNameText = commandName?.textContent.toLowerCase() || '';
+        const commandArgText = commandArg?.textContent.toLowerCase() || '';
+        const descriptionText = description?.textContent.toLowerCase() || '';
+        
+        // Поиск в любом месте (неточный поиск)
+        const searchText = `${commandNameText} ${commandArgText} ${descriptionText}`;
+        const isMatch = searchText.includes(query);
+        
+        if (isMatch) {
+          block.classList.remove('hidden');
+          visibleCount++;
+          
+          // Подсвечиваем найденный текст
+          if (commandName) highlightText(commandName, query);
+          if (commandArg) highlightText(commandArg, query);
+          if (description) highlightText(description, query);
+        } else {
+          block.classList.add('hidden');
+        }
+      });
+    }
+    
+    updateResultsCount(visibleCount, entries.length);
+  }
+  
+  // Обработчики событий
+  searchInput.addEventListener('input', performSearch);
+  searchInput.addEventListener('keyup', performSearch);
+  
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    performSearch();
+    searchInput.focus();
+  });
+  
+  // Инициализация
+  updateResultsCount(entries.length, entries.length);
 }
 
 // Экспортируем функции в глобальную область видимости
