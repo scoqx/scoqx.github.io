@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Real QVM xstats1 Test v0.047 ✅ Version Fix!</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #0f0;
+            padding: 10px;
+            margin: 0;
+        }
+        
+        h1 {
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+        }
+        
+        .panel {
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .panel h2 {
+            color: #ff0;
+            margin-top: 0;
+        }
+        
+        button {
+            background: #0a0;
+            color: #000;
+            border: 2px solid #0f0;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        
+        button:hover {
+            background: #0f0;
+            box-shadow: 0 0 15px #0f0;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px;
+            font-weight: bold;
+        }
+        
+        .status.ok {
+            background: #0a0;
+            color: #000;
+        }
+        
+        .status.error {
+            background: #a00;
+            color: #fff;
+        }
+        
+        .status.pending {
+            background: #aa0;
+            color: #000;
+        }
+        
+        #console {
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-size: 11px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        
+        .log {
+            margin: 3px 0;
+            padding: 3px 5px;
+        }
+        
+        .log-server { color: #0ff; }
+        .log-bridge { color: #f0f; }
+        .log-qvm { color: #ff0; }
+        .log-success { color: #0f0; font-weight: bold; }
+        .log-error { color: #f00; font-weight: bold; }
+        .log-info { color: #888; }
+        
+        .big-button {
+            width: 100%;
+            padding: 20px;
+            font-size: 18px;
+        }
+        
+        .info-box {
+            background: rgba(0, 50, 100, 0.2);
+            border-left: 4px solid #0ff;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        #q3console {
+            background: #000;
+            border: 2px solid #0a0;
+            padding: 8px;
+            height: 350px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: #0f0;
+            margin-top: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        #cmdInput {
+            width: calc(100% - 100px);
+            background: #000;
+            border: 2px solid #0a0;
+            color: #0f0;
+            padding: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        #sendCmdBtn {
+            width: 90px;
+            padding: 8px;
+            margin-left: 5px;
+        }
+        
+        #q3console::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #q3console::-webkit-scrollbar-track {
+            background: #000;
+        }
+        
+        #q3console::-webkit-scrollbar-thumb {
+            background: #0a0;
+            border-radius: 4px;
+        }
+        
+        .q3-line {
+            margin: 1px 0;
+            padding: 1px 0;
+        }
+        
+        .q3-init { color: #0ff; }
+        .q3-warning { color: #ff0; }
+        .q3-error { color: #f00; }
+        .q3-command { color: #f0f; }
+    </style>
+</head>
+<body>
+    <h1 style="margin: 10px 0;">🎮 Real QVM xstats1 Test</h1>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- Левая колонка: Canvas и управление -->
+        <div>
+            <div class="panel" style="padding: 8px; margin: 5px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                    <div><strong>QVM:</strong> <span id="qvmStatus" class="status pending">-</span></div>
+                    <div><strong>Снапшоты:</strong> <span id="snapshotStatus" style="font-size: 11px; color: #666;">-</span></div>
+                </div>
+            </div>
+            
+            <div class="panel" style="padding: 10px; margin: 5px 0;">
+                <button onclick="initAndStartQ3VMClient()" style="background: #0a0; font-size: 13px; padding: 8px 16px; width: 100%;">🎮 ЗАПУСТИТЬ QVM</button>
+                <canvas id="clientCanvas" width="640" height="480" style="width: 100%; max-height: 360px; border: 2px solid #0f0; display: block; margin: 8px 0; background: #000;"></canvas>
+            </div>
+        </div>
+        
+        <!-- Правая колонка: Консоль и тесты -->
+        <div>
+            <div class="panel" style="padding: 10px; margin: 5px 0;">
+                <h3 style="margin: 0 0 8px 0; font-size: 14px;">📤 Команды</h3>
+                <div style="margin-bottom: 8px;">
+                    <input type="text" id="cmdInput" placeholder='Команда (например: cp "Hello!")'/>
+                    <button id="sendCmdBtn" onclick="sendCustomCommand()">Отправить</button>
+                </div>
+                <button onclick="testSimpleCommand()" style="width: 48%; padding: 8px; margin: 2px; font-size: 12px;">🧪 Test CP</button>
+                <button onclick="runFullTest()" style="width: 48%; padding: 8px; margin: 2px; font-size: 12px;">▶️ XSTATS1</button>
+            </div>
+            
+            <div class="panel" style="padding: 10px; margin: 5px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                    <h3 style="margin: 0; font-size: 14px;">🎮 Q3 Console</h3>
+                    <button onclick="clearQ3Console()" style="padding: 4px 8px; font-size: 11px;">🗑️</button>
+                </div>
+                <div id="q3console"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JSZip для загрузки PK3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Q3VM WASM (приоритет) - 33x быстрее! -->
+    <script src="modules/q3vm-wasm.js?v=1.0.0"></script>
+    <script src="modules/q3vm-wasm-wrapper.js?v=1.0.5"></script>
+    
+    <!-- Q3VM JS Интерпретатор (fallback) -->
+    <script src="modules/q3vm-core.js?v=1.0.0"></script>
+    
+    <!-- Загрузка модулей -->
+    <script src="modules/q3-server-emulator.js?v=0.047"></script>
+    <script src="modules/q3vm-syscalls.js?v=0.047"></script>
+    <script src="modules/server-qvm-bridge.js?v=0.047"></script>
+    
+    <!-- Q3VM Client модули -->
+    <script src="modules/q3vm-loader.js?v=0.047"></script>
+    <script src="modules/q3vm-client-integration-v2.js?v=0.047"></script>
+    
+    <script>
+        let lastSnapshotCount = 0;
+        let q3consoleDiv = document.getElementById('q3console');
+        
+        // Логирование снапшотов в интерфейс
+        window.logSnapshot = function(message) {
+            lastSnapshotCount++;
+            const snapshotStatus = document.getElementById('snapshotStatus');
+            if (snapshotStatus) {
+                snapshotStatus.textContent = `#${lastSnapshotCount}`;
+                snapshotStatus.style.color = '#0f0';
+            }
+        };
+        
+        // Вывод в Q3 консоль
+        window.q3Print = function(text) {
+            if (!q3consoleDiv) {
+                q3consoleDiv = document.getElementById('q3console');
+            }
+            const line = document.createElement('div');
+            line.className = 'q3-line';
+            line.textContent = text;
+            q3consoleDiv.appendChild(line);
+            q3consoleDiv.scrollTop = q3consoleDiv.scrollHeight;
+        };
+        
+        // Очистка Q3 консоли
+        window.clearQ3Console = function() {
+            if (!q3consoleDiv) {
+                q3consoleDiv = document.getElementById('q3console');
+            }
+            q3consoleDiv.innerHTML = '';
+            window.q3Print('╔════════════════════════════════════════════════════════════╗');
+            window.q3Print('║       Q3 CONSOLE - QVM Output Display                     ║');
+            window.q3Print('╚════════════════════════════════════════════════════════════╝');
+            window.q3Print('');
+        };
+        
+        // Заглушка для log() (для обратной совместимости)
+        function log(message, className) {
+            // Не выводим, так как debug консоль удалена
+        }
+        
+        function setStatus(elementId, text, type) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.textContent = text;
+                el.className = `status ${type}`;
+            }
+        }
+        
+        function checkStatus() {
+            log('🔍 Проверка статуса компонентов...', 'log-info');
+            
+            // Server Emulator
+            if (window.serverEmulator) {
+                setStatus('serverStatus', 'Готов', 'ok');
+                log('✓ Server Emulator найден', 'log-success');
+            } else {
+                setStatus('serverStatus', 'Не найден', 'error');
+                log('✗ Server Emulator не найден', 'log-error');
+            }
+            
+            // QVM Syscalls
+            if (window.qvmSyscalls) {
+                setStatus('syscallsStatus', 'Готов', 'ok');
+                log('✓ QVM Syscalls найден', 'log-success');
+                
+                // Проверка наличия addServerCommand
+                if (typeof window.qvmSyscalls.addServerCommand === 'function') {
+                    log('  ✓ addServerCommand() доступен', 'log-success');
+                } else {
+                    log('  ✗ addServerCommand() не найден', 'log-error');
+                }
+            } else {
+                setStatus('syscallsStatus', 'Не найден', 'error');
+                log('✗ QVM Syscalls не найден', 'log-error');
+                log('  Инициализируйте QVM клиент сначала', 'log-info');
+            }
+            
+            // QVM Client
+            if (window.cgameVM) {
+                setStatus('qvmStatus', 'Загружен', 'ok');
+                log('✓ QVM Client найден', 'log-success');
+            } else {
+                setStatus('qvmStatus', 'Не загружен', 'error');
+                log('✗ QVM Client не найден', 'log-error');
+            }
+            
+            // Bridge
+            if (window.serverQVMBridge && window.serverQVMBridge.isConnected) {
+                setStatus('bridgeStatus', 'Подключен', 'ok');
+                log('✓ Мост подключен', 'log-success');
+            } else {
+                setStatus('bridgeStatus', 'Не подключен', 'error');
+                log('✗ Мост не подключен', 'log-error');
+            }
+        }
+        
+        function connectBridge() {
+            log('🔗 Попытка подключить мост...', 'log-bridge');
+            
+            if (window.connectServerToQVM) {
+                const result = window.connectServerToQVM();
+                if (result) {
+                    log('✓ Мост успешно подключен!', 'log-success');
+                    setStatus('bridgeStatus', 'Подключен', 'ok');
+                } else {
+                    log('✗ Не удалось подключить мост', 'log-error');
+                }
+            } else {
+                log('✗ connectServerToQVM() не найден', 'log-error');
+            }
+            
+            checkStatus();
+        }
+        
+        // Глобальный сервер (как в superhud-tools)
+        window.globalQ3Server = null;
+        
+        // Инициализация и запуск Q3VM клиента
+        window.initAndStartQ3VMClient = async function() {
+            const canvas = document.getElementById('clientCanvas');
+            
+            if (!canvas) {
+                log('✗ Canvas не найден!', 'log-error');
+                return;
+            }
+            
+            try {
+                log('⚙️ Инициализация Q3VM клиента...', 'log-info');
+                
+                // Создаем сервер если нет (но НЕ запускаем!)
+                if (!window.globalQ3Server) {
+                    log('  Создание сервера...', 'log-info');
+                    window.globalQ3Server = window.serverEmulator;
+                }
+                
+                // Добавляем игрока (проверяем каждый раз)
+                if (!globalQ3Server.players.has(0)) {
+                    log('  Добавление игрока TestWarrior...', 'log-info');
+                    globalQ3Server.addPlayer(0, 'TestWarrior');
+                }
+                
+                // ВАЖНО: connectClient теперь вызывается ВНУТРИ createQ3VMClientV2 ДО инициализации QVM
+                // Это нужно чтобы configstrings были отправлены до того, как CG_Init вызовет trap_GetGameState
+                // Не нужно вызывать connectClient здесь!
+                
+                log('  Загрузка Q3VM...', 'log-qvm');
+                setStatus('qvmStatus', 'Загрузка...', 'pending');
+                
+                // Создаем Q3VM клиент (из q3vm-client-integration-v2.js)
+                // Внутри createQ3VMClientV2:
+                //   1. Создается клиент (устанавливается callback)
+                //   2. Вызывается connectClient (отправляются configstrings)
+                //   3. Вызывается initialize() (CG_Init получает configstrings)
+                const q3vmClient = await createQ3VMClientV2(canvas, globalQ3Server);
+                
+                if (!q3vmClient) {
+                    throw new Error('Не удалось создать Q3VM клиент');
+                }
+                
+                log('  ✓ Q3VM клиент создан', 'log-success');
+                
+                // Сохраняем глобально для других функций
+                window.cgameVM = q3vmClient.vm;
+                window.qvmSyscalls = q3vmClient.syscallHandler;  // ← Правильное имя поля!
+                window.q3vmClient = q3vmClient;
+                
+                // Проверяем syscalls
+                if (!q3vmClient.syscallHandler) {
+                    throw new Error('Syscalls не инициализированы в QVM клиенте');
+                }
+                log('  ✓ Syscalls инициализированы', 'log-success');
+                
+                // Подключаем мост ПЕРЕД запуском сервера!
+                if (window.serverQVMBridge) {
+                    const bridgeResult = window.serverQVMBridge.connect(globalQ3Server, q3vmClient.syscallHandler);
+                    if (bridgeResult) {
+                        setStatus('bridgeStatus', 'Подключен', 'ok');
+                        log('  ✓ Мост подключен', 'log-success');
+                    }
+                } else {
+                    log('  ⚠️ serverQVMBridge не найден', 'log-warning');
+                }
+                
+                // ТЕПЕРЬ запускаем сервер (callback уже установлен!)
+                if (!globalQ3Server.isRunning) {
+                    log('  Запуск сервера с интервалом 1000ms (1 снапшот/сек)...', 'log-info');
+                    globalQ3Server.start(1000); // 1 секунда между снапшотами
+                }
+                
+                const clientStatus = q3vmClient.getStatus();
+                log(`  ✓ Тип VM: ${clientStatus.vmType ? clientStatus.vmType.toUpperCase() : 'Unknown'}`, 'log-success');
+                
+                // Запускаем рендеринг
+                q3vmClient.startRendering();
+                
+                const vmTypeEmoji = clientStatus.vmType === 'wasm' ? '🚀' : '🐌';
+                setStatus('qvmStatus', `${vmTypeEmoji} ${clientStatus.vmType ? clientStatus.vmType.toUpperCase() : ''} работает`, 'ok');
+                setStatus('syscallsStatus', 'Готов', 'ok');
+                setStatus('serverStatus', 'Работает', 'ok');
+                
+                log('✅ Все системы готовы! Можно тестировать xstats1', 'log-success');
+                log(`  window.qvmSyscalls = ${window.qvmSyscalls ? '✓ установлен' : '✗ null'}`, 'log-info');
+                log(`  window.cgameVM = ${window.cgameVM ? '✓ установлен' : '✗ null'}`, 'log-info');
+                
+            } catch (error) {
+                log(`✗ Ошибка: ${error.message}`, 'log-error');
+                setStatus('qvmStatus', 'Ошибка', 'error');
+                console.error('[Q3VM] Ошибка:', error);
+            }
+        }
+        
+        // Вызов реального QVM для обработки команды
+        function callRealQVM() {
+            if (!window.qvmSyscalls) {
+                log('✗ QVM Syscalls не найден', 'log-error');
+                return;
+            }
+            
+            if (!window.cgameVM || !window.cgameVM.vmMain) {
+                log('⚠️ Реальный QVM не загружен', 'log-info');
+                log('   Syscalls готовы - команда добавлена в очередь', 'log-info');
+                log('   Когда QVM загрузится, он сможет получить команду через:', 'log-info');
+                log('   → trap_GetServerCommand()', 'log-info');
+                log('   → trap_Argc() / trap_Argv()', 'log-info');
+                log('   → CG_Printf() для вывода (trap_Print)', 'log-info');
+                log('\n<strong>💡 Для вызова обработки в QVM используй:</strong>', 'log-info');
+                log('   <code>triggerQVMServerCommand()</code> - вызовет CG_ExecuteNewServerCommands в QVM', 'log-info');
+                return;
+            }
+            
+            log('\n<strong>[QVM]</strong> 🎮 Вызов реального QVM...', 'log-qvm');
+            
+            const latestSequence = window.qvmSyscalls.serverCommandSequence;
+            
+            log(`<strong>[QVM]</strong> Команда в очереди: sequence=${latestSequence}`, 'log-qvm');
+            log(`<strong>[QVM]</strong> Вызываю обработку серверных команд в QVM...`, 'log-qvm');
+            
+            // Вызываем обработку серверных команд в QVM
+            triggerQVMServerCommand();
+        }
+        
+        // Отправка произвольной команды
+        window.sendCustomCommand = function() {
+            if (!window.qvmSyscalls) {
+                window.q3Print('✗ QVM не запущен. Нажмите "ЗАПУСТИТЬ QVM"');
+                return;
+            }
+            
+            const input = document.getElementById('cmdInput');
+            const cmd = input.value.trim();
+            
+            if (!cmd) {
+                window.q3Print('⚠️ Введите команду');
+                return;
+            }
+            
+            window.q3Print('');
+            window.q3Print('━━━ 📤 Отправка команды ━━━');
+            window.q3Print(`> ${cmd}`);
+            
+            window.qvmSyscalls.addServerCommand(cmd);
+            
+            window.q3Print(`✓ Команда #${window.qvmSyscalls.serverCommandSequence} в очереди`);
+            window.q3Print('━━━━━━━━━━━━━━━━━━━━━━━━━');
+            window.q3Print('');
+            
+            // Очищаем поле ввода
+            input.value = '';
+        };
+        
+        // Enter для отправки
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('cmdInput');
+            if (input) {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendCustomCommand();
+                    }
+                });
+            }
+        });
+        
+        // Простой тест - отправить команду "cp" (center print)
+        window.testSimpleCommand = function() {
+            if (!window.qvmSyscalls) {
+                window.q3Print('✗ QVM не запущен. Нажмите "ЗАПУСТИТЬ QVM"');
+                return;
+            }
+            
+            window.q3Print('');
+            window.q3Print('━━━ 🧪 Тест: cp ━━━');
+            window.qvmSyscalls.addServerCommand('cp "^2Hello from QVM!"');
+            window.q3Print(`✓ Команда #${window.qvmSyscalls.serverCommandSequence}`);
+            window.q3Print('━━━━━━━━━━━━━━━━━━━━━');
+            window.q3Print('');
+        };
+        
+        // Триггер для вызова обработки серверных команд в QVM
+        window.triggerQVMServerCommand = function() {
+            if (!window.q3vmClient) {
+                log('✗ QVM Client не загружен. Сначала нажмите "ЗАПУСТИТЬ Q3VM КЛИЕНТ"', 'log-error');
+                console.error('[QVM] QVM Client не загружен.');
+                return false;
+            }
+            
+            if (!window.qvmSyscalls) {
+                log('✗ QVM Syscalls не найден', 'log-error');
+                console.error('[QVM] QVM Syscalls не найден');
+                return false;
+            }
+            
+            const latestSequence = window.qvmSyscalls.serverCommandSequence;
+            
+            log(`\n<strong>[QVM]</strong> 🎯 Обработка серверных команд (sequence=${latestSequence})...`, 'log-qvm');
+            console.log(`[QVM] Вызов обработки серверных команд (sequence=${latestSequence})...`);
+            
+            // Проверяем есть ли команды в очереди
+            if (latestSequence === 0) {
+                log('⚠️ Нет команд в очереди. Сначала нажмите "ЗАПУСТИТЬ ТЕСТ XSTATS1"', 'log-warning');
+                return false;
+            }
+            
+            try {
+                const serverTime = window.q3vmClient.serverTime || (Date.now() - window.qvmSyscalls.startTime);
+                
+                log(`<strong>[QVM]</strong> 🎯 Вызов CG_DRAW_ACTIVE_FRAME (serverTime=${serverTime})`, 'log-info');
+                log(`  Снапшот содержит: serverCommandSequence=${latestSequence}`, 'log-info');
+                log(`  QVM вызовет CG_ExecuteNewServerCommands(${latestSequence})`, 'log-info');
+                console.log(`[QVM] Вызов: CG_DRAW_ACTIVE_FRAME(${serverTime}, 0)`);
+                
+                // Используем WASM wrapper напрямую
+                let result;
+                if (window.q3vmClient.vm && window.q3vmClient.vm.call) {
+                    // WASM VM - используем wrapper.call(ignored, command, ...args)
+                    // Первый параметр игнорируется, реальная команда в args[0]!
+                    // CG_DRAW_ACTIVE_FRAME = 3, args: serverTime, stereoView
+                    result = window.q3vmClient.vm.call(0, 3, serverTime, 0);
+                    console.log(`[QVM] ✓ WASM VM call выполнен, result=${result}`);
+                } else if (window.cgameVM && window.cgameVM.vmMain) {
+                    // JS VM - используем vmMain
+                    result = window.cgameVM.vmMain(3, serverTime, 0);
+                    console.log(`[QVM] ✓ JS VM call выполнен, result=${result}`);
+                } else {
+                    throw new Error('VM не имеет метода call() или vmMain()');
+                }
+                
+                log(`<strong>[QVM]</strong> ✓ VM call выполнен, result=${result}`, 'log-success');
+                
+                // Проверяем состояние после вызова
+                setTimeout(() => {
+                    log('\n<strong>🔍 Диагностика обработки команды:</strong>', 'log-info');
+                    log(`  Команд в очереди: ${window.qvmSyscalls.serverCommands.length}`, 'log-info');
+                    log(`  Последняя sequence: ${latestSequence}`, 'log-info');
+                    log(`  Текущая команда: ${window.qvmSyscalls.currentCommand ? window.qvmSyscalls.currentCommand.commandString.substring(0, 40) : 'нет'}`, 'log-info');
+                    
+                    const cmd = window.qvmSyscalls.serverCommands.find(c => c.sequence === latestSequence);
+                    if (cmd) {
+                        console.log('[QVM] ✓ Команда найдена в очереди:', cmd.commandString.substring(0, 60));
+                        log(`  Команда в очереди: ${cmd.commandString.substring(0, 40)}...`, 'log-success');
+                    }
+                    
+                    log('\n<strong>💡 Проверьте консоль браузера (F12) для:</strong>', 'log-info');
+                    log('  • [QVM SYSCALL] ✓ GetServerCommand(...) - команда прочитана', 'log-info');
+                    log('  • [QVM Print] ... - вывод из CG_Printf', 'log-info');
+                    log('\n<strong>⚠️ Если этих сообщений нет:</strong>', 'log-warning');
+                    log('  → QVM не вызвал CG_ExecuteNewServerCommands', 'log-warning');
+                    log('  → Возможно cgs.serverCommandSequence уже равен ' + latestSequence, 'log-warning');
+                }, 200);
+                
+                return true;
+            } catch (error) {
+                console.error('[QVM] Ошибка при вызове VM:', error);
+                log(`<strong>[QVM]</strong> ✗ Ошибка: ${error.message}`, 'log-error');
+                return false;
+            }
+        };
+        
+        function runFullTest() {
+            if (!window.qvmSyscalls) {
+                window.q3Print('✗ QVM не запущен');
+                return;
+            }
+            
+            window.q3Print('');
+            window.q3Print('━━━ ▶️ XSTATS1 ━━━');
+            sendXStats1(0, 0);
+            window.q3Print(`✓ Команда #${window.qvmSyscalls.serverCommandSequence}`);
+            window.q3Print('━━━━━━━━━━━━━━━━━━━');
+            window.q3Print('');
+        }
+        
+        
+        // Автоматическая проверка при загрузке
+        window.addEventListener('load', function() {
+            // Приветствие в Q3 консоли
+            window.q3Print('╔════════════════════════════════════════════════════════════╗');
+            window.q3Print('║       Q3 CONSOLE - QVM Output Display                     ║');
+            window.q3Print('╚════════════════════════════════════════════════════════════╝');
+            window.q3Print('');
+            window.q3Print('Waiting for QVM initialization...');
+            window.q3Print('');
+            
+            // Создаем сервер сразу
+            window.globalQ3Server = window.serverEmulator;
+        });
+    </script>
+</body>
+</html>
+

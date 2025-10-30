@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест xstats1 команды - Q3 Server Emulator</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+        }
+        
+        .section {
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        
+        .section h2 {
+            color: #ff0;
+            margin-top: 0;
+        }
+        
+        button {
+            background: #0a0;
+            color: #000;
+            border: 2px solid #0f0;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #0f0;
+            box-shadow: 0 0 10px #0f0;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        button:disabled {
+            background: #333;
+            color: #666;
+            border-color: #666;
+            cursor: not-allowed;
+        }
+        
+        #console {
+            background: #000;
+            border: 2px solid #0f0;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 5px;
+        }
+        
+        .log-server {
+            color: #0ff;
+        }
+        
+        .log-client {
+            color: #f0f;
+        }
+        
+        .log-xstats {
+            color: #ff0;
+        }
+        
+        .log-info {
+            color: #0f0;
+        }
+        
+        .log-error {
+            color: #f00;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status.online {
+            background: #0a0;
+            color: #000;
+        }
+        
+        .status.offline {
+            background: #a00;
+            color: #fff;
+        }
+        
+        input, select {
+            background: #000;
+            color: #0f0;
+            border: 2px solid #0f0;
+            padding: 5px 10px;
+            font-family: inherit;
+            margin: 5px;
+        }
+        
+        .info-box {
+            background: #002200;
+            border-left: 4px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Тест xstats1 команды</h1>
+    
+    <div class="section">
+        <h2>📊 Статус эмулятора</h2>
+        <div>
+            <strong>Эмулятор:</strong> 
+            <span class="status online" id="emulatorStatus">Инициализация...</span>
+        </div>
+        <div id="playersInfo">
+            <strong>Игроки:</strong> 0
+        </div>
+        <div id="clientsInfo">
+            <strong>Подключенные клиенты:</strong> 0
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🎯 Быстрый тест</h2>
+        <div class="info-box">
+            Этот тест автоматически:
+            <ol style="margin: 5px 0;">
+                <li>Добавит игрока "TestPlayer" (ID: 0)</li>
+                <li>Подключит клиента 0</li>
+                <li>Отправит команду xstats1</li>
+            </ol>
+        </div>
+        <button onclick="quickTest()" id="quickTestBtn">▶️ Запустить быстрый тест</button>
+    </div>
+    
+    <div class="section">
+        <h2>🎮 Управление игроками</h2>
+        <div>
+            <input type="number" id="playerId" placeholder="Player ID" value="0" min="0" max="31">
+            <input type="text" id="playerName" placeholder="Player Name" value="TestPlayer">
+            <button onclick="addPlayer()">➕ Добавить игрока</button>
+        </div>
+        <div>
+            <input type="number" id="clientId" placeholder="Client ID" value="0" min="0" max="31">
+            <button onclick="connectClient()">🔗 Подключить клиента</button>
+            <button onclick="disconnectClient()">❌ Отключить клиента</button>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📤 Отправка команд</h2>
+        <div>
+            <strong>xstats1:</strong><br>
+            <select id="targetClientId">
+                <option value="0">Player 0</option>
+                <option value="1">Player 1</option>
+                <option value="2">Player 2</option>
+            </select>
+            →
+            <select id="requestingClientId">
+                <option value="0">Client 0</option>
+                <option value="1">Client 1</option>
+                <option value="2">Client 2</option>
+                <option value="-1">Всем клиентам</option>
+            </select>
+            <button onclick="sendXStats1Cmd()">📊 Отправить xstats1</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <strong>Произвольная команда:</strong><br>
+            <input type="text" id="customCommand" placeholder='print "Hello"' style="width: 300px;">
+            <select id="customClientId">
+                <option value="0">Client 0</option>
+                <option value="1">Client 1</option>
+                <option value="-1">Всем клиентам</option>
+            </select>
+            <button onclick="sendCustomCommand()">📨 Отправить</button>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>📜 История команд</h2>
+        <button onclick="showCommandHistory()">📋 Показать историю</button>
+        <button onclick="clearConsole()">🗑️ Очистить консоль</button>
+    </div>
+    
+    <div class="section">
+        <h2>💻 Консоль</h2>
+        <div id="console"></div>
+    </div>
+    
+    <script src="modules/q3-server-emulator.js"></script>
+    <script>
+        let consoleDiv = document.getElementById('console');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleDiv.appendChild(entry);
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function updateStatus() {
+            if (!window.serverEmulator) return;
+            
+            const status = document.getElementById('emulatorStatus');
+            status.textContent = 'Запущен';
+            status.className = 'status online';
+            
+            const stats = serverEmulator.getStats();
+            document.getElementById('playersInfo').innerHTML = 
+                `<strong>Игроки:</strong> ${stats.playersCount}`;
+            
+            const connectedClients = Array.from(serverEmulator.connectedClients);
+            document.getElementById('clientsInfo').innerHTML = 
+                `<strong>Подключенные клиенты:</strong> ${connectedClients.length} ${connectedClients.length > 0 ? '[' + connectedClients.join(', ') + ']' : ''}`;
+        }
+        
+        // Инициализация после загрузки эмулятора
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (window.serverEmulator) {
+                    log('✓ Q3 Server Emulator инициализирован', 'info');
+                    
+                    // Установить callback для команд
+                    setServerCommandCallback(function(command) {
+                        log(`Client ${command.clientId} получил команду #${command.sequence}`, 'client');
+                        log(`→ ${command.command.substring(0, 100)}${command.command.length > 100 ? '...' : ''}`, 'client');
+                    });
+                    
+                    updateStatus();
+                    document.getElementById('quickTestBtn').disabled = false;
+                } else {
+                    log('✗ Ошибка инициализации эмулятора', 'error');
+                }
+            }, 100);
+        });
+        
+        function quickTest() {
+            log('=== ЗАПУСК БЫСТРОГО ТЕСТА ===', 'info');
+            
+            // 1. Добавить игрока
+            log('1. Добавление игрока TestPlayer (ID: 0)', 'info');
+            serverEmulator.addPlayer(0, 'TestPlayer');
+            updateStatus();
+            
+            // 2. Подключить клиента
+            setTimeout(() => {
+                log('2. Подключение клиента 0', 'info');
+                serverEmulator.connectClient(0);
+                updateStatus();
+                
+                // 3. Отправить xstats1
+                setTimeout(() => {
+                    log('3. Отправка команды xstats1', 'info');
+                    sendXStats1(0, 0);
+                    
+                    log('=== ТЕСТ ЗАВЕРШЕН ===', 'info');
+                    log('✓ Проверьте логи выше для деталей', 'info');
+                }, 200);
+            }, 200);
+        }
+        
+        function addPlayer() {
+            const id = parseInt(document.getElementById('playerId').value);
+            const name = document.getElementById('playerName').value || `Player${id}`;
+            
+            serverEmulator.addPlayer(id, name);
+            log(`➕ Добавлен игрок: ${name} (ID: ${id})`, 'server');
+            updateStatus();
+        }
+        
+        function connectClient() {
+            const id = parseInt(document.getElementById('clientId').value);
+            
+            if (!serverEmulator.players.has(id)) {
+                log(`✗ Игрок ${id} не существует. Добавьте его сначала.`, 'error');
+                return;
+            }
+            
+            serverEmulator.connectClient(id);
+            log(`🔗 Клиент ${id} подключен`, 'server');
+            updateStatus();
+        }
+        
+        function disconnectClient() {
+            const id = parseInt(document.getElementById('clientId').value);
+            serverEmulator.disconnectClient(id);
+            log(`❌ Клиент ${id} отключен`, 'server');
+            updateStatus();
+        }
+        
+        function sendXStats1Cmd() {
+            const targetId = parseInt(document.getElementById('targetClientId').value);
+            const requestingId = parseInt(document.getElementById('requestingClientId').value);
+            
+            if (!serverEmulator.players.has(targetId)) {
+                log(`✗ Игрок ${targetId} не существует`, 'error');
+                return;
+            }
+            
+            if (requestingId === -1) {
+                log(`📊 Отправка xstats1 для игрока ${targetId} всем клиентам`, 'xstats');
+                sendXStats1(targetId);
+            } else {
+                log(`📊 Отправка xstats1 для игрока ${targetId} клиенту ${requestingId}`, 'xstats');
+                sendXStats1(targetId, requestingId);
+            }
+        }
+        
+        function sendCustomCommand() {
+            const command = document.getElementById('customCommand').value;
+            const clientId = parseInt(document.getElementById('customClientId').value);
+            
+            if (!command) {
+                log('✗ Введите команду', 'error');
+                return;
+            }
+            
+            if (clientId === -1) {
+                log(`📨 Отправка команды всем: ${command}`, 'server');
+                sendServerCommandToAll(command);
+            } else {
+                log(`📨 Отправка команды клиенту ${clientId}: ${command}`, 'server');
+                sendServerCommand(clientId, command);
+            }
+        }
+        
+        function showCommandHistory() {
+            const commands = getServerCommands(20);
+            log('=== ИСТОРИЯ КОМАНД (последние 20) ===', 'info');
+            commands.forEach(cmd => {
+                log(`#${cmd.sequence} → Client ${cmd.clientId}: ${cmd.command.substring(0, 80)}`, 'info');
+            });
+        }
+        
+        function clearConsole() {
+            consoleDiv.innerHTML = '';
+            log('✓ Консоль очищена', 'info');
+        }
+    </script>
+</body>
+</html>
+
+
+

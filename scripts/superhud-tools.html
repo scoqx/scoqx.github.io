@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperHUD Tools - OSP2-BE</title>
+    <link rel="stylesheet" href="superhud-tools.css">
+</head>
+<body>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('main-tester')">MAIN/ГЛАВНАЯ</button>
+            <button class="tab" onclick="switchTab('emulator')">2D Эмулятор</button>
+            <button class="tab" onclick="switchTab('server-emulator')">Сервер Эмулятор</button>
+            <button class="tab" onclick="switchTab('client-emulator')">Клиент</button>
+            <button class="tab" onclick="switchTab('shaders')">Система Шейдеров</button>
+            <button class="tab" onclick="switchTab('hud-editor')">HUD Редактор</button>
+        </div>
+        
+        <!-- Главный Тестер -->
+        <div id="main-tester" class="tab-content active">
+            <div class="main-tester-container">
+                
+                <div class="main-tester-buttons">
+                    <div class="tester-button-container">
+                        <button id="c89ToJsButton" class="tester-button" onclick="runC89ToJsTest()">
+                            <div class="button-icon">C89</div>
+                            <div class="button-text">
+                                <div class="button-title">C89 → JS</div>
+                                <div class="button-description">Перевод из assets/code/</div>
+                            </div>
+                            <div class="button-status" id="c89ToJsStatus">⏳</div>
+                        </button>
+                    </div>
+                    
+                    <div class="tester-button-container">
+                        <button id="pk3LoaderButton" class="tester-button" onclick="runPk3LoaderTest()">
+                            <div class="button-icon">PK3</div>
+                            <div class="button-text">
+                                <div class="button-title">PK3 LOADER</div>
+                                <div class="button-description">Загрузка из assets/</div>
+                            </div>
+                            <div class="button-status" id="pk3LoaderStatus">⏳</div>
+                        </button>
+                    </div>
+                    
+                    <div class="tester-button-container">
+                        <button id="shaderSystemButton" class="tester-button" onclick="runShaderSystemTest()">
+                            <div class="button-icon">🎨</div>
+                            <div class="button-text">
+                                <div class="button-title">SHADER SYSTEM</div>
+                                <div class="button-description">Инициализация шейдеров</div>
+                            </div>
+                            <div class="button-status" id="shaderSystemStatus">⏳</div>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="main-tester-log" id="mainTesterLog">
+                    <div class="log-header">
+                        Лог выполнения:
+                        <button onclick="copyLogToClipboard()" style="float: right; padding: 5px 15px; background: #555; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; transition: background 0.2s;">📋 Копировать консоль</button>
+                    </div>
+                    <div class="log-content" id="logContent">
+                        <div class="log-entry">Готов к тестированию...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 2D Эмулятор -->
+        <div id="emulator" class="tab-content">
+            <div class="grid">
+                <div class="panel">
+                    <h3>Canvas (640x480)</h3>
+                    <div class="canvas-container">
+                        <canvas id="emulatorCanvas" width="640" height="480"></canvas>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3>Управление</h3>
+                    <div class="controls">
+                        <button onclick="clearEmulator()">Очистить</button>
+                        <button onclick="demoBasic()">Базовый HUD</button>
+                        <button onclick="demoColors()">Цвета</button>
+                        <button onclick="demoPics()">Картинки</button>
+                        <button onclick="demoComplex()">Сложный HUD</button>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="testSetColor()">trap_SetColor</button>
+                        <button onclick="testFillRect()">trap_FillRect</button>
+                        <button onclick="testDrawPic()">trap_DrawPic</button>
+                    </div>
+                    
+                    <div class="status" id="emulatorStatus">
+                        Эмулятор готов к работе
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Клиент Эмулятор -->
+        <div id="client-emulator" class="tab-content">
+            <div class="grid">
+                <!-- Левая колонка -->
+                <div class="left-column">
+                    <div class="panel">
+                        <h3>Клиент</h3>
+                        
+                        <div class="control-block">
+                            <div class="controls">
+                                <button id="initClientButton" onclick="initAndStartQ3VMClient()" class="btn-primary" style="width: 100%; font-size: 16px; padding: 15px; background: #4CAF50;">
+                                    🎮 Запустить Q3VM клиент
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="control-block">
+                            <div class="controls">
+                                <button onclick="stopQ3VMClient()" class="btn-danger">⏹️ Остановить</button>
+                                <button onclick="downloadQ3VMAnalysis()" class="btn-secondary">📥 Скачать анализ</button>
+                                <button onclick="dumpQ3VMInfo()" class="btn-secondary">🔍 Дамп в консоль</button>
+                            </div>
+                        </div>
+                        
+                        <div class="status" id="clientStatus">
+                            Клиент готов к запуску
+                        </div>
+                        
+                        <div class="control-block" id="clientInfo" style="background: #1a1a1a; padding: 10px; border-radius: 5px; margin-top: 15px;">
+                            <div style="color: #888;">Информация о клиенте появится после запуска</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Управление сервером -->
+                    <div class="panel" style="margin-top: 15px;">
+                        <h3>🖥️ Сервер (VirtualPlayer)</h3>
+                        
+                        <div class="control-block">
+                            <div class="controls">
+                                <button id="serverStartBtn" onclick="startClientServer()" class="btn-primary" style="width: 100%;">
+                                    ▶️ Запустить сервер
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="control-block">
+                            <div class="controls">
+                                <button onclick="stopClientServer()" class="btn-danger">⏹️ Остановить</button>
+                                <button onclick="addServerBot()" class="btn-secondary">🤖 Добавить бота</button>
+                                <button onclick="dumpServerInfo()" class="btn-secondary">🔍 Инфо</button>
+                            </div>
+                        </div>
+                        
+                        <div class="status" id="serverStatus" style="margin-top: 10px;">
+                            Сервер не запущен
+                        </div>
+                        
+                        <div class="control-block" id="serverInfo" style="background: #1a1a1a; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            <div style="color: #888;">Информация о сервере появится после запуска</div>
+                        </div>
+                        
+                        <div class="control-block" id="playerInfo" style="background: #1a1a1a; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            <div style="color: #888; font-size: 11px;">
+                                <strong>💡 Подсказка:</strong><br>
+                                Сервер управляет данными игрока (здоровье, броня, оружие).<br>
+                                Клиент отображает эти данные в Debug Overlay.<br>
+                                <strong>Клавиши:</strong> D=toggle | 1-9=weapon | H/J=health | K/L=armor
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Правая колонка -->
+                <div class="right-column">
+                    <div class="panel">
+                        <h3>Canvas клиента (640x480)</h3>
+                        <div class="canvas-container">
+                            <canvas id="clientCanvas" width="640" height="480" style="border: 2px solid #fff; background: #000;"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Сервер Эмулятор -->
+        <div id="server-emulator" class="tab-content">
+            <div class="grid">
+                <!-- Левая колонка -->
+                <div class="left-column">
+                    <!-- Управление сервером -->
+                    <div class="panel">
+                        <h3>Сервер</h3>
+                    <div class="control-block">
+                        <div class="controls">
+                            <button onclick="startServerEmulator(1000)" class="btn-primary">▶️ Запуск (1с)</button>
+                            <button onclick="startServerEmulator(500)" class="btn-primary">⚡ Запуск (0.5с)</button>
+                            <button onclick="stopServerEmulator()" class="btn-danger">⏹️ Стоп</button>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="control-block">
+                        <div class="game-mode-selector">
+                            <div class="mode-group">
+                                <button class="mode-button" onclick="selectGameMode('ffa')" id="ffaButton">
+                                    FFA
+                                    <div class="mode-submenu" id="ffaSubmenu">
+                                        <div onclick="setGameType(0); hideSubmenus(); updateServerStats();">Free For All</div>
+                                        <div onclick="setGameType(1); hideSubmenus(); updateServerStats();">Tournament</div>
+                                        <div onclick="setGameType(2); hideSubmenus(); updateServerStats();">Single Player</div>
+                                    </div>
+                                </button>
+                            </div>
+                            
+                            <div class="mode-group">
+                                <button class="mode-button" onclick="selectGameMode('team')" id="teamButton">
+                                    TEAM
+                                    <div class="mode-submenu" id="teamSubmenu">
+                                        <div onclick="setGameType(3); hideSubmenus(); updateServerStats();">Team Deathmatch</div>
+                                        <div onclick="setGameType(4); hideSubmenus(); updateServerStats();">Capture The Flag</div>
+                                        <div onclick="setGameType(5); hideSubmenus(); updateServerStats();">One Flag CTF</div>
+                                        <div onclick="setGameType(6); hideSubmenus(); updateServerStats();">Obelisk</div>
+                                        <div onclick="setGameType(7); hideSubmenus(); updateServerStats();">Harvester</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="control-block">
+                        <div class="limits-grid">
+                            <div class="limit-group">
+                                <label>Frag:</label>
+                                <div class="controls">
+                                    <button onclick="setFragLimit(10)" class="btn-small">10</button>
+                                    <button onclick="setFragLimit(20)" class="btn-small">20</button>
+                                    <button onclick="setFragLimit(50)" class="btn-small">50</button>
+                                </div>
+                            </div>
+                            <div class="limit-group">
+                                <label>Capture:</label>
+                                <div class="controls">
+                                    <button onclick="setCaptureLimit(5)" class="btn-small">5</button>
+                                    <button onclick="setCaptureLimit(8)" class="btn-small">8</button>
+                                </div>
+                            </div>
+                            <div class="limit-group">
+                                <label>Time:</label>
+                                <div class="controls">
+                                    <button onclick="setTimeLimit(5)" class="btn-small">5m</button>
+                                    <button onclick="setTimeLimit(10)" class="btn-small">10m</button>
+                                    <button onclick="setTimeLimit(20)" class="btn-small">20m</button>
+                                    <button onclick="setTimeLimit(0)" class="btn-small">∞</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="status" id="serverStatus">
+                        Сервер готов к запуску
+                    </div>
+                    
+                    <div class="control-block">
+                        <div class="controls">
+                            <button onclick="simulateFlagCapture(1)" class="btn-red">🔴 Red захватил</button>
+                            <button onclick="simulateFlagCapture(2)" class="btn-blue">🔵 Blue захватил</button>
+                            <button onclick="simulateFlagReturn(1)" class="btn-red">🔴 Red сбросил</button>
+                            <button onclick="simulateFlagReturn(2)" class="btn-blue">🔵 Blue сбросил</button>
+                        </div>
+                    </div>
+                    
+                    <div class="control-block">
+                        <div class="controls">
+                            <button onclick="simulateFrag(0, 1)" class="btn-danger">⚔️ 0 убил 1</button>
+                        </div>
+                    </div>
+                    
+                    </div>
+                    
+                    <!-- Игроки -->
+                    <div class="panel">
+                        <h3>Игроки</h3>
+                        
+                        <div class="control-block">
+                            <div class="controls">
+                                <button onclick="addVirtualPlayer()" class="btn-success">➕ Бот</button>
+                                <button onclick="addVirtualPlayer('TestPlayer')" class="btn-success">👤 TestPlayer</button>
+                                <button onclick="removeVirtualPlayer(0)" class="btn-warning">🗑️ Удалить 0</button>
+                            </div>
+                        </div>
+                        
+                        <div id="playersList" style="background: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px; max-height: 400px; overflow-y: auto;">
+                            <div style="color: #888;">Нет игроков</div>
+                        </div>
+                        
+                    </div>
+                </div>
+                
+                <!-- Контекстное меню игрока -->
+                <div id="playerContextMenu" class="context-menu" style="display: none;">
+                    <div class="context-header">
+                        <strong id="contextPlayerName">Игрок</strong>
+                        <button onclick="hidePlayerContextMenu()" class="btn-close">×</button>
+                    </div>
+                    
+                    <div class="context-section">
+                        <div class="context-title">💀 Действия</div>
+                        <button onclick="killPlayer()" class="btn-danger">💀 Убить</button>
+                        <button onclick="kickPlayer()" class="btn-warning">👢 Кикнуть</button>
+                        <button onclick="showKillTargets()" class="btn-danger">⚔️ Убить кого-то</button>
+                    </div>
+                    
+                    <div class="context-section">
+                        <div class="context-title">❤️ HP</div>
+                        <div class="context-controls">
+                            <button onclick="changePlayerHealth(10)" class="btn-plus">+10</button>
+                            <button onclick="changePlayerHealth(-10)" class="btn-minus">-10</button>
+                            <button onclick="changePlayerHealth(50)" class="btn-plus">+50</button>
+                            <button onclick="changePlayerHealth(-50)" class="btn-minus">-50</button>
+                            <button onclick="changePlayerHealth(100)" class="btn-plus">+100</button>
+                            <button onclick="changePlayerHealth(-100)" class="btn-minus">-100</button>
+                        </div>
+                    </div>
+                    
+                    <div class="context-section">
+                        <div class="context-title">🛡️ Armor</div>
+                        <div class="context-controls">
+                            <button onclick="changePlayerArmor(10)" class="btn-plus">+10</button>
+                            <button onclick="changePlayerArmor(-10)" class="btn-minus">-10</button>
+                            <button onclick="changePlayerArmor(50)" class="btn-plus">+50</button>
+                            <button onclick="changePlayerArmor(-50)" class="btn-minus">-50</button>
+                            <button onclick="changePlayerArmor(100)" class="btn-plus">+100</button>
+                            <button onclick="changePlayerArmor(-100)" class="btn-minus">-100</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Правая колонка -->
+                <div class="right-column">
+                    <!-- Консоль сервера -->
+                    <div class="panel console-panel">
+                        <h3>Консоль сервера</h3>
+                        <div id="serverStats">
+                            <div style="color: #ccc;">Статистика не доступна</div>
+                        </div>
+                        
+                        <div class="log-content" id="snapshotLog" style="height: 400px; overflow-y: auto; background: #1a1a1a; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            <div style="color: #888;">Лог снапов пуст</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Система Шейдеров -->
+        <div id="shaders" class="tab-content">
+            <!-- Консоль управления сверху -->
+            <div style="background: #000; border: 2px solid #fff; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                <div class="controls" style="margin-bottom: 10px;">
+                    <button id="initShaderButton" onclick="runShaderSystemTest()" style="background: #4CAF50; color: white; font-weight: bold;">
+                        🎨 Инициализация
+                    </button>
+                    <button onclick="clearShaderCanvas(false)">Очистить canvas</button>
+                    <button onclick="testShaderRender()">Тест рендеринга</button>
+                    
+                    <span style="margin-left: 20px; color: #888;">Фон:</span>
+                    <button onclick="setShaderCanvasBackground('black')" style="background: #000; color: #fff; border: 2px solid #fff;">Черный</button>
+                    <button onclick="setShaderCanvasBackground('gray')" style="background: #808080; color: #fff;">Серый</button>
+                    <button onclick="setShaderCanvasBackground('white')" style="background: #fff; color: #000;">Белый</button>
+                    <button onclick="setShaderCanvasBackground('checkerboard')" style="background: linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%), linear-gradient(45deg, #ccc 25%, #fff 25%, #fff 75%, #ccc 75%); background-size: 20px 20px; background-position: 0 0, 10px 10px; color: #000;">Шахматы</button>
+                </div>
+                
+                <!-- Loading Bar -->
+                <div id="loadingBarContainer" style="display: none; margin-bottom: 10px;">
+                    <div style="position: relative; height: 50px; background: #1a1a1a; border: 2px solid #fff; border-radius: 5px; overflow: hidden;">
+                        <!-- Белая заливка -->
+                        <div id="initLoadingBar" style="position: absolute; top: 0; left: 0; width: 0%; height: 100%; background: white; transition: width 0.3s ease; z-index: 1;"></div>
+                        
+                        <!-- Текст с эффектом инверсии -->
+                        <div id="initLoadingText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 18px; width: 100%; text-align: center; background: linear-gradient(to right, black 0%, black 50%, white 50%, white 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; z-index: 2; letter-spacing: 1px;">
+                            Инициализация...
+                        </div>
+                        
+                        <!-- Процент в правом нижнем углу -->
+                        <div id="initLoadingPercent" style="position: absolute; bottom: 5px; right: 10px; font-size: 12px; font-weight: bold; background: linear-gradient(to right, black 0%, black 50%, white 50%, white 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; z-index: 2;">
+                            0%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="status" id="shaderStatus" style="margin: 0;">
+                    Готов к тестированию системы шейдеров
+                </div>
+            </div>
+            
+            <!-- Canvas слева, Explorer справа -->
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 15px; height: calc(100vh - 280px);">
+                <div class="panel" style="display: flex; flex-direction: column;">
+                    <h3 style="margin-bottom: 15px;">Canvas (640x480)</h3>
+                    <div class="canvas-container" style="flex: 0 0 auto;">
+                        <canvas id="shaderCanvas" width="640" height="480"></canvas>
+                    </div>
+                </div>
+                
+                <div class="panel" style="display: flex; flex-direction: column; min-width: 400px;">
+                    <h3 style="margin-bottom: 10px;">Shader Explorer</h3>
+                    <div class="shader-list" id="shaderList" style="flex: 1; height: auto;">
+                        <div style="color: #ccc; text-align: center;">Шейдеры не загружены</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Скрытый лог для обратной совместимости -->
+            <div style="display: none;" id="shaderLogContent"></div>
+        </div>
+        
+        <!-- HUD Редактор -->
+        <div id="hud-editor" class="tab-content">
+            <div class="grid">
+                <div class="panel">
+                    <h3>HUD Canvas</h3>
+                    <div class="canvas-container">
+                        <canvas id="hudCanvas" width="640" height="480"></canvas>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <h3>Редактор элементов</h3>
+                    <div class="controls">
+                        <button onclick="addHudElement('rect')">Прямоугольник</button>
+                        <button onclick="addHudElement('pic')">Картинка</button>
+                        <button onclick="addHudElement('text')">Текст</button>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="clearHud()">Очистить HUD</button>
+                        <button onclick="resetHud()">Сброс</button>
+                        <button onclick="exportHud()">Экспорт HUD</button>
+                        <button onclick="importHud()">Импорт HUD</button>
+                    </div>
+                    
+                    <div class="status" id="hudStatus">
+                        HUD редактор готов
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- JSZip для работы с PK3 архивами -->
+    <script src="modules/jszip.min.js"></script>
+    
+    <!-- TGA loader для загрузки TGA текстур -->
+    <script src="modules/tga-loader.js"></script>
+    
+    <!-- Q3VM WASM (приоритет) - 33x быстрее! -->
+    <script src="modules/q3vm-wasm.js?v=1.0.0"></script>
+    <script src="modules/q3vm-wasm-wrapper.js?v=1.0.2"></script>
+    
+    <!-- Q3VM JS Интерпретатор (fallback) -->
+    <script src="modules/q3vm-core.js?v=1.0.0"></script>
+    
+    <!-- Server Emulator (ВАЖНО: загружается первым!) -->
+    <script src="modules/q3-server-emulator.js?v=0.005"></script>
+    
+    <!-- Общие модули -->
+    <script src="modules/q3vm-loader.js?v=1.0.0"></script>
+    <script src="modules/q3vm-syscalls.js?v=1.0.3"></script>
+    <script src="modules/q3vm-client-integration-v2.js?v=0.06"></script>
+    
+    <!-- Старые модули (для обратной совместимости) -->
+    <script src="modules/q3-2d-emulator.js?v=0.001"></script>
+    
+    <!-- Система шейдеров -->
+    <script src="modules/superhud-tools.js?v=0.001"></script>
+    
+    <!-- UI модули -->
+    <script src="modules/app-init.js?v=0.001"></script>
+    <script src="modules/pk3-analyzer.js?v=0.001"></script>
+    <script src="modules/main-tester.js?v=0.001"></script>
+    <script src="modules/server-emulator-ui.js?v=0.001"></script>
+    <script src="modules/emulator-2d-ui.js?v=0.001"></script>
+    <script src="modules/hud-editor-ui.js?v=0.001"></script>
+    <script src="modules/q3vm-client-ui.js?v=1.0.2"></script>
+</body>
+</html>
