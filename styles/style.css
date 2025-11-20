@@ -455,10 +455,80 @@ body[data-page="index"] .logo-link {
     margin-top: var(--spacing-xl);
 }
 
+.changelog-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    flex-wrap: wrap;
+    min-height: 40px;
+}
+
 .changelog-title {
     font-size: 1.5rem;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 0;
     color: var(--text-color);
+}
+
+.changelog-search-toggle {
+    background: transparent;
+    border: 2px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: calc(var(--spacing-sm) * 0.5);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+}
+
+.changelog-search-toggle img {
+    width: 18px;
+    height: 18px;
+    opacity: 0.7;
+    object-fit: contain;
+}
+
+.changelog-search-toggle:hover {
+    opacity: 1;
+    border-color: var(--text-color);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.changelog-search-toggle:hover img {
+    opacity: 1;
+}
+
+.changelog-search-section {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex: 1;
+    min-width: 300px;
+}
+
+.changelog-search-section.hidden {
+    display: none;
+}
+
+.changelog-search-section .search-container {
+    flex: 1;
+    height: 40px;
+    min-width: 200px;
+    padding-left: var(--spacing-md);
+}
+
+.changelog-search-section .search-input {
+    padding-left: 0;
+}
+
+.changelog-search-section .search-stats {
+    white-space: nowrap;
+    font-size: 0.85rem;
 }
 
 .changelog-container {
@@ -479,10 +549,18 @@ body[data-page="index"] .logo-link {
 }
 
 .version-block {
-    margin-bottom: 0;
+    margin-bottom: var(--spacing-sm);
     padding: var(--spacing-sm);
     border-radius: var(--border-radius);
     background: rgba(255, 255, 255, 0.02);
+}
+
+.version-block:last-child {
+    margin-bottom: 0;
+}
+
+.version-block.hidden {
+    display: none;
 }
 
 .version-header {
@@ -2355,4 +2433,102 @@ html[lang="en"] .crypto-address.copied::after {
         width: 100%;
         justify-content: center;
     }
+}
+
+/* ==========================================================================
+   CFG Injector Styles
+   ========================================================================== */
+
+.preview-container {
+    margin: var(--spacing-md) 0;
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: rgba(255, 255, 255, 0.02);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.changes-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.preview-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    background: rgba(255, 255, 255, 0.02);
+    transition: var(--transition);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.preview-item.excluded {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+.preview-toggle-btn {
+    background: rgba(255, 0, 0, 0.2);
+    border: 1px solid #ff6666;
+    color: #ff6666;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    flex-shrink: 0;
+    padding: 0;
+    line-height: 1;
+    min-width: 20px;
+}
+
+.preview-toggle-btn:hover {
+    background: rgba(255, 0, 0, 0.4);
+    border-color: #ff9999;
+    transform: scale(1.1);
+}
+
+.preview-toggle-btn.excluded {
+    background: rgba(0, 255, 0, 0.2);
+    border-color: #66ff66;
+    color: #66ff66;
+}
+
+.preview-toggle-btn.excluded:hover {
+    background: rgba(0, 255, 0, 0.4);
+    border-color: #99ff99;
+}
+
+.preview-command {
+    font-weight: bold;
+    color: var(--text-color);
+    flex-shrink: 0;
+}
+
+.preview-arrow {
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.preview-old {
+    color: #ff6666;
+    text-decoration: line-through;
+}
+
+.preview-new {
+    color: #66ff66;
+}
+
+.preview-added {
+    color: #66ff66;
 }

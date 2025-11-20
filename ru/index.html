@@ -27,6 +27,7 @@
                 <a href="/ru/gallery.html" class="nav-link">Галерея</a>
                 <a href="/ru/commands.html" class="nav-link">Консольные команды</a>
                 <a href="/ru/compilations.html" class="nav-link">Сборки</a>
+                <a href="/ru/tools.html" class="nav-link">++</a>
             </div>
             
             <div class="nav-language">
@@ -90,6 +91,7 @@
                         <img src="/assets/blender_180_osp2.png" alt="OSP2 icon" class="download-title-icon">
                         OSP2
                     </h3>
+                    <p id="version-text-osp2" class="version-text"></p>
                     <a class="download-button" href="https://github.com/snems/OSP2/releases/download/latest/zz-osp-pak8.pk3" target="_blank" rel="noopener noreferrer">Скачать</a>
                 </div>
                 
@@ -98,7 +100,19 @@
         </div>
 
         <section class="changelog-section">
-            <h2 class="changelog-title">Список изменений</h2>
+            <div class="changelog-header">
+                <h2 class="changelog-title">Список изменений</h2>
+                <button id="changelog-search-toggle" class="changelog-search-toggle" title="Поиск">
+                    <img src="/assets/search.png" alt="Search" class="search-icon">
+                </button>
+                <!-- Search Section -->
+                <div class="changelog-search-section hidden">
+                    <div class="search-container">
+                        <input type="text" id="changelog-search" class="search-input" placeholder="Поиск в списке изменений...">
+                        <button id="clear-changelog-search" class="clear-search-btn" title="Очистить поиск">×</button>
+                    </div>
+                </div>
+            </div>
             <div class="changelog-container">
                 <pre id="changelog-content" class="changelog-content"></pre>
             </div>

@@ -25,6 +25,8 @@ class NavigationManager {
             return 'commands';
         } else if (lastSegment.includes('compilations')) {
             return 'compilations';
+        } else if (lastSegment.includes('tools')) {
+            return 'tools';
         }
         
         return 'home';
@@ -97,6 +99,8 @@ class NavigationManager {
                 return href.includes('commands.html');
             case 'compilations':
                 return href.includes('compilations.html');
+            case 'tools':
+                return href.includes('tools.html');
             default:
                 return false;
         }

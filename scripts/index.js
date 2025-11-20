@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadChangelog();
     loadVersion();
+    loadOSP2Version();
 });
 
 // Clear cache function
@@ -244,7 +245,7 @@ function reverseChangelogOrder(text) {
         const content = block.content.join('\n');
         const dateAttr = block.date ? ` title="${block.date}"` : '';
         return `<div class="version-block"><div class="version-header"${dateAttr}>${block.header}</div>\n${content}</div>`;
-    }).join('\n\n');
+    }).join('\n');
 }
 
 // Load changelog
@@ -266,6 +267,8 @@ async function loadChangelog() {
             const reversedText = reverseChangelogOrder(text);
             changelogEl.innerHTML = reversedText;
             console.log('🔍 Changelog loaded and reversed successfully');
+            // Initialize search after changelog is loaded
+            initializeChangelogSearch();
         }
     } catch (error) {
         console.error('Error loading changelog:', error);
@@ -274,6 +277,119 @@ async function loadChangelog() {
             changelogEl.textContent = 'Error loading changelog: ' + error.message;
         }
     }
+}
+
+// Initialize changelog search
+function initializeChangelogSearch() {
+    const searchToggle = document.getElementById('changelog-search-toggle');
+    const searchSection = document.querySelector('.changelog-search-section');
+    const searchInput = document.getElementById('changelog-search');
+    const clearBtn = document.getElementById('clear-changelog-search');
+    
+    if (!searchToggle || !searchSection || !searchInput || !clearBtn) return;
+    
+    const versionBlocks = document.querySelectorAll('.version-block');
+    const totalCount = versionBlocks.length;
+    
+    if (totalCount === 0) {
+        console.warn('No version blocks found for search');
+        return;
+    }
+    
+    // Store original HTML for each block to restore highlights
+    versionBlocks.forEach(block => {
+        if (!block.dataset.originalHtml) {
+            block.dataset.originalHtml = block.innerHTML;
+        }
+    });
+    
+    // Function to highlight text in element
+    function highlightText(element, query) {
+        if (!query || !element) return;
+        
+        const text = element.textContent;
+        const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        const highlightedText = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+        
+        if (highlightedText !== text) {
+            element.innerHTML = highlightedText;
+        }
+    }
+    
+    // Function to clear highlight
+    function clearHighlight(element) {
+        if (!element) return;
+        
+        const marks = element.querySelectorAll('mark.search-highlight');
+        marks.forEach(mark => {
+            mark.outerHTML = mark.textContent;
+        });
+    }
+    
+    // Search function
+    function performSearch() {
+        const query = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        versionBlocks.forEach(block => {
+            // Restore original HTML if exists
+            if (block.dataset.originalHtml) {
+                block.innerHTML = block.dataset.originalHtml;
+            }
+            
+            if (query === '') {
+                // Show all blocks and clear highlights
+                block.classList.remove('hidden');
+                visibleCount++;
+                
+                const versionHeader = block.querySelector('.version-header');
+                if (versionHeader) clearHighlight(versionHeader);
+            } else {
+                // Get text content from the entire block
+                const blockText = block.textContent.toLowerCase();
+                const isMatch = blockText.includes(query);
+                
+                if (isMatch) {
+                    block.classList.remove('hidden');
+                    visibleCount++;
+                    
+                    // Highlight in header if match found there
+                    const versionHeader = block.querySelector('.version-header');
+                    if (versionHeader) {
+                        const headerText = versionHeader.textContent.toLowerCase();
+                        if (headerText.includes(query)) {
+                            highlightText(versionHeader, query);
+                        }
+                    }
+                } else {
+                    block.classList.add('hidden');
+                }
+            }
+        });
+    }
+    
+    // Toggle search section
+    searchToggle.addEventListener('click', () => {
+        searchSection.classList.toggle('hidden');
+        if (!searchSection.classList.contains('hidden')) {
+            // Focus on input when opened
+            setTimeout(() => searchInput.focus(), 100);
+        } else {
+            // Clear search when closed
+            searchInput.value = '';
+            performSearch();
+        }
+    });
+    
+    // Event handlers
+    searchInput.addEventListener('input', performSearch);
+    searchInput.addEventListener('keyup', performSearch);
+    
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        performSearch();
+        searchInput.focus();
+    });
 }
 
 // Load version from version.json
@@ -300,6 +416,42 @@ async function loadVersion() {
         }
     } catch (error) {
         console.error('Error loading version:', error);
+        // Keep default version if loading fails
+    }
+}
+
+// Load OSP2 version from GitHub
+async function loadOSP2Version() {
+    try {
+        console.log('🔍 Loading OSP2 version...');
+        // Use GitHub API to avoid CORS issues
+        const response = await fetch('https://api.github.com/repos/snems/OSP2/contents/code/cgame/cg_local.h?ref=master', {
+            cache: 'no-cache'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            // Decode base64 content
+            const text = atob(data.content.replace(/\s/g, ''));
+            // Parse version from #define OSP_VERSION "version"
+            const versionMatch = text.match(/#define\s+OSP_VERSION\s+"([^"]+)"/);
+            
+            if (versionMatch && versionMatch[1]) {
+                const version = versionMatch[1];
+                const versionEl = document.getElementById('version-text-osp2');
+                
+                if (versionEl) {
+                    versionEl.textContent = version;
+                    console.log('✅ OSP2 version loaded:', version);
+                }
+            } else {
+                console.log('⚠️ OSP2 version not found in file');
+            }
+        } else {
+            console.log('⚠️ OSP2 version file not found, using default');
+        }
+    } catch (error) {
+        console.error('Error loading OSP2 version:', error);
         // Keep default version if loading fails
     }
 }

@@ -27,6 +27,7 @@
                 <a href="/en/gallery.html" class="nav-link">Gallery</a>
                 <a href="/en/commands.html" class="nav-link">Console Commands</a>
                 <a href="/en/compilations.html" class="nav-link">Compilations</a>
+                <a href="/en/tools.html" class="nav-link">++</a>
             </div>
             
             <div class="nav-language">
@@ -70,7 +71,7 @@
                     </div>
                     <div class="contact-row">
                         <img src="/assets/coin.png" alt="Coin icon" style="width: 20px; height: 20px; object-fit: contain;" />
-                        <strong><a href="#" onclick="openSupportModal(); return false;" class="donate-link">Support the Project</a></strong>
+                        <strong><a href="#" onclick="openSupportModal(); return false;" class="donate-link">Support Project</a></strong>
                     </div>
                 </div>
             </div>
@@ -90,6 +91,7 @@
                         <img src="/assets/blender_180_osp2.png" alt="OSP2 icon" class="download-title-icon">
                         OSP2
                     </h3>
+                    <p id="version-text-osp2" class="version-text"></p>
                     <a class="download-button" href="https://github.com/snems/OSP2/releases/download/latest/zz-osp-pak8.pk3" target="_blank" rel="noopener noreferrer">Download</a>
                 </div>
                 
@@ -98,7 +100,19 @@
         </div>
 
         <section class="changelog-section">
-            <h2 class="changelog-title">Changelog</h2>
+            <div class="changelog-header">
+                <h2 class="changelog-title">Changelog</h2>
+                <button id="changelog-search-toggle" class="changelog-search-toggle" title="Search">
+                    <img src="/assets/search.png" alt="Search" class="search-icon">
+                </button>
+                <!-- Search Section -->
+                <div class="changelog-search-section hidden">
+                    <div class="search-container">
+                        <input type="text" id="changelog-search" class="search-input" placeholder="Search changelog...">
+                        <button id="clear-changelog-search" class="clear-search-btn" title="Clear search">×</button>
+                    </div>
+                </div>
+            </div>
             <div class="changelog-container">
                 <pre id="changelog-content" class="changelog-content"></pre>
             </div>
@@ -197,7 +211,7 @@
     <div class="donation-modal" id="supportModal">
         <div class="donation-modal-content">
             <button class="donation-modal-close" id="closeSupportModal">&times;</button>
-            <h3>Support the Project</h3>
+            <h3>Support Project</h3>
             <div class="support-links">
                 <div class="support-link-item">
                     <button type="button" id="openCardModal">RU Bank Card</button>

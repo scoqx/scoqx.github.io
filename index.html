@@ -20,13 +20,12 @@
         
         // Check saved language preference
         const savedLang = localStorage.getItem('preferredLanguage');
-        const timestamp = new Date().getTime();
         
         // Redirect to saved language or default to English
         if (savedLang === 'ru') {
-            window.location.replace('/ru/index.html?v=' + timestamp);
+            window.location.replace('/ru/index.html');
         } else {
-            window.location.replace('/en/index.html?v=' + timestamp);
+            window.location.replace('/en/index.html');
         }
     </script>
 </head>
