@@ -544,8 +544,11 @@ body[data-page="index"] .logo-link {
     font-family: monospace;
     font-size: 14px;
     line-height: 1.4;
-  white-space: pre-wrap;
     color: var(--text-color);
+}
+
+.changelog-content .version-block {
+    white-space: pre-wrap;
 }
 
 .version-block {

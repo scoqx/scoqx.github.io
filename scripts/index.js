@@ -245,7 +245,7 @@ function reverseChangelogOrder(text) {
         const content = block.content.join('\n');
         const dateAttr = block.date ? ` title="${block.date}"` : '';
         return `<div class="version-block"><div class="version-header"${dateAttr}>${block.header}</div>\n${content}</div>`;
-    }).join('\n');
+    }).join('');
 }
 
 // Load changelog
