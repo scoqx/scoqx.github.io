@@ -10,10 +10,14 @@
     const statusMessage = document.getElementById('statusMessage');
     const previewContainer = document.getElementById('previewContainer');
     const previewContent = document.getElementById('previewContent');
+    const sortPreviewButton = document.getElementById('sortPreviewButton');
     
     let sourceFiles = [];
     let targetFile = null;
     let excludedCommands = new Set(); // Commands excluded from processing
+    let previewItems = []; // Store preview items for sorting
+    let isPreviewSorted = false; // Track if preview is currently sorted
+    let previewUpdateTimeout = null; // Debounce timer for preview updates
     
     // Check if we're on the tools page
     if (!sourceFilesInput || !targetFileInput || !processButton) {
@@ -27,9 +31,48 @@
             return;
         }
         
-        sourceFileList.innerHTML = sourceFiles.map((file, index) => 
-            `<div class="file-item">${file.name}</div>`
-        ).join('');
+        const lang = document.documentElement.lang || 'en';
+        const upText = '↑';
+        const downText = '↓';
+        const showControls = sourceFiles.length > 1; // Only show controls if more than 1 file
+        
+        sourceFileList.innerHTML = sourceFiles.map((file, index) => {
+            const canMoveUp = index > 0;
+            const canMoveDown = index < sourceFiles.length - 1;
+            
+            return `<div class="file-item" data-index="${index}">
+                <span class="file-item-name">${escapeHtml(file.name)}</span>
+                ${showControls ? `<div class="file-item-controls">
+                    <button class="file-move-btn" data-action="up" data-index="${index}" ${!canMoveUp ? 'disabled' : ''} title="${lang === 'ru' ? 'Вверх' : 'Move up'}">${upText}</button>
+                    <button class="file-move-btn" data-action="down" data-index="${index}" ${!canMoveDown ? 'disabled' : ''} title="${lang === 'ru' ? 'Вниз' : 'Move down'}">${downText}</button>
+                </div>` : ''}
+            </div>`;
+        }).join('');
+        
+        // Attach event listeners to move buttons
+        const moveButtons = sourceFileList.querySelectorAll('.file-move-btn');
+        moveButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const index = parseInt(this.getAttribute('data-index'));
+                const action = this.getAttribute('data-action');
+                
+                if (action === 'up' && index > 0) {
+                    // Move file up
+                    [sourceFiles[index - 1], sourceFiles[index]] = [sourceFiles[index], sourceFiles[index - 1]];
+                    updateSourceFileList();
+                    // Debounce preview update to avoid flickering
+                    schedulePreviewUpdate();
+                } else if (action === 'down' && index < sourceFiles.length - 1) {
+                    // Move file down
+                    [sourceFiles[index], sourceFiles[index + 1]] = [sourceFiles[index + 1], sourceFiles[index]];
+                    updateSourceFileList();
+                    // Debounce preview update to avoid flickering
+                    schedulePreviewUpdate();
+                }
+            });
+        });
     }
     
     function updateTargetFileList() {
@@ -39,6 +82,20 @@
         }
         
         targetFileList.innerHTML = `<div class="file-item">${targetFile.name}</div>`;
+    }
+    
+    // Schedule preview update with debounce to avoid flickering when moving files
+    function schedulePreviewUpdate() {
+        // Clear existing timeout
+        if (previewUpdateTimeout) {
+            clearTimeout(previewUpdateTimeout);
+        }
+        
+        // Schedule update after 300ms of inactivity
+        previewUpdateTimeout = setTimeout(() => {
+            updatePreview();
+            previewUpdateTimeout = null;
+        }, 300);
     }
     
     // Handle source files selection
@@ -386,17 +443,21 @@
         }
         
         try {
-            previewContainer.style.display = 'block';
-            const lang = document.documentElement.lang || 'en';
-            const analyzingMsg = lang === 'ru' ? 'Анализ...' : 'Analyzing...';
-            previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${analyzingMsg}</div>`;
+            // Keep preview visible if it was already shown (for smooth updates)
+            const wasHidden = previewContainer.style.display === 'none' || previewContainer.style.display === '';
+            if (wasHidden) {
+                previewContainer.style.display = 'block';
+                const lang = document.documentElement.lang || 'en';
+                const analyzingMsg = lang === 'ru' ? 'Анализ...' : 'Analyzing...';
+                previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${analyzingMsg}</div>`;
+            }
+            // If preview was already visible, don't show "Analyzing..." - just update content smoothly
             
             // Read all source files and extract commands
             const allCommands = new Map();
             
-            // Re-read source files to ensure they're current
-            const currentSourceFiles = Array.from(sourceFilesInput.files);
-            for (const file of currentSourceFiles) {
+            // Use sourceFiles array to maintain order (not sourceFilesInput.files)
+            for (const file of sourceFiles) {
                 try {
                     const content = await readFileAsText(file);
                     const commands = extractCommands(content);
@@ -463,7 +524,7 @@
             }
             
             // Build preview
-            const previewItems = [];
+            previewItems = [];
             const addedCommands = new Set();
             
             // Show updated commands
@@ -491,15 +552,67 @@
                 }
             }
             
+            // Reset sort state when preview is updated
+            isPreviewSorted = false;
+            
             // Render preview
-            if (previewItems.length === 0) {
-                const lang = document.documentElement.lang || 'en';
-                const message = lang === 'ru' 
-                    ? 'Нет изменений для отображения'
-                    : 'No changes to display';
-                previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${message}</div>`;
-            } else {
-                const html = previewItems.map(item => {
+            renderPreview();
+            
+        } catch (error) {
+            console.error('Error updating preview:', error);
+            const lang = document.documentElement.lang || 'en';
+            const errorMsg = lang === 'ru' 
+                ? `Ошибка: ${error.message}`
+                : `Error: ${error.message}`;
+            previewContent.innerHTML = `<div style="color: #ff6666;">${errorMsg}</div>`;
+        }
+    }
+    
+    // Render preview items
+    function renderPreview() {
+        if (previewItems.length === 0) {
+            const lang = document.documentElement.lang || 'en';
+            const message = lang === 'ru' 
+                ? 'Нет изменений для отображения'
+                : 'No changes to display';
+            previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${message}</div>`;
+        } else {
+            // Use sorted items if sorted, otherwise use original order
+            const itemsToRender = isPreviewSorted ? [...previewItems].sort((a, b) => {
+                // Extract command name ignoring set/seta prefix
+                const getSortName = (displayName) => {
+                    // Remove set/seta prefix if present
+                    let name = displayName.trim();
+                    if (name.startsWith('seta ')) {
+                        name = name.substring(5).trim();
+                    } else if (name.startsWith('set ')) {
+                        name = name.substring(4).trim();
+                    }
+                    // For bind commands, extract the key part and prepend "bind" for sorting
+                    if (name.startsWith('bind ')) {
+                        let key = name.substring(5).trim();
+                        // Remove quotes if present
+                        if ((key.startsWith('"') && key.endsWith('"')) || 
+                            (key.startsWith("'") && key.endsWith("'"))) {
+                            key = key.slice(1, -1);
+                        }
+                        // Sort by "bind" + key to keep bind commands together but sorted by key
+                        return ('bind ' + key).toLowerCase();
+                    }
+                    // Extract first word (command name or cvar name)
+                    const firstSpace = name.indexOf(' ');
+                    if (firstSpace > 0) {
+                        name = name.substring(0, firstSpace);
+                    }
+                    return name.toLowerCase();
+                };
+                
+                const nameA = getSortName(a.displayName);
+                const nameB = getSortName(b.displayName);
+                return nameA.localeCompare(nameB);
+            }) : previewItems;
+            
+            const html = itemsToRender.map(item => {
                     const isExcluded = excludedCommands.has(item.name);
                     const buttonClass = isExcluded ? 'preview-toggle-btn excluded' : 'preview-toggle-btn';
                     const buttonText = isExcluded ? '+' : '×';
@@ -544,14 +657,19 @@
                     });
                 });
             }
-            
-        } catch (error) {
-            console.error('Error updating preview:', error);
+    }
+    
+    // Sort preview items
+    function sortPreview() {
+        isPreviewSorted = !isPreviewSorted;
+        renderPreview();
+        
+        // Update button text
+        if (sortPreviewButton) {
             const lang = document.documentElement.lang || 'en';
-            const errorMsg = lang === 'ru' 
-                ? `Ошибка: ${error.message}`
-                : `Error: ${error.message}`;
-            previewContent.innerHTML = `<div style="color: #ff6666;">${errorMsg}</div>`;
+            sortPreviewButton.textContent = isPreviewSorted 
+                ? (lang === 'ru' ? 'Отменить сортировку' : 'Unsort')
+                : (lang === 'ru' ? 'Сортировать' : 'Sort');
         }
     }
     
@@ -573,6 +691,7 @@
             showStatus('', processingMsg);
             
             // Read all source files and extract commands
+            // Use sourceFiles array to maintain order
             const allCommands = new Map();
             
             for (const file of sourceFiles) {
@@ -880,8 +999,12 @@
         }
     }
     
-    // Attach event listener
+    // Attach event listeners
     processButton.addEventListener('click', processFiles);
+    
+    if (sortPreviewButton) {
+        sortPreviewButton.addEventListener('click', sortPreview);
+    }
     
     // Initialize
     updateProcessButton();

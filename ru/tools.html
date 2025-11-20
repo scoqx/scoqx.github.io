@@ -126,6 +126,89 @@
             padding: calc(var(--spacing-sm) * 0.5);
             font-size: 0.9rem;
             color: var(--text-color);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .file-item-name {
+            flex: 1;
+        }
+        
+        .file-item-controls {
+            display: flex;
+            gap: calc(var(--spacing-sm) * 0.5);
+        }
+        
+        .file-move-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            transition: var(--transition);
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .file-move-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .file-move-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        
+        .preview-toggle-btn {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            transition: var(--transition);
+            margin-right: var(--spacing-sm);
+        }
+        
+        .preview-toggle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .preview-toggle-btn.excluded {
+            background-color: rgba(0, 255, 0, 0.2);
+            border-color: rgba(0, 255, 0, 0.5);
+        }
+        
+        .preview-item.excluded {
+            opacity: 0.5;
+        }
+        
+        .preview-header-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .sort-button {
+            padding: calc(var(--spacing-sm) * 0.5) var(--spacing-md);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        
+        .sort-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
         
         .process-button {
@@ -312,7 +395,10 @@
                 </div>
                 
                 <div id="previewContainer" class="preview-container" style="display: none;">
-                    <h4>Предпросмотр изменений:</h4>
+                    <div class="preview-header-controls">
+                        <h4 style="margin: 0;">Предпросмотр изменений:</h4>
+                        <button id="sortPreviewButton" class="sort-button">Сортировать</button>
+                    </div>
                     <div id="previewContent" class="changes-preview">
                         <!-- Preview content will be loaded here -->
                     </div>
