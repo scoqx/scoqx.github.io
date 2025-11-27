@@ -312,6 +312,9 @@ function initializeSearch(entries) {
   function highlightText(element, query) {
     if (!query || !element) return;
     
+    // Сначала очищаем предыдущие выделения, чтобы получить чистый текст
+    clearHighlight(element);
+    
     const text = element.textContent;
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     const highlightedText = text.replace(regex, '<mark class="search-highlight">$1</mark>');
@@ -358,6 +361,11 @@ function initializeSearch(entries) {
         const commandName = block.querySelector('code.command-name');
         const commandArg = block.querySelector('code.command-arg');
         const description = block.querySelector('.command-description');
+        
+        // Сначала очищаем предыдущие выделения перед проверкой совпадений
+        if (commandName) clearHighlight(commandName);
+        if (commandArg) clearHighlight(commandArg);
+        if (description) clearHighlight(description);
         
         const commandNameText = commandName?.textContent.toLowerCase() || '';
         const commandArgText = commandArg?.textContent.toLowerCase() || '';
