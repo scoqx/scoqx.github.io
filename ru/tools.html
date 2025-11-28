@@ -52,6 +52,7 @@
             border-radius: var(--border-radius);
         }
         
+        
         .tool-section h2 {
             font-size: 1.5rem;
             margin: 0 0 var(--spacing-sm) 0;
@@ -93,23 +94,80 @@
             min-height: 1.5em;
         }
         
+        .file-drop-zone {
+            position: relative;
+            min-height: 120px;
+            padding: var(--spacing-lg);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .file-drop-zone {
+                min-height: 60px;
+                padding: var(--spacing-sm);
+            }
+        }
+        
+        .file-drop-zone:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .file-drop-zone.drag-over {
+            background-color: rgba(0, 255, 0, 0.1);
+            border-color: rgba(0, 255, 0, 0.5);
+            border-style: solid;
+        }
+        
+        .file-drop-zone.hidden {
+            display: none;
+        }
+        
+        .file-list.hidden {
+            display: none;
+        }
+        
+        .file-drop-zone-text {
+            color: var(--text-color);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+        
+        .file-drop-zone-ext {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .file-drop-zone-text {
+                font-size: 0.8rem;
+            }
+            
+            .file-drop-zone-ext {
+                font-size: 0.7rem;
+            }
+        }
+        
         .file-input-wrapper {
             position: relative;
         }
         
         .file-input {
-            width: 100%;
-            padding: var(--spacing-sm);
-            background-color: var(--primary-bg);
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius);
-            color: var(--text-color);
-            font-family: var(--font-family);
-            cursor: pointer;
-        }
-        
-        .file-input[multiple] {
-            cursor: pointer;
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
         }
         
         .file-list {
@@ -120,6 +178,10 @@
             min-height: 40px;
             max-height: 150px;
             overflow-y: auto;
+        }
+        
+        .file-list.hidden {
+            display: none !important;
         }
         
         .file-item {
@@ -162,6 +224,24 @@
             cursor: not-allowed;
         }
         
+        .file-remove-btn {
+            background-color: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.5);
+            border-radius: var(--border-radius);
+            color: #ff6666;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            transition: var(--transition);
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .file-remove-btn:hover {
+            background-color: rgba(255, 0, 0, 0.3);
+            border-color: rgba(255, 0, 0, 0.7);
+        }
+        
         .preview-toggle-btn {
             background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid var(--border-color);
@@ -185,6 +265,7 @@
         
         .preview-item.excluded {
             opacity: 0.5;
+            text-decoration: line-through;
         }
         
         .preview-header-controls {
@@ -192,6 +273,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: var(--spacing-sm);
+            margin-top: var(--spacing-lg);
         }
         
         .sort-button {
@@ -256,11 +338,19 @@
         }
         
         .preview-container {
-            margin-bottom: var(--spacing-lg);
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 2px solid var(--border-color);
-            border-radius: var(--border-radius);
+            margin: var(--spacing-md) 0;
             padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: rgba(255, 255, 255, 0.02);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .changes-preview {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
         }
         
         .preview-header {
@@ -329,6 +419,155 @@
             background-color: rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
+        
+        .tool-section.clickable {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .tool-section.clickable:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .filter-section {
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        .filter-section.visible {
+            display: block;
+        }
+        
+        .filter-section-title {
+            display: block;
+            font-weight: bold;
+            margin-bottom: var(--spacing-sm);
+            margin-top: 0;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+        
+        .filter-section-title:not(:first-child) {
+            margin-top: var(--spacing-md);
+        }
+        
+        .filter-options {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+        
+        .filter-option-item {
+            position: relative;
+        }
+        
+        .filter-option-item input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .filter-option-item label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: calc(var(--spacing-sm) * 0.5) var(--spacing-md);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 0.85rem;
+            font-weight: normal;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            margin: 0;
+            user-select: none;
+            min-height: 32px;
+            min-width: 120px;
+            box-sizing: border-box;
+        }
+        
+        .filter-option-item label:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .filter-option-item input[type="checkbox"]:checked + label {
+            background-color: rgba(255, 0, 0, 0.2);
+            border-color: rgba(255, 0, 0, 0.5);
+            color: #ff6666;
+        }
+        
+        .filter-option-item input[type="checkbox"]:checked + label:hover {
+            background-color: rgba(255, 0, 0, 0.3);
+            border-color: rgba(255, 0, 0, 0.7);
+        }
+        
+        .ignore-categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: var(--spacing-sm);
+            align-items: stretch;
+        }
+        
+        .ignore-category-item {
+            display: none;
+            position: relative;
+        }
+        
+        .ignore-category-item input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+        
+        .ignore-category-item label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: calc(var(--spacing-sm) * 0.5) var(--spacing-sm);
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            font-size: 0.85rem;
+            font-weight: normal;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            margin: 0;
+            user-select: none;
+            min-height: 32px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .ignore-category-item label:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .ignore-category-item input[type="checkbox"]:checked + label {
+            background-color: rgba(255, 0, 0, 0.2);
+            border-color: rgba(255, 0, 0, 0.5);
+            color: #ff6666;
+        }
+        
+        .ignore-category-item input[type="checkbox"]:checked + label:hover {
+            background-color: rgba(255, 0, 0, 0.3);
+            border-color: rgba(255, 0, 0, 0.7);
+        }
     </style>
 </head>
 <body data-page="tools">
@@ -367,12 +606,29 @@
                     Инжектор конфигов
                 </button>
             </div>
+            
+            <div class="tool-section clickable" id="openSkyboxModal">
+                <h2>Q3 SKYBOX TOOL</h2>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                    Конвертация 360° панорамы (equirectangular) в Quake 3 skybox faces
+                </p>
+            </div>
         </div>
     </main>
 
+    <!-- Q3 Skybox Tool Modal -->
+    <div class="donation-modal" id="skyboxModal">
+        <div class="donation-modal-content" style="max-width: 1200px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto; padding: 0;">
+            <button class="donation-modal-close" id="closeSkyboxModal">&times;</button>
+            <div id="skyboxToolContent" style="padding: 18px 20px 16px;">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <!-- Config Injector Modal -->
     <div class="donation-modal" id="configInjectorModal">
-        <div class="donation-modal-content" style="max-width: 900px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto;">
+        <div class="donation-modal-content" style="max-width: 1200px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto;">
             <button class="donation-modal-close" id="closeConfigInjectorModal">&times;</button>
             <h3 style="text-align: center;">Инжектор конфигов</h3>
             <div class="cfg-injector-container" style="background-color: rgba(255, 255, 255, 0.05); border: 2px solid var(--border-color); border-radius: var(--border-radius); padding: var(--spacing-lg);">
@@ -381,6 +637,9 @@
                         <label for="sourceFiles">Исходные файлы</label>
                         <div class="file-input-wrapper">
                             <input type="file" id="sourceFiles" class="file-input" multiple accept=".cfg,.txt">
+                            <div class="file-drop-zone" id="sourceDropZone" data-target="source">
+                                <div class="file-drop-zone-text">Click / Drop / Ctrl+V<br><span class="file-drop-zone-ext">cfg или txt</span></div>
+                            </div>
                         </div>
                         <div class="file-list" id="sourceFileList"></div>
                     </div>
@@ -389,16 +648,99 @@
                         <label for="targetFile">Целевой конфиг</label>
                         <div class="file-input-wrapper">
                             <input type="file" id="targetFile" class="file-input" accept=".cfg,.txt">
+                            <div class="file-drop-zone" id="targetDropZone" data-target="target">
+                                <div class="file-drop-zone-text">Click / Drop / Ctrl+V<br><span class="file-drop-zone-ext">cfg или txt</span></div>
+                            </div>
                         </div>
                         <div class="file-list" id="targetFileList"></div>
                     </div>
                 </div>
                 
-                <div id="previewContainer" class="preview-container" style="display: none;">
-                    <div class="preview-header-controls">
-                        <h4 style="margin: 0;">Предпросмотр изменений:</h4>
-                        <button id="sortPreviewButton" class="sort-button">Сортировать</button>
+                <div class="filter-section">
+                    <label class="filter-section-title">Фильтры:</label>
+                    
+                    <div class="filter-options">
+                        <div class="filter-option-item">
+                            <input type="checkbox" id="ignoreNewCommands">
+                            <label for="ignoreNewCommands">Новые строчки</label>
+                        </div>
+                        <div class="filter-option-item">
+                            <input type="checkbox" id="ignoreUpdatedCommands">
+                            <label for="ignoreUpdatedCommands">Изменения</label>
+                        </div>
                     </div>
+                    
+                    <label class="filter-section-title">Категории:</label>
+                    <div class="ignore-categories-grid">
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreR" data-category="r_">
+                            <label for="ignoreR">r_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreCg" data-category="cg_">
+                            <label for="ignoreCg">cg_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreS" data-category="s_">
+                            <label for="ignoreS">s_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreCl" data-category="cl_">
+                            <label for="ignoreCl">cl_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreCom" data-category="com_">
+                            <label for="ignoreCom">com_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreCh" data-category="ch_">
+                            <label for="ignoreCh">ch_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreSv" data-category="sv_">
+                            <label for="ignoreSv">sv_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreUi" data-category="ui_">
+                            <label for="ignoreUi">ui_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreBind" data-category="bind">
+                            <label for="ignoreBind">bind</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreVstr" data-category="vstr">
+                            <label for="ignoreVstr">vstr</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreSet" data-category="set">
+                            <label for="ignoreSet">set</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreCustom" data-category="custom">
+                            <label for="ignoreCustom">Custom</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreG" data-category="g_">
+                            <label for="ignoreG">g_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignorePmove" data-category="pmove_">
+                            <label for="ignorePmove">pmove_*</label>
+                        </div>
+                        <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreServerGame" data-category="server_game">
+                            <label for="ignoreServerGame">Game</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="preview-header-controls" id="previewHeaderControls" style="display: none;">
+                    <h4 style="margin: 0;">Предпросмотр изменений:</h4>
+                    <button id="sortPreviewButton" class="sort-button">Сортировать</button>
+                </div>
+                
+                <div id="previewContainer" class="preview-container" style="display: none;">
                     <div id="previewContent" class="changes-preview">
                         <!-- Preview content will be loaded here -->
                     </div>
@@ -416,6 +758,7 @@
     <script src="/scripts/navigation.js?v=1.3"></script>
     <script src="/scripts/cfg-injector.js?v=1.3"></script>
     <script src="/scripts/cfge-modal.js?v=1.3"></script>
+    <script src="/scripts/skybox-modal.js?v=1.3"></script>
     
     <!-- Simple Analytics - 100% privacy-first analytics -->
     <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>

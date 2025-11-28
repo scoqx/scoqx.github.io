@@ -10,6 +10,7 @@
     const statusMessage = document.getElementById('statusMessage');
     const previewContainer = document.getElementById('previewContainer');
     const previewContent = document.getElementById('previewContent');
+    const previewHeaderControls = document.getElementById('previewHeaderControls');
     const sortPreviewButton = document.getElementById('sortPreviewButton');
     
     let sourceFiles = [];
@@ -18,22 +19,310 @@
     let previewItems = []; // Store preview items for sorting
     let isPreviewSorted = false; // Track if preview is currently sorted
     let previewUpdateTimeout = null; // Debounce timer for preview updates
+    let ignoredCategories = new Set(); // Categories to ignore
+    let ignoreNewCommands = false; // Ignore new commands (not in target)
+    let ignoreUpdatedCommands = false; // Ignore updated commands (changed values)
     
     // Check if we're on the tools page
     if (!sourceFilesInput || !targetFileInput || !processButton) {
         return;
     }
     
+    // Setup ignore options checkboxes
+    function setupIgnoreOptions() {
+        const ignoreNewCheckbox = document.getElementById('ignoreNewCommands');
+        const ignoreUpdatedCheckbox = document.getElementById('ignoreUpdatedCommands');
+        
+        if (ignoreNewCheckbox) {
+            ignoreNewCheckbox.addEventListener('change', function() {
+                ignoreNewCommands = this.checked;
+                renderPreview(); // Re-render to apply filter
+            });
+        }
+        
+        if (ignoreUpdatedCheckbox) {
+            ignoreUpdatedCheckbox.addEventListener('change', function() {
+                ignoreUpdatedCommands = this.checked;
+                renderPreview(); // Re-render to apply filter
+            });
+        }
+    }
+    
+    // Setup ignore categories checkboxes
+    function setupIgnoreCategories() {
+        const checkboxes = document.querySelectorAll('.ignore-category-item input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const category = this.getAttribute('data-category');
+                if (this.checked) {
+                    ignoredCategories.add(category);
+                } else {
+                    ignoredCategories.delete(category);
+                }
+                // Update preview when categories change
+                schedulePreviewUpdate();
+            });
+        });
+    }
+    
+    // Determine command category
+    // Returns category name if command belongs to a filterable category
+    // User-defined variables (like CrouchON, speed, is_pause) return 'custom'
+    function getCommandCategory(commandName, prefix) {
+        // Handle bind commands (stored as bind_KEY)
+        if (commandName.startsWith('bind_')) {
+            return 'bind';
+        }
+        
+        // Check for cvar prefixes (standard Quake 3 cvars)
+        // Works for both "seta r_something" and "r_something 0" syntax
+        if (commandName.startsWith('r_')) return 'r_';
+        if (commandName.startsWith('cg_')) return 'cg_';
+        if (commandName.startsWith('s_')) return 's_';
+        if (commandName.startsWith('cl_')) return 'cl_';
+        if (commandName.startsWith('com_')) return 'com_';
+        if (commandName.startsWith('ch_')) return 'ch_';
+        if (commandName.startsWith('sv_')) return 'sv_';
+        if (commandName.startsWith('ui_')) return 'ui_';
+        if (commandName.startsWith('g_')) return 'g_'; // Server game variables
+        if (commandName.startsWith('pmove_')) return 'pmove_'; // Physics engine
+        
+        // Check for special commands
+        if (commandName === 'vstr' || commandName.startsWith('vstr_')) return 'vstr';
+        
+        // Check for server game commands without prefix
+        const serverGameCommands = ['capturelimit', 'fraglimit', 'timelimit', 'map_restart', 'fast_restart', 'shuffle', 'reset', 'kick', 'ban', 'map', 'nextmap', 'addbot', 'removebot', 'team', 'spectator', 'callvote', 'vote'];
+        if (serverGameCommands.includes(commandName.toLowerCase())) {
+            return 'server_game';
+        }
+        
+        // Check for set command (not seta)
+        // This is handled separately by checking prefix
+        
+        // User-defined variables (CrouchON, CrouchOff, speed, is_pause, etc.)
+        // These are custom variables created with seta/set that don't match standard cvar prefixes
+        // If command has seta/set prefix and doesn't match any standard category, it's custom
+        if (prefix === 'seta' || prefix === 'set') {
+            return 'custom';
+        }
+        
+        // Commands without prefix that don't match categories are not custom variables
+        // (they might be regular commands like exec, echo, etc.)
+        return null;
+    }
+    
+    // Check if command should be ignored based on category
+    function shouldIgnoreCommand(commandName, prefix) {
+        // Check if it's a 'set' command (not 'seta')
+        // 'set' commands create temporary variables that are reset on map load
+        if (prefix === 'set' && ignoredCategories.has('set')) {
+            return true;
+        }
+        
+        // Get category from command name and prefix
+        const category = getCommandCategory(commandName, prefix);
+        
+        // If command has no category, it's not filtered
+        if (!category) {
+            return false;
+        }
+        
+        // Check if category is ignored
+        if (ignoredCategories.has(category)) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Initialize ignore options and categories
+    setupIgnoreOptions();
+    setupIgnoreCategories();
+    
+    // ========== Helper Functions ==========
+    
+    // Extract comment from line (everything after //, but not inside quotes)
+    function extractComment(line) {
+        let commentIndex = -1;
+        let inQuotes = false;
+        let quoteChar = null;
+        
+        for (let i = 0; i < line.length - 1; i++) {
+            const char = line[i];
+            const nextChar = line[i + 1];
+            
+            if ((char === '"' || char === "'") && (i === 0 || line[i - 1] !== '\\')) {
+                if (!inQuotes) {
+                    inQuotes = true;
+                    quoteChar = char;
+                } else if (char === quoteChar) {
+                    inQuotes = false;
+                    quoteChar = null;
+                }
+            } else if (!inQuotes && char === '/' && nextChar === '/') {
+                commentIndex = i;
+                break;
+            }
+        }
+        
+        return commentIndex !== -1 ? line.substring(commentIndex) : '';
+    }
+    
+    // Get language
+    function getLang() {
+        return document.documentElement.lang || 'en';
+    }
+    
+    // Translations
+    const translations = {
+        ru: {
+            analyzing: 'Анализ...',
+            error_reading_file: 'Ошибка чтения файла',
+            error_reading_target: 'Ошибка чтения целевого файла',
+            no_changes: 'Нет изменений для отображения',
+            processing: 'Обработка...',
+            select_files: 'Пожалуйста, выберите исходные файлы и целевой файл',
+            file_downloaded: 'Файл {name} успешно загружен!',
+            restore_change: 'Вернуть изменение',
+            exclude_change: 'Отменить изменение',
+            move_up: 'Вверх',
+            move_down: 'Вниз',
+            remove: 'Удалить',
+            sort: 'Сортировать',
+            unsort: 'Отменить сортировку'
+        },
+        en: {
+            analyzing: 'Analyzing...',
+            error_reading_file: 'Error reading file',
+            error_reading_target: 'Error reading target file',
+            no_changes: 'No changes to display',
+            processing: 'Processing...',
+            select_files: 'Please select source files and target file',
+            file_downloaded: 'File {name} downloaded successfully!',
+            restore_change: 'Restore change',
+            exclude_change: 'Exclude change',
+            move_up: 'Move up',
+            move_down: 'Move down',
+            remove: 'Remove',
+            sort: 'Sort',
+            unsort: 'Unsort'
+        }
+    };
+    
+    function t(key, params = {}) {
+        const lang = getLang();
+        let text = translations[lang]?.[key] || translations.en[key] || key;
+        // Replace placeholders like {name}
+        Object.entries(params).forEach(([k, v]) => {
+            text = text.replace(`{${k}}`, v);
+        });
+        return text;
+    }
+    
+    // Create DataTransfer from files
+    function createDataTransferFromFiles(files) {
+        const dataTransfer = new DataTransfer();
+        files.forEach(file => dataTransfer.items.add(file));
+        return dataTransfer;
+    }
+    
+    // Update file input with files
+    function updateFileInput(input, files) {
+        input.files = createDataTransferFromFiles(files).files;
+    }
+    
+    // Read and extract commands from files
+    async function readAndExtractCommands(files) {
+        const allCommands = new Map();
+        for (const file of files) {
+            try {
+                const content = await readFileAsText(file);
+                const commands = extractCommandsRaw(content);
+                for (const [name, cmd] of commands) {
+                    allCommands.set(name, cmd);
+                }
+            } catch (error) {
+                console.error(`Error reading file ${file.name}:`, error);
+                throw error;
+            }
+        }
+        return allCommands;
+    }
+    
+    // Reconstruct command line from command object
+    function reconstructCommandLine(cmd, commandName, leadingWhitespace = '', comment = '') {
+        // Check if this is a bind command (stored as bind_KEY)
+        let displayCommandName = commandName;
+        let keyPart = '';
+        if (commandName.startsWith('bind_')) {
+            displayCommandName = 'bind';
+            keyPart = commandName.substring(5); // Remove "bind_" prefix
+        }
+        
+        // Commands that should not have seta/set prefix
+        const noPrefixCommands = ['bind', 'exec', 'vstr', 'unbind', 'unbindall', 'cvar_restart', 'clear', 'echo'];
+        const isNoPrefixCommand = noPrefixCommands.includes(displayCommandName);
+        
+        // Use prefix from command, but don't add seta for special commands
+        let prefix = cmd.prefix || '';
+        if (!prefix && !isNoPrefixCommand) {
+            prefix = 'seta';
+        }
+        const prefixStr = prefix ? prefix + ' ' : '';
+        
+        // Determine if value should have quotes
+        const valueAlreadyQuoted = (cmd.value.length > 0 && 
+            ((cmd.value[0] === '"' && cmd.value[cmd.value.length - 1] === '"') ||
+             (cmd.value[0] === "'" && cmd.value[cmd.value.length - 1] === "'")));
+        const needsQuotes = valueAlreadyQuoted 
+            ? false 
+            : (cmd.hasQuotes !== undefined 
+                ? cmd.hasQuotes 
+                : (cmd.value.includes(' ') || cmd.value.includes(';') || cmd.value === ''));
+        const valueStr = needsQuotes ? `"${cmd.value}"` : cmd.value;
+        
+        // For bind commands, reconstruct as "bind KEY VALUE"
+        let commandPart = '';
+        if (displayCommandName === 'bind' && keyPart) {
+            const keyWasQuoted = cmd.bindKeyWasQuoted !== undefined ? cmd.bindKeyWasQuoted : false;
+            const keyStr = keyWasQuoted ? `"${keyPart}"` : keyPart;
+            commandPart = `${displayCommandName} ${keyStr} ${valueStr}`;
+        } else {
+            commandPart = `${displayCommandName} ${valueStr}`;
+        }
+        
+        return `${leadingWhitespace}${prefixStr}${commandPart}${comment ? ' ' + comment : ''}`;
+    }
+    
+    // ========== End Helper Functions ==========
+    
     // Update file list display
     function updateSourceFileList() {
+        const sourceDropZone = document.getElementById('sourceDropZone');
         if (sourceFiles.length === 0) {
             sourceFileList.innerHTML = '';
+            if (sourceFileList) {
+                sourceFileList.classList.add('hidden');
+            }
+            if (sourceDropZone) {
+                sourceDropZone.classList.remove('hidden');
+            }
             return;
         }
         
-        const lang = document.documentElement.lang || 'en';
+        // Hide drop zone when files are loaded
+        if (sourceDropZone) {
+            sourceDropZone.classList.add('hidden');
+        }
+        
+        // Show file list when files are loaded
+        if (sourceFileList) {
+            sourceFileList.classList.remove('hidden');
+        }
+        
         const upText = '↑';
         const downText = '↓';
+        const removeText = '×';
         const showControls = sourceFiles.length > 1; // Only show controls if more than 1 file
         
         sourceFileList.innerHTML = sourceFiles.map((file, index) => {
@@ -42,23 +331,45 @@
             
             return `<div class="file-item" data-index="${index}">
                 <span class="file-item-name">${escapeHtml(file.name)}</span>
-                ${showControls ? `<div class="file-item-controls">
-                    <button class="file-move-btn" data-action="up" data-index="${index}" ${!canMoveUp ? 'disabled' : ''} title="${lang === 'ru' ? 'Вверх' : 'Move up'}">${upText}</button>
-                    <button class="file-move-btn" data-action="down" data-index="${index}" ${!canMoveDown ? 'disabled' : ''} title="${lang === 'ru' ? 'Вниз' : 'Move down'}">${downText}</button>
-                </div>` : ''}
+                <div class="file-item-controls">
+                    ${showControls ? `
+                        <button class="file-move-btn" data-action="up" data-index="${index}" ${!canMoveUp ? 'disabled' : ''} title="${t('move_up')}">${upText}</button>
+                        <button class="file-move-btn" data-action="down" data-index="${index}" ${!canMoveDown ? 'disabled' : ''} title="${t('move_down')}">${downText}</button>
+                    ` : ''}
+                    <button class="file-remove-btn" data-action="remove" data-index="${index}" title="${t('remove')}">${removeText}</button>
+                </div>
             </div>`;
         }).join('');
         
-        // Attach event listeners to move buttons
-        const moveButtons = sourceFileList.querySelectorAll('.file-move-btn');
-        moveButtons.forEach(button => {
+        // Attach event listeners to control buttons
+        const controlButtons = sourceFileList.querySelectorAll('.file-move-btn, .file-remove-btn');
+        controlButtons.forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 const index = parseInt(this.getAttribute('data-index'));
                 const action = this.getAttribute('data-action');
                 
-                if (action === 'up' && index > 0) {
+                if (action === 'remove') {
+                    // Remove file from array
+                    sourceFiles.splice(index, 1);
+                    // Update file input
+                    if (sourceFiles.length > 0) {
+                        updateFileInput(sourceFilesInput, sourceFiles);
+                    } else {
+                        // Clear input
+                        sourceFilesInput.value = '';
+                    }
+                    // Update UI
+                    updateSourceFileList();
+                    updateProcessButton();
+                    // Reset preview
+                    setPreviewVisibility(false);
+                    if (previewContent) {
+                        previewContent.innerHTML = '';
+                    }
+                    excludedCommands.clear();
+                } else if (action === 'up' && index > 0) {
                     // Move file up
                     [sourceFiles[index - 1], sourceFiles[index]] = [sourceFiles[index], sourceFiles[index - 1]];
                     updateSourceFileList();
@@ -76,12 +387,59 @@
     }
     
     function updateTargetFileList() {
+        const targetDropZone = document.getElementById('targetDropZone');
         if (!targetFile) {
             targetFileList.innerHTML = '';
+            if (targetFileList) {
+                targetFileList.classList.add('hidden');
+            }
+            if (targetDropZone) {
+                targetDropZone.classList.remove('hidden');
+            }
             return;
         }
         
-        targetFileList.innerHTML = `<div class="file-item">${targetFile.name}</div>`;
+        // Hide drop zone when file is loaded
+        if (targetDropZone) {
+            targetDropZone.classList.add('hidden');
+        }
+        
+        // Show file list when file is loaded
+        if (targetFileList) {
+            targetFileList.classList.remove('hidden');
+        }
+        
+        const removeText = '×';
+        
+        targetFileList.innerHTML = `<div class="file-item">
+            <span class="file-item-name">${escapeHtml(targetFile.name)}</span>
+            <div class="file-item-controls">
+                <button class="file-remove-btn" data-action="remove" title="${t('remove')}">${removeText}</button>
+            </div>
+        </div>`;
+        
+        // Attach event listener to remove button
+        const removeButton = targetFileList.querySelector('.file-remove-btn');
+        if (removeButton) {
+            removeButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Clear target file
+                targetFile = null;
+                targetFileInput.value = '';
+                
+                // Update UI
+                updateTargetFileList();
+                updateProcessButton();
+                // Reset preview
+                setPreviewVisibility(false);
+                if (previewContent) {
+                    previewContent.innerHTML = '';
+                }
+                excludedCommands.clear();
+            });
+        }
     }
     
     // Schedule preview update with debounce to avoid flickering when moving files
@@ -105,9 +463,7 @@
         updateSourceFileList();
         updateProcessButton();
         // Reset preview before updating
-        if (previewContainer) {
-            previewContainer.style.display = 'none';
-        }
+        setPreviewVisibility(false);
         if (previewContent) {
             previewContent.innerHTML = '';
         }
@@ -115,6 +471,13 @@
         setTimeout(() => {
             updatePreview();
         }, 100);
+        
+        // Update categories immediately if both files are selected
+        if (sourceFiles.length > 0 && targetFile) {
+            updateVisibleCategories().catch(err => {
+                console.error('Error updating visible categories:', err);
+            });
+        }
     });
     
     // Handle target file selection
@@ -128,9 +491,7 @@
         updateTargetFileList();
         updateProcessButton();
         // Reset preview before updating
-        if (previewContainer) {
-            previewContainer.style.display = 'none';
-        }
+        setPreviewVisibility(false);
         if (previewContent) {
             previewContent.innerHTML = '';
         }
@@ -138,6 +499,13 @@
         setTimeout(() => {
             updatePreview();
         }, 100);
+        
+        // Update categories immediately if both files are selected
+        if (sourceFiles.length > 0 && targetFile) {
+            updateVisibleCategories().catch(err => {
+                console.error('Error updating visible categories:', err);
+            });
+        }
     });
     
     // Toggle command exclusion
@@ -161,9 +529,7 @@
                 // Update button
                 button.className = buttonClass;
                 button.textContent = buttonText;
-                button.title = isExcluded 
-                    ? (document.documentElement.lang === 'ru' ? 'Вернуть изменение' : 'Restore change')
-                    : (document.documentElement.lang === 'ru' ? 'Отменить изменение' : 'Exclude change');
+                button.title = isExcluded ? t('restore_change') : t('exclude_change');
                 
                 // Update item class
                 item.className = itemClass;
@@ -177,6 +543,24 @@
     // Update process button state
     function updateProcessButton() {
         processButton.disabled = sourceFiles.length === 0 || !targetFile;
+        
+        const hasFiles = sourceFiles.length > 0 && targetFile;
+        
+        // Show/hide filter section
+        const filterSection = document.querySelector('.filter-section');
+        if (filterSection) {
+            if (hasFiles) {
+                filterSection.classList.add('visible');
+                // Categories will be updated after preview is loaded in updatePreview()
+            } else {
+                filterSection.classList.remove('visible');
+                // Hide all category items when no files
+                const categoryItems = document.querySelectorAll('.ignore-category-item');
+                categoryItems.forEach(item => {
+                    item.style.display = 'none';
+                });
+            }
+        }
     }
     
     // Parse command from a line
@@ -185,31 +569,9 @@
         const originalLine = line;
         
         // Remove comments (everything after //)
-        // But be careful with // inside quoted strings
-        let commentIndex = -1;
-        let inQuotes = false;
-        let quoteChar = null;
-        
-        for (let i = 0; i < line.length - 1; i++) {
-            const char = line[i];
-            const nextChar = line[i + 1];
-            
-            if ((char === '"' || char === "'") && (i === 0 || line[i - 1] !== '\\')) {
-                if (!inQuotes) {
-                    inQuotes = true;
-                    quoteChar = char;
-                } else if (char === quoteChar) {
-                    inQuotes = false;
-                    quoteChar = null;
-                }
-            } else if (!inQuotes && char === '/' && nextChar === '/') {
-                commentIndex = i;
-                break;
-            }
-        }
-        
-        if (commentIndex !== -1) {
-            line = line.substring(0, commentIndex);
+        const comment = extractComment(line);
+        if (comment) {
+            line = line.substring(0, line.length - comment.length);
         }
         
         // Trim whitespace
@@ -377,8 +739,8 @@
         };
     }
     
-    // Extract commands from file content
-    function extractCommands(content) {
+    // Extract commands from file content (without filtering by ignored categories)
+    function extractCommandsRaw(content) {
         const lines = content.split('\n');
         const commands = new Map();
         
@@ -399,6 +761,96 @@
         return commands;
     }
     
+    // Extract commands from file content
+    function extractCommands(content) {
+        const lines = content.split('\n');
+        const commands = new Map();
+        
+        for (const line of lines) {
+            const command = parseCommand(line);
+            if (command) {
+                // Check if command should be ignored based on category
+                if (shouldIgnoreCommand(command.name, command.prefix)) {
+                    continue;
+                }
+                
+                // If command already exists, keep the last one
+                commands.set(command.name, {
+                    value: command.value,
+                    hasQuotes: command.hasQuotes,
+                    prefix: command.prefix,
+                    originalCommandName: command.originalCommandName,
+                    bindKeyWasQuoted: command.bindKeyWasQuoted
+                });
+            }
+        }
+        
+        return commands;
+    }
+    
+    // Update visible category checkboxes based on commands that have changes
+    async function updateVisibleCategories() {
+        if (sourceFiles.length === 0 || !targetFile) {
+            // Hide all checkboxes if no files
+            const categoryItems = document.querySelectorAll('.ignore-category-item');
+            categoryItems.forEach(item => {
+                item.style.display = 'none';
+            });
+            return;
+        }
+        
+        try {
+            // Collect categories from ALL commands in source files (not just preview)
+            // This allows categories to remain visible even when they are ignored
+            const foundCategories = new Set();
+            
+            // Read all source files and extract commands without filtering
+            for (const file of sourceFiles) {
+                try {
+                    const content = await readFileAsText(file);
+                    const commands = extractCommandsRaw(content); // Use raw extraction to get all commands
+                    
+                    // Analyze all commands from source files
+                    for (const [commandName, cmd] of commands) {
+                        const prefix = cmd.prefix || '';
+                        
+                        // Get category from command name and prefix
+                        const category = getCommandCategory(commandName, prefix);
+                        if (category) {
+                            foundCategories.add(category);
+                        }
+                        
+                        // Check for 'set' prefix (not 'seta')
+                        if (prefix === 'set') {
+                            foundCategories.add('set');
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error reading file ${file.name} for categories:`, error);
+                }
+            }
+            
+            // Show/hide category checkboxes based on found categories
+            const categoryItems = document.querySelectorAll('.ignore-category-item');
+            categoryItems.forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    const category = checkbox.getAttribute('data-category');
+                    if (foundCategories.has(category)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                        // Uncheck and remove from ignored if not found
+                        checkbox.checked = false;
+                        ignoredCategories.delete(category);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error updating visible categories:', error);
+        }
+    }
+    
     // Read file as text
     function readFileAsText(file) {
         return new Promise((resolve, reject) => {
@@ -416,6 +868,16 @@
         return div.innerHTML;
     }
     
+    // Helper function to show/hide preview header and container
+    function setPreviewVisibility(visible) {
+        if (previewHeaderControls) {
+            previewHeaderControls.style.display = visible ? 'flex' : 'none';
+        }
+        if (previewContainer) {
+            previewContainer.style.display = visible ? 'block' : 'none';
+        }
+    }
+    
     // Update preview
     async function updatePreview() {
         if (!previewContainer || !previewContent) {
@@ -424,20 +886,20 @@
         
         // Check if files are still selected
         if (sourceFiles.length === 0 || !targetFile) {
-            previewContainer.style.display = 'none';
+            setPreviewVisibility(false);
             previewContent.innerHTML = '';
             return;
         }
         
         // Verify files are still valid
         if (!sourceFilesInput.files || sourceFilesInput.files.length === 0) {
-            previewContainer.style.display = 'none';
+            setPreviewVisibility(false);
             previewContent.innerHTML = '';
             return;
         }
         
         if (!targetFileInput.files || targetFileInput.files.length === 0) {
-            previewContainer.style.display = 'none';
+            setPreviewVisibility(false);
             previewContent.innerHTML = '';
             return;
         }
@@ -446,41 +908,24 @@
             // Keep preview visible if it was already shown (for smooth updates)
             const wasHidden = previewContainer.style.display === 'none' || previewContainer.style.display === '';
             if (wasHidden) {
-                previewContainer.style.display = 'block';
-                const lang = document.documentElement.lang || 'en';
-                const analyzingMsg = lang === 'ru' ? 'Анализ...' : 'Analyzing...';
-                previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${analyzingMsg}</div>`;
+                setPreviewVisibility(true);
+                previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${t('analyzing')}</div>`;
             }
             // If preview was already visible, don't show "Analyzing..." - just update content smoothly
             
-            // Read all source files and extract commands
-            const allCommands = new Map();
-            
-            // Use sourceFiles array to maintain order (not sourceFilesInput.files)
-            for (const file of sourceFiles) {
-                try {
-                    const content = await readFileAsText(file);
-                    const commands = extractCommands(content);
-                    
-                    // Merge commands (later files override earlier ones)
-                    for (const [name, cmd] of commands) {
-                        allCommands.set(name, cmd);
-                    }
-                } catch (error) {
-                    console.error(`Error reading file ${file.name}:`, error);
-                    const lang = document.documentElement.lang || 'en';
-                    const errorMsg = lang === 'ru' 
-                        ? `Ошибка чтения файла: ${file.name}`
-                        : `Error reading file: ${file.name}`;
-                    previewContent.innerHTML = `<div style="color: #ff6666;">${errorMsg}</div>`;
-                    return;
-                }
+            // Read all source files and extract commands (raw - without filtering)
+            let allCommands;
+            try {
+                allCommands = await readAndExtractCommands(sourceFiles);
+            } catch (error) {
+                previewContent.innerHTML = `<div style="color: #ff6666;">${t('error_reading_file')}: ${error.message}</div>`;
+                return;
             }
             
             // Read target file - use current file from input
             const currentTargetFile = targetFileInput.files[0];
             if (!currentTargetFile) {
-                previewContainer.style.display = 'none';
+                setPreviewVisibility(false);
                 previewContent.innerHTML = '';
                 return;
             }
@@ -490,11 +935,7 @@
                 targetContent = await readFileAsText(currentTargetFile);
             } catch (error) {
                 console.error('Error reading target file:', error);
-                const lang = document.documentElement.lang || 'en';
-                const errorMsg = lang === 'ru' 
-                    ? 'Ошибка чтения целевого файла'
-                    : 'Error reading target file';
-                previewContent.innerHTML = `<div style="color: #ff6666;">${errorMsg}</div>`;
+                previewContent.innerHTML = `<div style="color: #ff6666;">${t('error_reading_target')}</div>`;
                 return;
             }
             
@@ -527,8 +968,11 @@
             previewItems = [];
             const addedCommands = new Set();
             
-            // Show updated commands
+            // Show updated commands (including ignored ones - they will be strikethrough)
             for (const [name, sourceCmd] of allCommands) {
+                // Check if command should be ignored based on category
+                const isIgnored = shouldIgnoreCommand(name, sourceCmd.prefix);
+                
                 if (targetCommands.has(name)) {
                     const targetCmd = targetCommands.get(name);
                     if (targetCmd.value !== sourceCmd.value) {
@@ -537,7 +981,9 @@
                             name: name,
                             displayName: getDisplayName(name, sourceCmd),
                             oldValue: targetCmd.value,
-                            newValue: sourceCmd.value
+                            newValue: sourceCmd.value,
+                            prefix: sourceCmd.prefix,
+                            isIgnored: isIgnored
                         });
                         addedCommands.add(name);
                     }
@@ -546,7 +992,9 @@
                         type: 'added',
                         name: name,
                         displayName: getDisplayName(name, sourceCmd),
-                        value: sourceCmd.value
+                        value: sourceCmd.value,
+                        prefix: sourceCmd.prefix,
+                        isIgnored: isIgnored
                     });
                     addedCommands.add(name);
                 }
@@ -555,27 +1003,24 @@
             // Reset sort state when preview is updated
             isPreviewSorted = false;
             
-            // Render preview
+            // Render preview first
             renderPreview();
+            
+            // Update visible categories (async - reads files directly)
+            updateVisibleCategories().catch(err => {
+                console.error('Error updating visible categories:', err);
+            });
             
         } catch (error) {
             console.error('Error updating preview:', error);
-            const lang = document.documentElement.lang || 'en';
-            const errorMsg = lang === 'ru' 
-                ? `Ошибка: ${error.message}`
-                : `Error: ${error.message}`;
-            previewContent.innerHTML = `<div style="color: #ff6666;">${errorMsg}</div>`;
+            previewContent.innerHTML = `<div style="color: #ff6666;">Error: ${error.message}</div>`;
         }
     }
     
     // Render preview items
     function renderPreview() {
         if (previewItems.length === 0) {
-            const lang = document.documentElement.lang || 'en';
-            const message = lang === 'ru' 
-                ? 'Нет изменений для отображения'
-                : 'No changes to display';
-            previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${message}</div>`;
+            previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${t('no_changes')}</div>`;
         } else {
             // Use sorted items if sorted, otherwise use original order
             const itemsToRender = isPreviewSorted ? [...previewItems].sort((a, b) => {
@@ -612,18 +1057,32 @@
                 return nameA.localeCompare(nameB);
             }) : previewItems;
             
-            const html = itemsToRender.map(item => {
+            // Filter items based on ignore options
+            const filteredItems = itemsToRender.filter(item => {
+                if (ignoreNewCommands && item.type === 'added') {
+                    return false; // Hide new commands
+                }
+                if (ignoreUpdatedCommands && item.type === 'updated') {
+                    return false; // Hide updated commands
+                }
+                return true;
+            });
+            
+            const html = filteredItems.map(item => {
                     const isExcluded = excludedCommands.has(item.name);
+                    const isIgnored = item.isIgnored || false;
                     const buttonClass = isExcluded ? 'preview-toggle-btn excluded' : 'preview-toggle-btn';
                     const buttonText = isExcluded ? '+' : '×';
-                    const itemClass = isExcluded ? 'preview-item excluded' : 'preview-item';
+                    // Item is excluded if manually excluded OR ignored by category
+                    const itemClass = (isExcluded || isIgnored) ? 'preview-item excluded' : 'preview-item';
                     
                     // Store original command name in data attribute (will be decoded when reading)
                     const commandNameForData = item.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                     
+                    const buttonTitle = isExcluded ? t('restore_change') : t('exclude_change');
                     if (item.type === 'updated') {
                         return `<div class="${itemClass}">
-                            <button class="${buttonClass}" data-command="${commandNameForData}" title="${isExcluded ? (document.documentElement.lang === 'ru' ? 'Вернуть изменение' : 'Restore change') : (document.documentElement.lang === 'ru' ? 'Отменить изменение' : 'Exclude change')}">${buttonText}</button>
+                            <button class="${buttonClass}" data-command="${commandNameForData}" title="${buttonTitle}">${buttonText}</button>
                             <span class="preview-command">${escapeHtml(item.displayName)}</span>
                             <span class="preview-arrow">→</span>
                             <span class="preview-old">${escapeHtml(item.oldValue)}</span>
@@ -632,7 +1091,7 @@
                         </div>`;
                     } else if (item.type === 'added') {
                         return `<div class="${itemClass}">
-                            <button class="${buttonClass}" data-command="${commandNameForData}" title="${isExcluded ? (document.documentElement.lang === 'ru' ? 'Вернуть изменение' : 'Restore change') : (document.documentElement.lang === 'ru' ? 'Отменить изменение' : 'Exclude change')}">${buttonText}</button>
+                            <button class="${buttonClass}" data-command="${commandNameForData}" title="${buttonTitle}">${buttonText}</button>
                             <span class="preview-added">+ ${escapeHtml(item.displayName)} = ${escapeHtml(item.value)}</span>
                         </div>`;
                     }
@@ -666,52 +1125,29 @@
         
         // Update button text
         if (sortPreviewButton) {
-            const lang = document.documentElement.lang || 'en';
-            sortPreviewButton.textContent = isPreviewSorted 
-                ? (lang === 'ru' ? 'Отменить сортировку' : 'Unsort')
-                : (lang === 'ru' ? 'Сортировать' : 'Sort');
+            sortPreviewButton.textContent = isPreviewSorted ? t('unsort') : t('sort');
         }
     }
     
     // Process files
     async function processFiles() {
         if (sourceFiles.length === 0 || !targetFile) {
-            const lang = document.documentElement.lang || 'en';
-            const message = lang === 'ru' 
-                ? 'Пожалуйста, выберите исходные файлы и целевой файл'
-                : 'Please select source files and target file';
-            showStatus('error', message);
+            showStatus('error', t('select_files'));
             return;
         }
         
         try {
             processButton.disabled = true;
-            const lang = document.documentElement.lang || 'en';
-            const processingMsg = lang === 'ru' ? 'Обработка...' : 'Processing...';
-            showStatus('', processingMsg);
+            showStatus('', t('processing'));
             
-            // Read all source files and extract commands
-            // Use sourceFiles array to maintain order
-            const allCommands = new Map();
-            
-            for (const file of sourceFiles) {
-                try {
-                    const content = await readFileAsText(file);
-                    const commands = extractCommands(content);
-                    
-                    // Merge commands (later files override earlier ones)
-                    for (const [name, cmd] of commands) {
-                        allCommands.set(name, cmd);
-                    }
-                } catch (error) {
-                    console.error(`Error reading file ${file.name}:`, error);
-                    const message = lang === 'ru'
-                        ? `Ошибка чтения файла: ${file.name}`
-                        : `Error reading file: ${file.name}`;
-                    showStatus('error', message);
-                    processButton.disabled = false;
-                    return;
-                }
+            // Read all source files and extract commands (raw - will be filtered later)
+            let allCommands;
+            try {
+                allCommands = await readAndExtractCommands(sourceFiles);
+            } catch (error) {
+                showStatus('error', `${t('error_reading_file')}: ${error.message}`);
+                processButton.disabled = false;
+                return;
             }
             
             // Read target file
@@ -720,10 +1156,7 @@
                 targetContent = await readFileAsText(targetFile);
             } catch (error) {
                 console.error('Error reading target file:', error);
-                const message = lang === 'ru'
-                    ? 'Ошибка чтения целевого файла'
-                    : 'Error reading target file';
-                showStatus('error', message);
+                showStatus('error', t('error_reading_target'));
                 processButton.disabled = false;
                 return;
             }
@@ -761,6 +1194,25 @@
             for (const [name, sourceCmd] of allCommands) {
                 if (excludedCommands.has(name)) {
                     continue; // Skip excluded commands
+                }
+                
+                // Check if command should be ignored based on category
+                if (shouldIgnoreCommand(name, sourceCmd.prefix)) {
+                    continue; // Skip ignored category commands
+                }
+                
+                const isNewCommand = !targetCommands.has(name);
+                const isUpdatedCommand = targetCommands.has(name) && 
+                    targetCommands.get(name).value !== sourceCmd.value;
+                
+                // Skip new commands if option is enabled
+                if (ignoreNewCommands && isNewCommand) {
+                    continue;
+                }
+                
+                // Skip updated commands if option is enabled
+                if (ignoreUpdatedCommands && isUpdatedCommand) {
+                    continue;
                 }
                 
                 if (targetCommands.has(name)) {
@@ -801,87 +1253,11 @@
                         const leadingWhitespaceMatch = originalLine.match(/^[\s\t]*/);
                         const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : '';
                         
-                        // Extract comment (everything after //, but not inside quotes)
-                        let commentIndex = -1;
-                        let inQuotes = false;
-                        let quoteChar = null;
+                        // Extract comment
+                        const comment = extractComment(originalLine);
                         
-                        for (let i = 0; i < originalLine.length - 1; i++) {
-                            const char = originalLine[i];
-                            const nextChar = originalLine[i + 1];
-                            
-                            if ((char === '"' || char === "'") && (i === 0 || originalLine[i - 1] !== '\\')) {
-                                if (!inQuotes) {
-                                    inQuotes = true;
-                                    quoteChar = char;
-                                } else if (char === quoteChar) {
-                                    inQuotes = false;
-                                    quoteChar = null;
-                                }
-                            } else if (!inQuotes && char === '/' && nextChar === '/') {
-                                commentIndex = i;
-                                break;
-                            }
-                        }
-                        
-                        const comment = commentIndex !== -1 ? originalLine.substring(commentIndex) : '';
-                        
-                        // Check if this is a bind command (stored as bind_KEY)
-                        let displayCommandName = item.commandName;
-                        let keyPart = '';
-                        if (item.commandName.startsWith('bind_')) {
-                            displayCommandName = 'bind';
-                            keyPart = item.commandName.substring(5); // Remove "bind_" prefix
-                        }
-                        
-                        // Commands that should not have seta/set prefix
-                        const noPrefixCommands = ['bind', 'exec', 'vstr', 'unbind', 'unbindall', 'cvar_restart', 'clear', 'echo'];
-                        const isNoPrefixCommand = noPrefixCommands.includes(displayCommandName);
-                        
-                        // Use prefix from command, but don't add seta for special commands
-                        let prefix = cmd.prefix || '';
-                        if (!prefix && !isNoPrefixCommand) {
-                            prefix = 'seta';
-                        }
-                        const prefixStr = prefix ? prefix + ' ' : '';
-                        
-                        // Determine if value should have quotes
-                        // Use hasQuotes from source if available, otherwise check if value contains spaces or special chars
-                        // But don't add quotes if value already starts and ends with quotes
-                        const valueAlreadyQuoted = (cmd.value.length > 0 && 
-                            ((cmd.value[0] === '"' && cmd.value[cmd.value.length - 1] === '"') ||
-                             (cmd.value[0] === "'" && cmd.value[cmd.value.length - 1] === "'")));
-                        const needsQuotes = valueAlreadyQuoted 
-                            ? false 
-                            : (cmd.hasQuotes !== undefined 
-                                ? cmd.hasQuotes 
-                                : (cmd.value.includes(' ') || cmd.value.includes(';') || cmd.value === ''));
-                        const valueStr = needsQuotes ? `"${cmd.value}"` : cmd.value;
-                        
-                        // For bind commands, reconstruct as "bind KEY VALUE"
-                        let commandPart = '';
-                        if (displayCommandName === 'bind' && keyPart) {
-                            // Check if key was quoted in original or source
-                            const keyWasQuoted = cmd.bindKeyWasQuoted !== undefined 
-                                ? cmd.bindKeyWasQuoted 
-                                : false;
-                            
-                            let keyStr = keyPart;
-                            if (!keyWasQuoted) {
-                                // If key wasn't quoted, keep it unquoted (as in original)
-                                // Quake 3 accepts unquoted single character keys
-                                keyStr = keyPart;
-                            } else {
-                                // Key was quoted, preserve quotes (use double quotes for consistency)
-                                keyStr = `"${keyPart}"`;
-                            }
-                            commandPart = `${displayCommandName} ${keyStr} ${valueStr}`;
-                        } else {
-                            commandPart = `${displayCommandName} ${valueStr}`;
-                        }
-                        
-                        const newLine = `${leadingWhitespace}${prefixStr}${commandPart}${comment ? ' ' + comment : ''}`;
-                        
+                        // Reconstruct command line
+                        const newLine = reconstructCommandLine(cmd, item.commandName, leadingWhitespace, comment);
                         outputLines.push(newLine);
                         addedCommands.add(item.commandName);
                     }
@@ -894,57 +1270,8 @@
             // Add new commands that weren't in target
             for (const [name, cmd] of targetCommands) {
                 if (!addedCommands.has(name)) {
-                    // Check if this is a bind command (stored as bind_KEY)
-                    let displayCommandName = name;
-                    let keyPart = '';
-                    if (name.startsWith('bind_')) {
-                        displayCommandName = 'bind';
-                        keyPart = name.substring(5); // Remove "bind_" prefix
-                    }
-                    
-                    // Commands that should not have seta/set prefix
-                    const noPrefixCommands = ['bind', 'exec', 'vstr', 'unbind', 'unbindall', 'cvar_restart', 'clear', 'echo'];
-                    const isNoPrefixCommand = noPrefixCommands.includes(displayCommandName);
-                    
-                    // Use prefix from command, but don't add seta for special commands
-                    let prefix = cmd.prefix || '';
-                    if (!prefix && !isNoPrefixCommand) {
-                        prefix = 'seta';
-                    }
-                    const prefixStr = prefix ? prefix + ' ' : '';
-                    // Don't add quotes if value already starts and ends with quotes
-                    const valueAlreadyQuoted = (cmd.value.length > 0 && 
-                        ((cmd.value[0] === '"' && cmd.value[cmd.value.length - 1] === '"') ||
-                         (cmd.value[0] === "'" && cmd.value[cmd.value.length - 1] === "'")));
-                    const needsQuotes = valueAlreadyQuoted 
-                        ? false 
-                        : (cmd.hasQuotes !== undefined 
-                            ? cmd.hasQuotes 
-                            : (cmd.value.includes(' ') || cmd.value === ''));
-                    const valueStr = needsQuotes ? `"${cmd.value}"` : cmd.value;
-                    
-                    // For bind commands, reconstruct as "bind KEY VALUE"
-                    let commandPart = '';
-                    if (displayCommandName === 'bind' && keyPart) {
-                        // Check if key was quoted in source
-                        const keyWasQuoted = cmd.bindKeyWasQuoted !== undefined 
-                            ? cmd.bindKeyWasQuoted 
-                            : false;
-                        
-                        let keyStr = keyPart;
-                        if (!keyWasQuoted) {
-                            // If key wasn't quoted, keep it unquoted (as in original)
-                            keyStr = keyPart;
-                        } else {
-                            // Key was quoted, preserve quotes
-                            keyStr = `"${keyPart}"`;
-                        }
-                        commandPart = `${displayCommandName} ${keyStr} ${valueStr}`;
-                    } else {
-                        commandPart = `${displayCommandName} ${valueStr}`;
-                    }
-                    
-                    outputLines.push(`${prefixStr}${commandPart}`);
+                    const commandLine = reconstructCommandLine(cmd, name);
+                    outputLines.push(commandLine);
                 }
             }
             
@@ -973,10 +1300,7 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             
-            const message = lang === 'ru'
-                ? `Файл ${zipFileName} успешно загружен!`
-                : `File ${zipFileName} downloaded successfully!`;
-            showStatus('success', message);
+            showStatus('success', t('file_downloaded', { name: zipFileName }));
             processButton.disabled = false;
             
         } catch (error) {
@@ -999,6 +1323,380 @@
         }
     }
     
+    // Track which file selector area has focus
+    let focusedArea = null; // 'source', 'target', or null
+    let hoveredArea = null; // 'source', 'target', or null - tracks mouse hover
+    
+    // Handle paste event for file insertion (Ctrl+V)
+    function handlePaste(e) {
+        // Check if modal is open (check if configInjectorModal exists and is active)
+        const configInjectorModal = document.getElementById('configInjectorModal');
+        if (!configInjectorModal || !configInjectorModal.classList.contains('active')) {
+            return; // Don't handle paste if modal is not open
+        }
+        
+        // Check if clipboard contains files
+        const items = e.clipboardData?.items;
+        if (!items) {
+            return;
+        }
+        
+        const files = [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                // Check if file has .cfg or .txt extension
+                if (file && /\.(cfg|txt)$/i.test(file.name)) {
+                    files.push(file);
+                }
+            }
+        }
+        
+        if (files.length === 0) {
+            return;
+        }
+        
+        // Prevent default paste behavior
+        e.preventDefault();
+        
+        // Determine which input field to use based on hover, focus, or active element
+        const activeElement = document.activeElement;
+        let targetArea = hoveredArea || focusedArea; // Prefer hover over focus
+        
+        // If no hover or focus tracked, try to detect from active element
+        if (!targetArea) {
+            const sourceDropZone = document.getElementById('sourceDropZone');
+            const targetDropZone = document.getElementById('targetDropZone');
+            
+            // Find the file selector containers
+            const sourceSelector = sourceFilesInput.closest('.file-selector');
+            const targetSelector = targetFileInput.closest('.file-selector');
+            
+            // Check if active element is a drop zone
+            if (activeElement === sourceDropZone || (sourceDropZone && sourceDropZone.contains(activeElement))) {
+                targetArea = 'source';
+            }
+            else if (activeElement === targetDropZone || (targetDropZone && targetDropZone.contains(activeElement))) {
+                targetArea = 'target';
+            }
+            // Check if active element is within source selector
+            else if (sourceSelector && sourceSelector.contains(activeElement)) {
+                targetArea = 'source';
+            }
+            // Check if active element is within target selector
+            else if (targetSelector && targetSelector.contains(activeElement)) {
+                targetArea = 'target';
+            }
+            // Check if input elements themselves are focused
+            else if (activeElement === sourceFilesInput || 
+                     sourceFileList && sourceFileList.contains(activeElement)) {
+                targetArea = 'source';
+            }
+            else if (activeElement === targetFileInput ||
+                     targetFileList && targetFileList.contains(activeElement)) {
+                targetArea = 'target';
+            }
+        }
+        
+        // Insert files into the appropriate input
+        if (targetArea === 'source') {
+            // Add files to source files (multiple files allowed)
+            const existingFiles = Array.from(sourceFiles);
+            const newFiles = files.filter(file => 
+                !existingFiles.some(existing => existing.name === file.name && existing.size === file.size)
+            );
+            
+            if (newFiles.length > 0) {
+                const allFiles = [...existingFiles, ...newFiles];
+                updateFileInput(sourceFilesInput, allFiles);
+                sourceFiles = Array.from(sourceFilesInput.files);
+                sourceFilesInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else if (targetArea === 'target') {
+            // Set target file (only one file allowed, use the first one)
+            if (files.length > 0) {
+                updateFileInput(targetFileInput, [files[0]]);
+                targetFile = targetFileInput.files[0] || null;
+                targetFileInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else {
+            // Default: if no specific area is focused, use source files area
+            const existingFiles = Array.from(sourceFiles);
+            const newFiles = files.filter(file => 
+                !existingFiles.some(existing => existing.name === file.name && existing.size === file.size)
+            );
+            
+            if (newFiles.length > 0) {
+                const allFiles = [...existingFiles, ...newFiles];
+                updateFileInput(sourceFilesInput, allFiles);
+                sourceFiles = Array.from(sourceFilesInput.files);
+                sourceFilesInput.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+    }
+    
+    // Add paste event listener to document
+    document.addEventListener('paste', handlePaste);
+    
+    // Add focus and hover tracking to file selector areas
+    function setupFocusTracking() {
+        const sourceDropZone = document.getElementById('sourceDropZone');
+        const targetDropZone = document.getElementById('targetDropZone');
+        
+        // Track focus and hover on source files area
+        const sourceSelector = sourceFilesInput.closest('.file-selector');
+        if (sourceSelector) {
+            sourceSelector.addEventListener('click', function() {
+                focusedArea = 'source';
+            });
+            sourceSelector.addEventListener('focusin', function() {
+                focusedArea = 'source';
+            });
+            sourceSelector.addEventListener('mouseenter', function() {
+                hoveredArea = 'source';
+            });
+            sourceSelector.addEventListener('mouseleave', function() {
+                hoveredArea = null;
+            });
+        }
+        
+        // Track focus and hover on source drop zone
+        if (sourceDropZone) {
+            sourceDropZone.addEventListener('click', function() {
+                focusedArea = 'source';
+            });
+            sourceDropZone.addEventListener('focus', function() {
+                focusedArea = 'source';
+            });
+            sourceDropZone.addEventListener('mouseenter', function() {
+                hoveredArea = 'source';
+            });
+            sourceDropZone.addEventListener('mouseleave', function() {
+                hoveredArea = null;
+            });
+        }
+        
+        // Track focus on source input and file list
+        if (sourceFilesInput) {
+            sourceFilesInput.addEventListener('focus', function() {
+                focusedArea = 'source';
+            });
+            sourceFilesInput.addEventListener('click', function() {
+                focusedArea = 'source';
+            });
+        }
+        
+        if (sourceFileList) {
+            sourceFileList.addEventListener('focus', function() {
+                focusedArea = 'source';
+            });
+            sourceFileList.addEventListener('click', function() {
+                focusedArea = 'source';
+            });
+            sourceFileList.addEventListener('mouseenter', function() {
+                hoveredArea = 'source';
+            });
+            sourceFileList.addEventListener('mouseleave', function() {
+                hoveredArea = null;
+            });
+        }
+        
+        // Track focus and hover on target file area
+        const targetSelector = targetFileInput.closest('.file-selector');
+        if (targetSelector) {
+            targetSelector.addEventListener('click', function() {
+                focusedArea = 'target';
+            });
+            targetSelector.addEventListener('focusin', function() {
+                focusedArea = 'target';
+            });
+            targetSelector.addEventListener('mouseenter', function() {
+                hoveredArea = 'target';
+            });
+            targetSelector.addEventListener('mouseleave', function() {
+                hoveredArea = null;
+            });
+        }
+        
+        // Track focus and hover on target drop zone
+        if (targetDropZone) {
+            targetDropZone.addEventListener('click', function() {
+                focusedArea = 'target';
+            });
+            targetDropZone.addEventListener('focus', function() {
+                focusedArea = 'target';
+            });
+            targetDropZone.addEventListener('mouseenter', function() {
+                hoveredArea = 'target';
+            });
+            targetDropZone.addEventListener('mouseleave', function() {
+                hoveredArea = null;
+            });
+        }
+        
+        // Track focus on target input and file list
+        if (targetFileInput) {
+            targetFileInput.addEventListener('focus', function() {
+                focusedArea = 'target';
+            });
+            targetFileInput.addEventListener('click', function() {
+                focusedArea = 'target';
+            });
+        }
+        
+        if (targetFileList) {
+            targetFileList.addEventListener('focus', function() {
+                focusedArea = 'target';
+            });
+            targetFileList.addEventListener('click', function() {
+                focusedArea = 'target';
+            });
+            targetFileList.addEventListener('mouseenter', function() {
+                hoveredArea = 'target';
+            });
+            targetFileList.addEventListener('mouseleave', function() {
+                hoveredArea = null;
+            });
+        }
+    }
+    
+    // Setup drag-and-drop zones and click handlers
+    function setupDropZones() {
+        const sourceDropZone = document.getElementById('sourceDropZone');
+        const targetDropZone = document.getElementById('targetDropZone');
+        
+        // Setup source drop zone
+        if (sourceDropZone) {
+            // Click to select files
+            sourceDropZone.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                focusedArea = 'source';
+                sourceFilesInput.click();
+            });
+            
+            // Drag and drop handlers
+            sourceDropZone.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                focusedArea = 'source';
+                this.classList.add('drag-over');
+            });
+            
+            sourceDropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('drag-over');
+            });
+            
+            sourceDropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Only remove drag-over if we're leaving the drop zone itself
+                if (!this.contains(e.relatedTarget)) {
+                    this.classList.remove('drag-over');
+                }
+            });
+            
+            sourceDropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('drag-over');
+                focusedArea = 'source';
+                
+                const files = Array.from(e.dataTransfer.files).filter(file => 
+                    /\.(cfg|txt)$/i.test(file.name)
+                );
+                
+                if (files.length > 0) {
+                    const existingFiles = Array.from(sourceFiles);
+                    const newFiles = files.filter(file => 
+                        !existingFiles.some(existing => existing.name === file.name && existing.size === file.size)
+                    );
+                    
+                    if (newFiles.length > 0) {
+                        const allFiles = [...existingFiles, ...newFiles];
+                        updateFileInput(sourceFilesInput, allFiles);
+                        sourceFiles = Array.from(sourceFilesInput.files);
+                        sourceFilesInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            });
+            
+            // Focus tracking for paste
+            sourceDropZone.addEventListener('focus', function() {
+                focusedArea = 'source';
+            });
+            
+            sourceDropZone.setAttribute('tabindex', '0'); // Make it focusable for paste
+        }
+        
+        // Setup target drop zone
+        if (targetDropZone) {
+            // Click to select file
+            targetDropZone.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                focusedArea = 'target';
+                targetFileInput.click();
+            });
+            
+            // Drag and drop handlers
+            targetDropZone.addEventListener('dragenter', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                focusedArea = 'target';
+                this.classList.add('drag-over');
+            });
+            
+            targetDropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.add('drag-over');
+            });
+            
+            targetDropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                // Only remove drag-over if we're leaving the drop zone itself
+                if (!this.contains(e.relatedTarget)) {
+                    this.classList.remove('drag-over');
+                }
+            });
+            
+            targetDropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.classList.remove('drag-over');
+                focusedArea = 'target';
+                
+                const files = Array.from(e.dataTransfer.files).filter(file => 
+                    /\.(cfg|txt)$/i.test(file.name)
+                );
+                
+                if (files.length > 0) {
+                    updateFileInput(targetFileInput, [files[0]]);
+                    targetFile = targetFileInput.files[0] || null;
+                    targetFileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            });
+            
+            // Focus tracking for paste
+            targetDropZone.addEventListener('focus', function() {
+                focusedArea = 'target';
+            });
+            
+            targetDropZone.setAttribute('tabindex', '0'); // Make it focusable for paste
+        }
+    }
+    
+    // Setup focus tracking
+    setupFocusTracking();
+    
+    // Setup drop zones
+    setupDropZones();
+    
     // Attach event listeners
     processButton.addEventListener('click', processFiles);
     
@@ -1007,6 +1705,8 @@
     }
     
     // Initialize
+    updateSourceFileList();
+    updateTargetFileList();
     updateProcessButton();
 })();
 
