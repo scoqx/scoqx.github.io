@@ -705,6 +705,10 @@
                             <label for="ignoreUi">ui_*</label>
                         </div>
                         <div class="ignore-category-item">
+                            <input type="checkbox" id="ignoreX" data-category="x_">
+                            <label for="ignoreX">x_*</label>
+                        </div>
+                        <div class="ignore-category-item">
                             <input type="checkbox" id="ignoreBind" data-category="bind">
                             <label for="ignoreBind">bind</label>
                         </div>
@@ -736,9 +740,12 @@
                 </div>
                 
                 <div class="preview-header-controls" id="previewHeaderControls" style="display: none;">
-                    <h4 style="margin: 0;">Preview Changes:</h4>
-                    <button id="sortPreviewButton" class="sort-button">Sort</button>
-                </div>
+                        <h4 style="margin: 0;">Preview Changes:</h4>
+                        <div style="display: flex; gap: var(--spacing-sm);">
+                            <button id="sortPreviewButton" class="sort-button">Sort</button>
+                            <button id="hideIgnoredButton" class="sort-button">Hide ignored</button>
+                        </div>
+                    </div>
                 
                 <div id="previewContainer" class="preview-container" style="display: none;">
                     <div id="previewContent" class="changes-preview">

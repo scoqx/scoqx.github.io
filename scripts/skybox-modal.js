@@ -30,12 +30,13 @@
     max-width:1180px;
     background:var(--black);
     border-radius:18px;
-    padding:18px 20px 16px;
+    padding:0px 20px 16px;
   }
   .skybox-tool-app h1{
     font-size:1.25rem;
     text-transform:uppercase;
     letter-spacing:.12em;
+    margin-top:0;
     margin-bottom:4px;
   }
   .skybox-tool-app h1 span{color:var(--red);}
@@ -328,7 +329,7 @@
 
       <div>
         <button id="zipBtn" type="button" disabled>${isRu ? 'Создать и скачать ZIP' : 'Generate &amp; Download ZIP'}</button>
-        <small>${isRu ? 'Создаёт' : 'Creates'} <code>name_q3_skybox.zip</code> ${isRu ? 'с 6 гранями.' : 'with 6 faces.'}</small>
+        <small style="display: block; margin-top: 4px;">${isRu ? 'Создаёт' : 'Creates'} <code>name_q3_skybox.zip</code> ${isRu ? 'с 6 гранями.' : 'with 6 faces.'}</small>
       </div>
     </div>
   </div>
@@ -778,6 +779,18 @@
             loadSkyboxTool();
             skyboxModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Set focus on dropzone after a short delay to ensure content is loaded
+            setTimeout(() => {
+                const dropzone = document.getElementById('dropzone');
+                if (dropzone) {
+                    dropzone.focus();
+                } else {
+                    // Fallback: focus on modal content if dropzone not ready
+                    skyboxToolContent.setAttribute('tabindex', '-1');
+                    skyboxToolContent.focus();
+                }
+            }, 100);
         });
         
         closeSkyboxModal.addEventListener('click', function() {

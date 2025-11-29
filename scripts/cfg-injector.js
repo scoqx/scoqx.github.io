@@ -12,6 +12,7 @@
     const previewContent = document.getElementById('previewContent');
     const previewHeaderControls = document.getElementById('previewHeaderControls');
     const sortPreviewButton = document.getElementById('sortPreviewButton');
+    const hideIgnoredButton = document.getElementById('hideIgnoredButton');
     
     let sourceFiles = [];
     let targetFile = null;
@@ -22,6 +23,7 @@
     let ignoredCategories = new Set(); // Categories to ignore
     let ignoreNewCommands = false; // Ignore new commands (not in target)
     let ignoreUpdatedCommands = false; // Ignore updated commands (changed values)
+    let hideIgnoredInPreview = false; // Hide ignored categories from preview (visual only)
     
     // Check if we're on the tools page
     if (!sourceFilesInput || !targetFileInput || !processButton) {
@@ -84,6 +86,7 @@
         if (commandName.startsWith('ch_')) return 'ch_';
         if (commandName.startsWith('sv_')) return 'sv_';
         if (commandName.startsWith('ui_')) return 'ui_';
+        if (commandName.startsWith('x_')) return 'x_';
         if (commandName.startsWith('g_')) return 'g_'; // Server game variables
         if (commandName.startsWith('pmove_')) return 'pmove_'; // Physics engine
         
@@ -189,7 +192,9 @@
             move_down: 'Вниз',
             remove: 'Удалить',
             sort: 'Сортировать',
-            unsort: 'Отменить сортировку'
+            unsort: 'Отменить сортировку',
+            hide_ignored: 'Скрыть игнорируемые',
+            show_ignored: 'Показать игнорируемые'
         },
         en: {
             analyzing: 'Analyzing...',
@@ -205,7 +210,9 @@
             move_down: 'Move down',
             remove: 'Remove',
             sort: 'Sort',
-            unsort: 'Unsort'
+            unsort: 'Unsort',
+            hide_ignored: 'Hide ignored',
+            show_ignored: 'Show ignored'
         }
     };
     
@@ -472,12 +479,7 @@
             updatePreview();
         }, 100);
         
-        // Update categories immediately if both files are selected
-        if (sourceFiles.length > 0 && targetFile) {
-            updateVisibleCategories().catch(err => {
-                console.error('Error updating visible categories:', err);
-            });
-        }
+        // Categories will be updated after preview is loaded in updatePreview()
     });
     
     // Handle target file selection
@@ -500,12 +502,7 @@
             updatePreview();
         }, 100);
         
-        // Update categories immediately if both files are selected
-        if (sourceFiles.length > 0 && targetFile) {
-            updateVisibleCategories().catch(err => {
-                console.error('Error updating visible categories:', err);
-            });
-        }
+        // Categories will be updated after preview is loaded in updatePreview()
     });
     
     // Toggle command exclusion
@@ -789,7 +786,7 @@
     }
     
     // Update visible category checkboxes based on commands that have changes
-    async function updateVisibleCategories() {
+    function updateVisibleCategories() {
         if (sourceFiles.length === 0 || !targetFile) {
             // Hide all checkboxes if no files
             const categoryItems = document.querySelectorAll('.ignore-category-item');
@@ -800,33 +797,24 @@
         }
         
         try {
-            // Collect categories from ALL commands in source files (not just preview)
-            // This allows categories to remain visible even when they are ignored
+            // Collect categories only from commands that have changes (in previewItems)
+            // This shows categories only when they are actually being changed
             const foundCategories = new Set();
             
-            // Read all source files and extract commands without filtering
-            for (const file of sourceFiles) {
-                try {
-                    const content = await readFileAsText(file);
-                    const commands = extractCommandsRaw(content); // Use raw extraction to get all commands
-                    
-                    // Analyze all commands from source files
-                    for (const [commandName, cmd] of commands) {
-                        const prefix = cmd.prefix || '';
-                        
-                        // Get category from command name and prefix
-                        const category = getCommandCategory(commandName, prefix);
-                        if (category) {
-                            foundCategories.add(category);
-                        }
-                        
-                        // Check for 'set' prefix (not 'seta')
-                        if (prefix === 'set') {
-                            foundCategories.add('set');
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Error reading file ${file.name} for categories:`, error);
+            // Analyze previewItems to find categories that have changes
+            for (const item of previewItems) {
+                const commandName = item.name;
+                const prefix = item.prefix || '';
+                
+                // Get category from command name and prefix
+                const category = getCommandCategory(commandName, prefix);
+                if (category) {
+                    foundCategories.add(category);
+                }
+                
+                // Check for 'set' prefix (not 'seta')
+                if (prefix === 'set') {
+                    foundCategories.add('set');
                 }
             }
             
@@ -876,6 +864,10 @@
         if (previewContainer) {
             previewContainer.style.display = visible ? 'block' : 'none';
         }
+        // Update hide ignored button text when preview becomes visible
+        if (visible && hideIgnoredButton) {
+            hideIgnoredButton.textContent = hideIgnoredInPreview ? t('show_ignored') : t('hide_ignored');
+        }
     }
     
     // Update preview
@@ -917,9 +909,9 @@
             let allCommands;
             try {
                 allCommands = await readAndExtractCommands(sourceFiles);
-            } catch (error) {
+                } catch (error) {
                 previewContent.innerHTML = `<div style="color: #ff6666;">${t('error_reading_file')}: ${error.message}</div>`;
-                return;
+                    return;
             }
             
             // Read target file - use current file from input
@@ -1006,10 +998,8 @@
             // Render preview first
             renderPreview();
             
-            // Update visible categories (async - reads files directly)
-            updateVisibleCategories().catch(err => {
-                console.error('Error updating visible categories:', err);
-            });
+            // Update visible categories based on previewItems
+            updateVisibleCategories();
             
         } catch (error) {
             console.error('Error updating preview:', error);
@@ -1064,6 +1054,10 @@
                 }
                 if (ignoreUpdatedCommands && item.type === 'updated') {
                     return false; // Hide updated commands
+                }
+                // Hide ignored categories from preview if option is enabled (visual only)
+                if (hideIgnoredInPreview && item.isIgnored) {
+                    return false; // Hide ignored categories visually
                 }
                 return true;
             });
@@ -1144,10 +1138,10 @@
             let allCommands;
             try {
                 allCommands = await readAndExtractCommands(sourceFiles);
-            } catch (error) {
+                } catch (error) {
                 showStatus('error', `${t('error_reading_file')}: ${error.message}`);
-                processButton.disabled = false;
-                return;
+                    processButton.disabled = false;
+                    return;
             }
             
             // Read target file
@@ -1702,6 +1696,16 @@
     
     if (sortPreviewButton) {
         sortPreviewButton.addEventListener('click', sortPreview);
+    }
+    
+    // Toggle hide ignored categories in preview
+    if (hideIgnoredButton) {
+        hideIgnoredButton.addEventListener('click', function() {
+            hideIgnoredInPreview = !hideIgnoredInPreview;
+            renderPreview(); // Re-render to apply filter
+            // Update button text
+            hideIgnoredButton.textContent = hideIgnoredInPreview ? t('show_ignored') : t('hide_ignored');
+        });
     }
     
     // Initialize
