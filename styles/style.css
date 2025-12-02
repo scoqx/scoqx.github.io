@@ -2539,8 +2539,3 @@ html[lang="en"] .crypto-address.copied::after {
 .preview-added {
     color: #66ff66;
 }
-
-/* Q3GFX tool section - hidden */
-#openQ3GFXModal {
-    display: none !important;
-}
