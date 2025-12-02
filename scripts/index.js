@@ -482,6 +482,13 @@ function closeSupportModal() {
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
+        // Если открываем дочернее модальное окно, закрываем основное окно поддержки
+        if (modalId === 'donationModal' || modalId === 'cryptoModal' || modalId === 'cardModal') {
+            const supportModal = document.getElementById('supportModal');
+            if (supportModal && supportModal.classList.contains('active')) {
+                supportModal.classList.remove('active');
+            }
+        }
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -603,6 +610,10 @@ document.addEventListener('keydown', function(event) {
         if (activeModal) {
             if (activeModal.id === 'supportModal') {
                 closeSupportModal();
+            } else if (activeModal.id === 'donationModal' || activeModal.id === 'cryptoModal' || activeModal.id === 'cardModal') {
+                // Закрываем дочернее окно и открываем основное окно поддержки
+                closeModal(activeModal.id);
+                openSupportModal();
             } else {
                 closeModal(activeModal.id);
             }

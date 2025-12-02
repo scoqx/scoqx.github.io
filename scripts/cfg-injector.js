@@ -13,6 +13,7 @@
     const previewHeaderControls = document.getElementById('previewHeaderControls');
     const sortPreviewButton = document.getElementById('sortPreviewButton');
     const hideIgnoredButton = document.getElementById('hideIgnoredButton');
+    const clearButton = document.getElementById('clearConfigEditorButton');
     
     let sourceFiles = [];
     let targetFile = null;
@@ -20,10 +21,12 @@
     let previewItems = []; // Store preview items for sorting
     let isPreviewSorted = false; // Track if preview is currently sorted
     let previewUpdateTimeout = null; // Debounce timer for preview updates
+    let renderPreviewTimeout = null; // Debounce timer for render preview
     let ignoredCategories = new Set(); // Categories to ignore
     let ignoreNewCommands = false; // Ignore new commands (not in target)
     let ignoreUpdatedCommands = false; // Ignore updated commands (changed values)
     let hideIgnoredInPreview = false; // Hide ignored categories from preview (visual only)
+    let previewEventDelegationSetup = false; // Track if event delegation is set up
     
     // Check if we're on the tools page
     if (!sourceFilesInput || !targetFileInput || !processButton) {
@@ -38,19 +41,29 @@
         if (ignoreNewCheckbox) {
             ignoreNewCheckbox.addEventListener('change', function() {
                 ignoreNewCommands = this.checked;
-                renderPreview(); // Re-render to apply filter
+                // Debounce render to avoid lag
+                scheduleRenderPreview();
+                // Отметить изменения
+                if (window.ChangeTracker) {
+                    window.ChangeTracker.markChanges('config-editor');
+                }
             });
         }
         
         if (ignoreUpdatedCheckbox) {
             ignoreUpdatedCheckbox.addEventListener('change', function() {
                 ignoreUpdatedCommands = this.checked;
-                renderPreview(); // Re-render to apply filter
+                // Debounce render to avoid lag
+                scheduleRenderPreview();
+                // Отметить изменения
+                if (window.ChangeTracker) {
+                    window.ChangeTracker.markChanges('config-editor');
+                }
             });
         }
     }
     
-    // Setup ignore categories checkboxes
+    // Setup ignore categories checkboxes with debouncing
     function setupIgnoreCategories() {
         const checkboxes = document.querySelectorAll('.ignore-category-item input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
@@ -61,10 +74,28 @@
                 } else {
                     ignoredCategories.delete(category);
                 }
-                // Update preview when categories change
-                schedulePreviewUpdate();
+                // Debounce render preview to avoid lag when clicking multiple checkboxes
+                scheduleRenderPreview();
+                // Отметить изменения
+                if (window.ChangeTracker) {
+                    window.ChangeTracker.markChanges('config-editor');
+                }
             });
         });
+    }
+    
+    // Schedule render preview with debounce
+    function scheduleRenderPreview() {
+        // Clear existing timeout
+        if (renderPreviewTimeout) {
+            clearTimeout(renderPreviewTimeout);
+        }
+        
+        // Schedule render after 50ms of inactivity (fast enough for responsive UI)
+        renderPreviewTimeout = setTimeout(() => {
+            renderPreview();
+            renderPreviewTimeout = null;
+        }, 50);
     }
     
     // Determine command category
@@ -194,7 +225,8 @@
             sort: 'Сортировать',
             unsort: 'Отменить сортировку',
             hide_ignored: 'Скрыть игнорируемые',
-            show_ignored: 'Показать игнорируемые'
+            show_ignored: 'Показать игнорируемые',
+            confirm_clear: 'Вы уверены?'
         },
         en: {
             analyzing: 'Analyzing...',
@@ -212,7 +244,8 @@
             sort: 'Sort',
             unsort: 'Unsort',
             hide_ignored: 'Hide ignored',
-            show_ignored: 'Show ignored'
+            show_ignored: 'Show ignored',
+            confirm_clear: 'Are you sure?'
         }
     };
     
@@ -254,6 +287,118 @@
             }
         }
         return allCommands;
+    }
+    
+    // Replace value in existing command line, preserving formatting
+    function replaceValueInLine(originalLine, newValue, newHasQuotes, commandName) {
+        // Extract comment first
+        const comment = extractComment(originalLine);
+        const lineWithoutComment = comment ? originalLine.substring(0, originalLine.length - comment.length) : originalLine;
+        
+        // Preserve leading whitespace from original line
+        const leadingWhitespaceMatch = originalLine.match(/^[\s\t]*/);
+        const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : '';
+        
+        // Handle bind commands (stored as bind_KEY, but displayed as "bind KEY VALUE")
+        if (commandName && commandName.startsWith('bind_')) {
+            // Parse "bind KEY OLDVALUE" format
+            const trimmedLine = lineWithoutComment.trim();
+            const bindMatch = trimmedLine.match(/^bind\s+("([^"]*)"|'([^']*)'|(\S+))\s+(.+)$/);
+            if (bindMatch) {
+                const keyPattern = bindMatch[1]; // The key as it appears in the line (may be quoted)
+                const oldValuePart = bindMatch[5].trim(); // Everything after key is the old value
+                
+                // Find where key ends in the original line (preserving whitespace)
+                const bindIndex = lineWithoutComment.toLowerCase().indexOf('bind');
+                if (bindIndex >= 0) {
+                    const afterBind = lineWithoutComment.substring(bindIndex + 4); // After "bind"
+                    const keyMatch = afterBind.match(/^\s*("([^"]*)"|'([^']*)'|(\S+))/);
+                    if (keyMatch) {
+                        const keyEndIndex = bindIndex + 4 + keyMatch.index + keyMatch[0].length;
+                        const afterKey = lineWithoutComment.substring(keyEndIndex);
+                        
+                        // Find where old value ends (whitespace after value or comment)
+                        let valueEndIndex = afterKey.length;
+                        const valueMatch = afterKey.trim().match(/^(\S+|"([^"]*)"|'([^']*)')/);
+                        if (valueMatch) {
+                            const valueInLine = afterKey.substring(0, afterKey.trimStart().indexOf(valueMatch[0]) + valueMatch[0].length);
+                            valueEndIndex = valueInLine.length;
+                        }
+                        
+                        // Extract whitespace before value
+                        const beforeValue = afterKey.substring(0, afterKey.length - afterKey.trimStart().length);
+                        const afterValue = afterKey.substring(valueEndIndex);
+                        
+                        // Format new value
+                        const needsQuotes = newHasQuotes !== undefined ? newHasQuotes : (newValue.includes(' ') || newValue === '');
+                        const valueStr = needsQuotes ? `"${newValue}"` : newValue;
+                        
+                        // Reconstruct: everything before key + key + new value + after value
+                        const beforeBind = lineWithoutComment.substring(0, bindIndex + 4);
+                        const keyPart = lineWithoutComment.substring(bindIndex + 4, keyEndIndex);
+                        const newLine = beforeBind + keyPart + beforeValue + valueStr + afterValue;
+                        const lineWithComment = comment ? newLine + comment : newLine;
+                        
+                        return leadingWhitespace + lineWithComment;
+                    }
+                }
+            }
+        }
+        
+        // Find the command pattern to locate where the value starts
+        // We need to find: prefix (optional) + command name + whitespace + old value
+        const prefixMatch = lineWithoutComment.match(/^(seta|set)\s+/);
+        const prefix = prefixMatch ? prefixMatch[1] : '';
+        const commandPart = prefix ? lineWithoutComment.substring(prefixMatch[0].length) : lineWithoutComment;
+        
+        // Find command name (first word)
+        const nameMatch = commandPart.match(/^(\S+)[\s\t]+/);
+        if (!nameMatch) {
+            // If we can't parse, fall back to reconstruction
+            const cmdObj = { value: newValue, hasQuotes: newHasQuotes, prefix: prefix };
+            return reconstructCommandLine(
+                cmdObj,
+                commandName || commandPart.trim(),
+                leadingWhitespace,
+                comment
+            );
+        }
+        
+        const parsedCommandName = nameMatch[1];
+        const afterCommandName = commandPart.substring(nameMatch[0].length);
+        
+        // Find where the old value starts and ends
+        let oldValueStart = 0;
+        let oldValueEnd = afterCommandName.length;
+        
+        // Check if value is quoted
+        const quotedMatch = afterCommandName.match(/^[\s\t]*("([^"]*)"|'([^']*)')/);
+        if (quotedMatch) {
+            oldValueStart = (afterCommandName.match(/^[\s\t]*/) || [''])[0].length;
+            oldValueEnd = oldValueStart + quotedMatch[0].trim().length;
+        } else {
+            // Unquoted value - find first non-whitespace sequence
+            const valueMatch = afterCommandName.match(/^[\s\t]*(\S+)/);
+            if (valueMatch) {
+                oldValueStart = (afterCommandName.match(/^[\s\t]*/) || [''])[0].length;
+                oldValueEnd = oldValueStart + valueMatch[1].length;
+            }
+        }
+        
+        // Extract whitespace before and after value
+        const beforeValue = afterCommandName.substring(0, oldValueStart);
+        const afterValue = afterCommandName.substring(oldValueEnd);
+        
+        // Format new value
+        const needsQuotes = newHasQuotes !== undefined ? newHasQuotes : (newValue.includes(' ') || newValue === '');
+        const valueStr = needsQuotes ? `"${newValue}"` : newValue;
+        
+        // Reconstruct line with new value
+        const prefixStr = prefix ? prefix + ' ' : '';
+        const newLine = prefixStr + parsedCommandName + beforeValue + valueStr + afterValue;
+        const lineWithComment = comment ? newLine + comment : newLine;
+        
+        return leadingWhitespace + lineWithComment;
     }
     
     // Reconstruct command line from command object
@@ -479,6 +624,11 @@
             updatePreview();
         }, 100);
         
+        // Отметить изменения
+        if (window.ChangeTracker && sourceFiles.length > 0) {
+            window.ChangeTracker.markChanges('config-editor');
+        }
+        
         // Categories will be updated after preview is loaded in updatePreview()
     });
     
@@ -502,6 +652,11 @@
             updatePreview();
         }, 100);
         
+        // Отметить изменения
+        if (window.ChangeTracker && targetFile) {
+            window.ChangeTracker.markChanges('config-editor');
+        }
+        
         // Categories will be updated after preview is loaded in updatePreview()
     });
     
@@ -513,15 +668,28 @@
             excludedCommands.add(commandName);
         }
         
+        // Отметить изменения
+        if (window.ChangeTracker) {
+            window.ChangeTracker.markChanges('config-editor');
+        }
+        
         // Update only the specific item instead of refreshing entire preview
-        const button = previewContent.querySelector(`button[data-command="${commandName.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"]`);
+        const escapedCommandName = commandName.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const button = previewContent.querySelector(`button[data-command="${escapedCommandName}"]`);
         if (button) {
             const item = button.closest('.preview-item');
             if (item) {
                 const isExcluded = excludedCommands.has(commandName);
+                
+                // Find the item in previewItems to check if it's also ignored
+                const previewItem = previewItems.find(p => p.name === commandName);
+                const itemPrefix = previewItem ? (previewItem.prefix !== undefined ? previewItem.prefix : '') : '';
+                const isIgnored = previewItem ? shouldIgnoreCommand(commandName, itemPrefix) : false;
+                
                 const buttonClass = isExcluded ? 'preview-toggle-btn excluded' : 'preview-toggle-btn';
                 const buttonText = isExcluded ? '+' : '×';
-                const itemClass = isExcluded ? 'preview-item excluded' : 'preview-item';
+                // Item is excluded if manually excluded OR ignored by category
+                const itemClass = (isExcluded || isIgnored) ? 'preview-item excluded' : 'preview-item';
                 
                 // Update button
                 button.className = buttonClass;
@@ -533,7 +701,7 @@
             }
         } else {
             // Fallback: update entire preview if button not found
-            updatePreview();
+            scheduleRenderPreview();
         }
     }
     
@@ -542,6 +710,15 @@
         processButton.disabled = sourceFiles.length === 0 || !targetFile;
         
         const hasFiles = sourceFiles.length > 0 && targetFile;
+        
+        // Show/hide clear button
+        if (clearButton) {
+            if (hasFiles) {
+                clearButton.style.display = 'block';
+            } else {
+                clearButton.style.display = 'none';
+            }
+        }
         
         // Show/hide filter section
         const filterSection = document.querySelector('.filter-section');
@@ -802,6 +979,7 @@
             const foundCategories = new Set();
             
             // Analyze previewItems to find categories that have changes
+            // Cache category lookups for better performance
             for (const item of previewItems) {
                 const commandName = item.name;
                 const prefix = item.prefix || '';
@@ -818,21 +996,23 @@
                 }
             }
             
-            // Show/hide category checkboxes based on found categories
-            const categoryItems = document.querySelectorAll('.ignore-category-item');
-            categoryItems.forEach(item => {
-                const checkbox = item.querySelector('input[type="checkbox"]');
-                if (checkbox) {
-                    const category = checkbox.getAttribute('data-category');
-                    if (foundCategories.has(category)) {
-                        item.style.display = 'flex';
-                    } else {
-                        item.style.display = 'none';
-                        // Uncheck and remove from ignored if not found
-                        checkbox.checked = false;
-                        ignoredCategories.delete(category);
+            // Batch DOM updates using requestAnimationFrame for smoother performance
+            requestAnimationFrame(() => {
+                const categoryItems = document.querySelectorAll('.ignore-category-item');
+                categoryItems.forEach(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        const category = checkbox.getAttribute('data-category');
+                        if (foundCategories.has(category)) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                            // Uncheck and remove from ignored if not found
+                            checkbox.checked = false;
+                            ignoredCategories.delete(category);
+                        }
                     }
-                }
+                });
             });
         } catch (error) {
             console.error('Error updating visible categories:', error);
@@ -963,11 +1143,16 @@
             // Show updated commands (including ignored ones - they will be strikethrough)
             for (const [name, sourceCmd] of allCommands) {
                 // Check if command should be ignored based on category
-                const isIgnored = shouldIgnoreCommand(name, sourceCmd.prefix);
+                const isIgnoredByCategory = shouldIgnoreCommand(name, sourceCmd.prefix);
                 
                 if (targetCommands.has(name)) {
                     const targetCmd = targetCommands.get(name);
                     if (targetCmd.value !== sourceCmd.value) {
+                        // Check if this item should be ignored by filter (updated commands)
+                        const isIgnoredByFilter = ignoreUpdatedCommands;
+                        // Item is ignored if ignored by category OR by filter
+                        const isIgnored = isIgnoredByCategory || isIgnoredByFilter;
+                        
                         previewItems.push({
                             type: 'updated',
                             name: name,
@@ -980,6 +1165,11 @@
                         addedCommands.add(name);
                     }
                 } else {
+                    // Check if this item should be ignored by filter (new commands)
+                    const isIgnoredByFilter = ignoreNewCommands;
+                    // Item is ignored if ignored by category OR by filter
+                    const isIgnored = isIgnoredByCategory || isIgnoredByFilter;
+                    
                     previewItems.push({
                         type: 'added',
                         name: name,
@@ -1007,115 +1197,152 @@
         }
     }
     
+    // Setup event delegation for preview buttons (only once)
+    function setupPreviewEventDelegation() {
+        if (previewEventDelegationSetup || !previewContent) {
+            return;
+        }
+        
+        // Use event delegation on previewContent container
+        previewContent.addEventListener('click', function(e) {
+            const button = e.target.closest('.preview-toggle-btn');
+            if (button) {
+                e.preventDefault();
+                e.stopPropagation();
+                const commandName = button.getAttribute('data-command');
+                if (commandName) {
+                    // Decode HTML entities
+                    const decodedName = commandName
+                        .replace(/&quot;/g, '"')
+                        .replace(/&#39;/g, "'")
+                        .replace(/&amp;/g, '&');
+                    toggleCommandExclusion(decodedName);
+                }
+            }
+        });
+        
+        previewEventDelegationSetup = true;
+    }
+    
     // Render preview items
     function renderPreview() {
+        if (!previewContent) {
+            return;
+        }
+        
+        // Setup event delegation once
+        setupPreviewEventDelegation();
+        
         if (previewItems.length === 0) {
             previewContent.innerHTML = `<div style="color: var(--text-color); opacity: 0.7;">${t('no_changes')}</div>`;
-        } else {
-            // Use sorted items if sorted, otherwise use original order
-            const itemsToRender = isPreviewSorted ? [...previewItems].sort((a, b) => {
-                // Extract command name ignoring set/seta prefix
-                const getSortName = (displayName) => {
-                    // Remove set/seta prefix if present
-                    let name = displayName.trim();
-                    if (name.startsWith('seta ')) {
-                        name = name.substring(5).trim();
-                    } else if (name.startsWith('set ')) {
-                        name = name.substring(4).trim();
+            return;
+        }
+        
+        // Use sorted items if sorted, otherwise use original order
+        const itemsToRender = isPreviewSorted ? [...previewItems].sort((a, b) => {
+            // Extract command name ignoring set/seta prefix
+            const getSortName = (displayName) => {
+                // Remove set/seta prefix if present
+                let name = displayName.trim();
+                if (name.startsWith('seta ')) {
+                    name = name.substring(5).trim();
+                } else if (name.startsWith('set ')) {
+                    name = name.substring(4).trim();
+                }
+                // For bind commands, extract the key part and prepend "bind" for sorting
+                if (name.startsWith('bind ')) {
+                    let key = name.substring(5).trim();
+                    // Remove quotes if present
+                    if ((key.startsWith('"') && key.endsWith('"')) || 
+                        (key.startsWith("'") && key.endsWith("'"))) {
+                        key = key.slice(1, -1);
                     }
-                    // For bind commands, extract the key part and prepend "bind" for sorting
-                    if (name.startsWith('bind ')) {
-                        let key = name.substring(5).trim();
-                        // Remove quotes if present
-                        if ((key.startsWith('"') && key.endsWith('"')) || 
-                            (key.startsWith("'") && key.endsWith("'"))) {
-                            key = key.slice(1, -1);
-                        }
-                        // Sort by "bind" + key to keep bind commands together but sorted by key
-                        return ('bind ' + key).toLowerCase();
-                    }
-                    // Extract first word (command name or cvar name)
-                    const firstSpace = name.indexOf(' ');
-                    if (firstSpace > 0) {
-                        name = name.substring(0, firstSpace);
-                    }
-                    return name.toLowerCase();
-                };
-                
-                const nameA = getSortName(a.displayName);
-                const nameB = getSortName(b.displayName);
-                return nameA.localeCompare(nameB);
-            }) : previewItems;
+                    // Sort by "bind" + key to keep bind commands together but sorted by key
+                    return ('bind ' + key).toLowerCase();
+                }
+                // Extract first word (command name or cvar name)
+                const firstSpace = name.indexOf(' ');
+                if (firstSpace > 0) {
+                    name = name.substring(0, firstSpace);
+                }
+                return name.toLowerCase();
+            };
             
-            // Filter items based on ignore options
-            const filteredItems = itemsToRender.filter(item => {
-                if (ignoreNewCommands && item.type === 'added') {
-                    return false; // Hide new commands
-                }
-                if (ignoreUpdatedCommands && item.type === 'updated') {
-                    return false; // Hide updated commands
-                }
-                // Hide ignored categories from preview if option is enabled (visual only)
-                if (hideIgnoredInPreview && item.isIgnored) {
-                    return false; // Hide ignored categories visually
-                }
-                return true;
-            });
+            const nameA = getSortName(a.displayName);
+            const nameB = getSortName(b.displayName);
+            return nameA.localeCompare(nameB);
+        }) : previewItems;
+        
+        // Recalculate isIgnored for each item based on current filter and category settings
+        // Filters now work like categories - they mark items as ignored (strikethrough)
+        const filteredItems = itemsToRender.map(item => {
+            // Get prefix from item (may be undefined, which is fine)
+            const itemPrefix = item.prefix !== undefined ? item.prefix : '';
             
-            const html = filteredItems.map(item => {
-                    const isExcluded = excludedCommands.has(item.name);
-                    const isIgnored = item.isIgnored || false;
-                    const buttonClass = isExcluded ? 'preview-toggle-btn excluded' : 'preview-toggle-btn';
-                    const buttonText = isExcluded ? '+' : '×';
-                    // Item is excluded if manually excluded OR ignored by category
-                    const itemClass = (isExcluded || isIgnored) ? 'preview-item excluded' : 'preview-item';
-                    
-                    // Store original command name in data attribute (will be decoded when reading)
-                    const commandNameForData = item.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-                    
-                    const buttonTitle = isExcluded ? t('restore_change') : t('exclude_change');
-                    if (item.type === 'updated') {
-                        return `<div class="${itemClass}">
-                            <button class="${buttonClass}" data-command="${commandNameForData}" title="${buttonTitle}">${buttonText}</button>
-                            <span class="preview-command">${escapeHtml(item.displayName)}</span>
-                            <span class="preview-arrow">→</span>
-                            <span class="preview-old">${escapeHtml(item.oldValue)}</span>
-                            <span class="preview-arrow">→</span>
-                            <span class="preview-new">${escapeHtml(item.newValue)}</span>
-                        </div>`;
-                    } else if (item.type === 'added') {
-                        return `<div class="${itemClass}">
-                            <button class="${buttonClass}" data-command="${commandNameForData}" title="${buttonTitle}">${buttonText}</button>
-                            <span class="preview-added">+ ${escapeHtml(item.displayName)} = ${escapeHtml(item.value)}</span>
-                        </div>`;
-                    }
-                }).join('');
-                previewContent.innerHTML = html;
-                
-                // Attach event listeners to buttons
-                const toggleButtons = previewContent.querySelectorAll('.preview-toggle-btn');
-                toggleButtons.forEach(button => {
-                    button.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const commandName = this.getAttribute('data-command');
-                        if (commandName) {
-                            // Decode HTML entities
-                            const decodedName = commandName
-                                .replace(/&quot;/g, '"')
-                                .replace(/&#39;/g, "'")
-                                .replace(/&amp;/g, '&');
-                            toggleCommandExclusion(decodedName);
-                        }
-                    });
-                });
+            // Check if item should be ignored by category
+            const isIgnoredByCategory = shouldIgnoreCommand(item.name, itemPrefix);
+            
+            // Check if item should be ignored by filter
+            const isIgnoredByFilter = (ignoreNewCommands && item.type === 'added') || 
+                                     (ignoreUpdatedCommands && item.type === 'updated');
+            
+            // Item is ignored if ignored by category OR by filter
+            const isIgnored = isIgnoredByCategory || isIgnoredByFilter;
+            
+            // Return item with updated isIgnored flag
+            return {
+                ...item,
+                isIgnored: isIgnored
+            };
+        }).filter(item => {
+            // Hide ignored items (categories or filters) from preview if option is enabled (visual only)
+            if (hideIgnoredInPreview && item.isIgnored) {
+                return false; // Hide ignored items visually
             }
+            return true;
+        });
+        
+        // Use DocumentFragment for faster DOM updates
+        const fragment = document.createDocumentFragment();
+        const tempDiv = document.createElement('div');
+        
+        const html = filteredItems.map(item => {
+                const isExcluded = excludedCommands.has(item.name);
+                const isIgnored = item.isIgnored || false;
+                const buttonClass = isExcluded ? 'preview-toggle-btn excluded' : 'preview-toggle-btn';
+                const buttonText = isExcluded ? '+' : '×';
+                // Item is excluded if manually excluded OR ignored by category
+                const itemClass = (isExcluded || isIgnored) ? 'preview-item excluded' : 'preview-item';
+                
+                // Store original command name in data attribute (will be decoded when reading)
+                const commandNameForData = item.name.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                
+                const buttonTitle = isExcluded ? t('restore_change') : t('exclude_change');
+                if (item.type === 'updated') {
+                    return `<div class="${itemClass}">
+                        <button class="${buttonClass}" data-command="${commandNameForData}" title="${buttonTitle}">${buttonText}</button>
+                        <span class="preview-command">${escapeHtml(item.displayName)}</span>
+                        <span class="preview-arrow">→</span>
+                        <span class="preview-old">${escapeHtml(item.oldValue)}</span>
+                        <span class="preview-arrow">→</span>
+                        <span class="preview-new">${escapeHtml(item.newValue)}</span>
+                    </div>`;
+                } else if (item.type === 'added') {
+                    return `<div class="${itemClass}">
+                        <button class="${buttonClass}" data-command="${commandNameForData}" title="${buttonTitle}">${buttonText}</button>
+                        <span class="preview-added">+ ${escapeHtml(item.displayName)} = ${escapeHtml(item.value)}</span>
+                    </div>`;
+                }
+            }).join('');
+        
+        // Batch DOM update - set innerHTML once
+        previewContent.innerHTML = html;
     }
     
     // Sort preview items
     function sortPreview() {
         isPreviewSorted = !isPreviewSorted;
-        renderPreview();
+        scheduleRenderPreview(); // Debounce render for smoother performance
         
         // Update button text
         if (sortPreviewButton) {
@@ -1187,10 +1414,11 @@
             // Merge commands: source commands override target commands (excluding excluded ones)
             for (const [name, sourceCmd] of allCommands) {
                 if (excludedCommands.has(name)) {
-                    continue; // Skip excluded commands
+                    continue; // Skip excluded commands (manually excluded)
                 }
                 
                 // Check if command should be ignored based on category
+                // Categories mark items as ignored but don't skip processing (unless manually excluded)
                 if (shouldIgnoreCommand(name, sourceCmd.prefix)) {
                     continue; // Skip ignored category commands
                 }
@@ -1199,12 +1427,12 @@
                 const isUpdatedCommand = targetCommands.has(name) && 
                     targetCommands.get(name).value !== sourceCmd.value;
                 
-                // Skip new commands if option is enabled
+                // Skip new commands if filter is enabled (like categories, filters skip during processing)
                 if (ignoreNewCommands && isNewCommand) {
                     continue;
                 }
                 
-                // Skip updated commands if option is enabled
+                // Skip updated commands if filter is enabled (like categories, filters skip during processing)
                 if (ignoreUpdatedCommands && isUpdatedCommand) {
                     continue;
                 }
@@ -1235,25 +1463,22 @@
             const outputLines = [];
             const addedCommands = new Set();
             
-            // First, process existing structure
+            // First, process existing structure - modify values in place
             for (const item of targetStructure) {
                 if (item.isCommand && item.commandName) {
                     const cmd = targetCommands.get(item.commandName);
-                    if (cmd) {
-                        // Reconstruct command line
+                    if (cmd && cmd.lineIndex !== undefined && cmd.lineIndex >= 0) {
+                        // Command exists in target - replace value in place, preserving formatting
                         const originalLine = item.line;
-                        
-                        // Extract leading whitespace (tabs/spaces) to preserve indentation
-                        const leadingWhitespaceMatch = originalLine.match(/^[\s\t]*/);
-                        const leadingWhitespace = leadingWhitespaceMatch ? leadingWhitespaceMatch[0] : '';
-                        
-                        // Extract comment
-                        const comment = extractComment(originalLine);
-                        
-                        // Reconstruct command line
-                        const newLine = reconstructCommandLine(cmd, item.commandName, leadingWhitespace, comment);
+                        const newLine = replaceValueInLine(originalLine, cmd.value, cmd.hasQuotes, item.commandName);
                         outputLines.push(newLine);
                         addedCommands.add(item.commandName);
+                    } else if (!cmd) {
+                        // Command was removed or ignored - keep original line as is
+                        outputLines.push(item.line);
+                    } else {
+                        // Command was not in target originally (shouldn't happen here, but fallback)
+                        outputLines.push(item.line);
                     }
                 } else {
                     // Keep non-command lines as is
@@ -1296,6 +1521,11 @@
             
             showStatus('success', t('file_downloaded', { name: zipFileName }));
             processButton.disabled = false;
+            
+            // Отметить, что работа завершена
+            if (window.ChangeTracker) {
+                window.ChangeTracker.markCompleted('config-editor');
+            }
             
         } catch (error) {
             console.error('Error processing files:', error);
@@ -1691,6 +1921,64 @@
     // Setup drop zones
     setupDropZones();
     
+    // Функция очистки всех данных
+    function clearAll() {
+        // Очистить файлы
+        sourceFiles = [];
+        targetFile = null;
+        sourceFilesInput.value = '';
+        targetFileInput.value = '';
+        
+        // Очистить исключенные команды
+        excludedCommands.clear();
+        
+        // Сбросить фильтры
+        ignoreNewCommands = false;
+        ignoreUpdatedCommands = false;
+        hideIgnoredInPreview = false;
+        
+        // Сбросить категории
+        ignoredCategories.clear();
+        
+        // Сбросить превью
+        previewItems = [];
+        isPreviewSorted = false;
+        
+        // Обновить UI
+        updateSourceFileList();
+        updateTargetFileList();
+        updateProcessButton();
+        setPreviewVisibility(false);
+        if (previewContent) {
+            previewContent.innerHTML = '';
+        }
+        
+        // Сбросить чекбоксы фильтров
+        const ignoreNewCheckbox = document.getElementById('ignoreNewCommands');
+        const ignoreUpdatedCheckbox = document.getElementById('ignoreUpdatedCommands');
+        if (ignoreNewCheckbox) ignoreNewCheckbox.checked = false;
+        if (ignoreUpdatedCheckbox) ignoreUpdatedCheckbox.checked = false;
+        
+        // Сбросить чекбоксы категорий
+        const categoryCheckboxes = document.querySelectorAll('.ignore-category-item input[type="checkbox"]');
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Сбросить изменения в трекере
+        if (window.ChangeTracker) {
+            window.ChangeTracker.resetChanges('config-editor');
+        }
+        
+        // Обновить текст кнопок
+        if (sortPreviewButton) {
+            sortPreviewButton.textContent = t('sort');
+        }
+        if (hideIgnoredButton) {
+            hideIgnoredButton.textContent = t('hide_ignored');
+        }
+    }
+    
     // Attach event listeners
     processButton.addEventListener('click', processFiles);
     
@@ -1702,9 +1990,100 @@
     if (hideIgnoredButton) {
         hideIgnoredButton.addEventListener('click', function() {
             hideIgnoredInPreview = !hideIgnoredInPreview;
-            renderPreview(); // Re-render to apply filter
+            scheduleRenderPreview(); // Debounce render for smoother performance
             // Update button text
             hideIgnoredButton.textContent = hideIgnoredInPreview ? t('show_ignored') : t('hide_ignored');
+        });
+    }
+    
+    // Создать модальное окно подтверждения очистки
+    function createClearConfirmModal() {
+        if (document.getElementById('clearConfirmModal')) {
+            return;
+        }
+        
+        const modal = document.createElement('div');
+        modal.id = 'clearConfirmModal';
+        modal.className = 'clear-confirm-modal';
+        modal.style.cssText = 'display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(4px); align-items: center; justify-content: center;';
+        modal.innerHTML = `
+            <div class="clear-confirm-modal-content" style="background-color: rgba(255, 255, 255, 0.1); border: 2px solid var(--border-color); border-radius: var(--border-radius); padding: var(--spacing-lg); max-width: 400px; width: 90%; text-align: center; box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);">
+                <h3 style="margin: 0 0 var(--spacing-md) 0; color: var(--text-color); font-size: 1.2rem; font-weight: bold;">${t('confirm_clear')}</h3>
+                <div style="display: flex; gap: var(--spacing-md); justify-content: center;">
+                    <button class="clear-confirm-btn clear-confirm-yes" style="padding: var(--spacing-sm) var(--spacing-lg); font-size: 1rem; font-weight: bold; border: 2px solid rgba(255, 0, 0, 0.5); border-radius: var(--border-radius); cursor: pointer; transition: var(--transition); min-width: 100px; background-color: rgba(255, 0, 0, 0.2); color: #ff6666;">${getLang() === 'ru' ? 'Да' : 'Yes'}</button>
+                    <button class="clear-confirm-btn clear-confirm-no" style="padding: var(--spacing-sm) var(--spacing-lg); font-size: 1rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: var(--border-radius); cursor: pointer; transition: var(--transition); min-width: 100px; background-color: rgba(255, 255, 255, 0.1); color: var(--text-color);">${getLang() === 'ru' ? 'Нет' : 'No'}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Показать модальное окно подтверждения очистки
+    function showClearConfirm(callback) {
+        createClearConfirmModal();
+        const modal = document.getElementById('clearConfirmModal');
+        if (!modal) {
+            if (callback) callback(false);
+            return;
+        }
+        
+        modal.style.display = 'flex';
+        
+        const yesBtn = modal.querySelector('.clear-confirm-yes');
+        const noBtn = modal.querySelector('.clear-confirm-no');
+        
+        if (!yesBtn || !noBtn) {
+            if (callback) callback(false);
+            return;
+        }
+        
+        // Удалить старые обработчики
+        const newYesBtn = yesBtn.cloneNode(true);
+        const newNoBtn = noBtn.cloneNode(true);
+        yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+        noBtn.parentNode.replaceChild(newNoBtn, noBtn);
+        
+        // Обработчики кнопок
+        newYesBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            if (callback) callback(true);
+        });
+        
+        newNoBtn.addEventListener('click', function() {
+            modal.style.display = 'none';
+            if (callback) callback(false);
+        });
+        
+        // Закрытие по клику на фон
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+                if (callback) callback(false);
+            }
+        });
+        
+        // Закрытие по ESC
+        const escHandler = function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                e.preventDefault();
+                e.stopPropagation();
+                modal.style.display = 'none';
+                document.removeEventListener('keydown', escHandler);
+                if (callback) callback(false);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
+    }
+    
+    // Clear button
+    if (clearButton) {
+        clearButton.style.display = 'none'; // Скрыть по умолчанию
+        clearButton.addEventListener('click', function() {
+            showClearConfirm(function(confirmed) {
+                if (confirmed) {
+                    clearAll();
+                }
+            });
         });
     }
     

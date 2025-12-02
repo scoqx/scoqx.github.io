@@ -369,6 +369,23 @@
   const facesWrap   = document.getElementById('previewFaces');
 
   const fmtRadios   = document.querySelectorAll('input[name="fmt"]');
+  
+  // Отслеживание изменений параметров
+  function markSkyboxChanges() {
+    if (window.ChangeTracker) {
+      window.ChangeTracker.markChanges('skybox');
+    }
+  }
+  
+  if (nameInput) nameInput.addEventListener('input', markSkyboxChanges);
+  if (sizeInput) sizeInput.addEventListener('input', markSkyboxChanges);
+  if (angleInput) angleInput.addEventListener('input', markSkyboxChanges);
+  if (pitchInput) pitchInput.addEventListener('input', markSkyboxChanges);
+  if (fmtRadios) {
+    fmtRadios.forEach(radio => {
+      radio.addEventListener('change', markSkyboxChanges);
+    });
+  }
 
   const fileInputFake = document.createElement('input');
   fileInputFake.type = 'file';
@@ -434,6 +451,10 @@
     img.onload = () => {
       URL.revokeObjectURL(url);
       preparePano(img);
+      // Отметить изменения
+      if (window.ChangeTracker) {
+        window.ChangeTracker.markChanges('skybox');
+      }
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
@@ -736,6 +757,11 @@
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       statusEl.textContent += \`\\n\${doneText} \${baseName}_q3_skybox.zip\`;
+      
+      // Отметить, что работа завершена
+      if (window.ChangeTracker) {
+        window.ChangeTracker.markCompleted('skybox');
+      }
     }catch(e){
       console.error(e);
       statusEl.textContent += \`\\n\${errorText} \${e}\`;
@@ -773,12 +799,22 @@
             isContentLoaded = true;
         }
         
-        openSkyboxBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+        function openSkyboxModal() {
             loadSkyboxTool();
             skyboxModal.classList.add('active');
             document.body.style.overflow = 'hidden';
+            
+            // Update URL hash
+            if (history.pushState) {
+                history.pushState(null, null, '#skybox');
+            } else {
+                window.location.hash = '#skybox';
+            }
+            
+            // Сбросить изменения при открытии
+            if (window.ChangeTracker) {
+                window.ChangeTracker.resetChanges('skybox');
+            }
             
             // Set focus on dropzone after a short delay to ensure content is loaded
             setTimeout(() => {
@@ -791,25 +827,78 @@
                     skyboxToolContent.focus();
                 }
             }, 100);
+        }
+        
+        function closeSkyboxModalFunc() {
+            doCloseSkyboxModal();
+        }
+        
+        function doCloseSkyboxModal() {
+            skyboxModal.classList.remove('active');
+            document.body.style.overflow = '';
+            // Remove URL hash
+            if (history.pushState) {
+                history.pushState(null, null, window.location.pathname + window.location.search);
+            } else {
+                window.location.hash = '';
+            }
+            // Сбросить изменения при закрытии
+            if (window.ChangeTracker) {
+                window.ChangeTracker.resetChanges('skybox');
+            }
+        }
+        
+        openSkyboxBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            openSkyboxModal();
         });
         
         closeSkyboxModal.addEventListener('click', function() {
-            skyboxModal.classList.remove('active');
-            document.body.style.overflow = '';
+            closeSkyboxModalFunc();
         });
         
-        skyboxModal.addEventListener('click', function(e) {
-            if (e.target === skyboxModal) {
-                skyboxModal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
+        // Close on background click (only if both mousedown and mouseup were outside content)
+        var mouseDownOnBackground = false;
+        skyboxModal.addEventListener('mousedown', function(e) {
+            mouseDownOnBackground = (e.target === skyboxModal);
         });
+        var handleMouseUp = function(e) {
+            if (mouseDownOnBackground) {
+                if (e.target === skyboxModal || !skyboxModal.contains(e.target)) {
+                    closeSkyboxModalFunc();
+                }
+            }
+            mouseDownOnBackground = false;
+        };
+        skyboxModal.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('mouseup', handleMouseUp);
         
         // Close on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && skyboxModal.classList.contains('active')) {
-                skyboxModal.classList.remove('active');
-                document.body.style.overflow = '';
+                e.preventDefault();
+                if (window.ChangeTracker) {
+                    window.ChangeTracker.handleEscPress('skybox', function() {
+                        closeSkyboxModalFunc();
+                    });
+                } else {
+                    closeSkyboxModalFunc();
+                }
+            }
+        });
+        
+        // Check URL hash on page load
+        if (window.location.hash === '#skybox') {
+            openSkyboxModal();
+        }
+        
+        // Listen for hash changes (back/forward buttons)
+        window.addEventListener('hashchange', function() {
+            if (window.location.hash === '#skybox') {
+                openSkyboxModal();
+            } else if (skyboxModal.classList.contains('active')) {
+                closeSkyboxModalFunc();
             }
         });
     });

@@ -93,6 +93,32 @@
         </div>
     </main>
 
+    <script>
+        // Apply saved view mode immediately to prevent visual switching
+        // This script runs synchronously before gallery.js loads
+        (function() {
+            const savedMode = localStorage.getItem('galleryViewMode');
+            const isThumbnailMode = savedMode === 'thumbnail';
+            
+            const mainGallery = document.getElementById('mainGallery');
+            const thumbnailGrid = document.getElementById('thumbnailGrid');
+            const modeToggle = document.getElementById('modeToggle');
+            
+            if (mainGallery && thumbnailGrid) {
+                if (isThumbnailMode) {
+                    mainGallery.classList.add('hidden');
+                    thumbnailGrid.classList.remove('hidden');
+                } else {
+                    mainGallery.classList.remove('hidden');
+                    thumbnailGrid.classList.add('hidden');
+                }
+            }
+            
+            if (modeToggle) {
+                modeToggle.checked = isThumbnailMode;
+            }
+        })();
+    </script>
     <script src="/scripts/language-manager.js?v=1.3"></script>
     <script src="/scripts/navigation.js?v=1.3"></script>
     <script src="/scripts/thumbnail-optimizer.js?v=1.3"></script>

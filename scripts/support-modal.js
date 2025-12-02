@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (openDonationBtn && donationModal && closeModal) {
         openDonationBtn.addEventListener('click', function() {
+            // Закрываем основное окно поддержки перед открытием дочернего
+            const supportModal = document.getElementById('supportModal');
+            if (supportModal && supportModal.classList.contains('active')) {
+                supportModal.classList.remove('active');
+            }
             donationModal.classList.add('active');
         });
 
@@ -28,6 +33,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (openCryptoBtn && cryptoModal && closeCryptoModal) {
         openCryptoBtn.addEventListener('click', function() {
+            // Закрываем основное окно поддержки перед открытием дочернего
+            const supportModal = document.getElementById('supportModal');
+            if (supportModal && supportModal.classList.contains('active')) {
+                supportModal.classList.remove('active');
+            }
             cryptoModal.classList.add('active');
         });
 
@@ -49,6 +59,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (openCardBtn && cardModal && closeCardModal) {
         openCardBtn.addEventListener('click', function() {
+            // Закрываем основное окно поддержки перед открытием дочернего
+            const supportModal = document.getElementById('supportModal');
+            if (supportModal && supportModal.classList.contains('active')) {
+                supportModal.classList.remove('active');
+            }
             cardModal.classList.add('active');
         });
 
@@ -102,9 +117,17 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close modals on Escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            if (donationModal) donationModal.classList.remove('active');
-            if (cryptoModal) cryptoModal.classList.remove('active');
-            if (cardModal) cardModal.classList.remove('active');
+            const supportModal = document.getElementById('supportModal');
+            if (donationModal && donationModal.classList.contains('active')) {
+                donationModal.classList.remove('active');
+                if (supportModal) supportModal.classList.add('active');
+            } else if (cryptoModal && cryptoModal.classList.contains('active')) {
+                cryptoModal.classList.remove('active');
+                if (supportModal) supportModal.classList.add('active');
+            } else if (cardModal && cardModal.classList.contains('active')) {
+                cardModal.classList.remove('active');
+                if (supportModal) supportModal.classList.add('active');
+            }
         }
     });
 });

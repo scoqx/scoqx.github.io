@@ -56,6 +56,7 @@ html, body {
   z-index: 1000;
   width: 100%;
   max-width: 100vw;
+  user-select: none;
 }
 
 .nav-container {
@@ -66,10 +67,13 @@ html, body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 var(--spacing-md);
+    user-select: none;
 }
 
 .nav-logo {
   flex-shrink: 0;
+    user-select: none;
+    pointer-events: auto;
 }
 
 .logo-link {
@@ -2534,4 +2538,9 @@ html[lang="en"] .crypto-address.copied::after {
 
 .preview-added {
     color: #66ff66;
+}
+
+/* Q3GFX tool section - hidden */
+#openQ3GFXModal {
+    display: none !important;
 }

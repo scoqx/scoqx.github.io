@@ -144,10 +144,11 @@ class Gallery {
     }
     
     async renderGallery() {
+        // Apply saved view mode first, before rendering
+        this.applySavedViewMode();
         this.renderMainImage();
         await this.renderThumbnailsAsync();
         this.updateViewModeButton();
-        this.applySavedViewMode();
     }
     
     renderMainImage() {
@@ -499,7 +500,7 @@ class Gallery {
         container.innerHTML = '';
         
         // Load thumbnails in batches for better performance
-        const batchSize = 5; // Load 5 thumbnails at a time
+        const batchSize = 15; // Increased batch size for faster loading
         const totalImages = this.images.length;
         
         console.log(`🔄 Loading ${totalImages} thumbnails in batches of ${batchSize}`);
@@ -507,7 +508,7 @@ class Gallery {
         for (let i = 0; i < totalImages; i += batchSize) {
             const batch = this.images.slice(i, i + batchSize);
             
-            // Create thumbnails for this batch
+            // Create thumbnails for this batch (no delay between batches)
             const batchPromises = batch.map((image, batchIndex) => {
                 const index = i + batchIndex;
                 return this.createThumbnailAsync(image, index, container);
@@ -515,11 +516,6 @@ class Gallery {
             
             // Wait for this batch to complete before loading next
             await Promise.all(batchPromises);
-            
-            // Small delay between batches to prevent blocking
-            if (i + batchSize < totalImages) {
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
         }
         
         console.log('✅ All thumbnails loaded');

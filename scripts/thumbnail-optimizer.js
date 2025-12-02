@@ -146,7 +146,7 @@ class ThumbnailOptimizer {
     }
     
     /**
-     * Создает lazy loading изображение с оптимизированной миниатюрой
+     * Создает lazy loading изображение с оптимизированной миниатюрой и blur-up эффектом
      */
     createOptimizedImageElement(originalSrc, alt, size = 'small', className = '') {
         const img = document.createElement('img');
@@ -205,14 +205,15 @@ class ThumbnailOptimizer {
         canvas.width = thumbnailSize;
         canvas.height = thumbnailSize;
         
-        // Создаем серый placeholder
-        ctx.fillStyle = '#f0f0f0';
+        // Создаем черный фон
+        ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, thumbnailSize, thumbnailSize);
         
-        // Добавляем текст "Loading..."
-        ctx.fillStyle = '#999';
+        // Добавляем серый текст "Loading..."
+        ctx.fillStyle = '#808080';
         ctx.font = '14px Arial';
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText('Loading...', thumbnailSize / 2, thumbnailSize / 2);
         
         return canvas.toDataURL();

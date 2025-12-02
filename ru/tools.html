@@ -70,8 +70,8 @@
         .file-selectors {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-lg);
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
             align-items: start;
         }
         
@@ -96,8 +96,8 @@
         
         .file-drop-zone {
             position: relative;
-            min-height: 120px;
-            padding: var(--spacing-lg);
+            min-height: 80px;
+            padding: var(--spacing-md);
             background-color: rgba(255, 255, 255, 0.05);
             border: 2px dashed var(--border-color);
             border-radius: var(--border-radius);
@@ -175,8 +175,8 @@
             padding: var(--spacing-sm);
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: var(--border-radius);
-            min-height: 40px;
-            max-height: 150px;
+            min-height: 30px;
+            max-height: 120px;
             overflow-y: auto;
         }
         
@@ -273,7 +273,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: var(--spacing-sm);
-            margin-top: var(--spacing-lg);
+            margin-top: var(--spacing-md);
         }
         
         .sort-button {
@@ -338,12 +338,12 @@
         }
         
         .preview-container {
-            margin: var(--spacing-md) 0;
-            padding: var(--spacing-md);
+            margin: var(--spacing-sm) 0;
+            padding: var(--spacing-sm);
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             background: rgba(255, 255, 255, 0.02);
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
         }
         
@@ -431,8 +431,8 @@
         }
         
         .filter-section {
-            margin-bottom: var(--spacing-lg);
-            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
             background-color: rgba(255, 255, 255, 0.05);
             border: 2px solid var(--border-color);
             border-radius: var(--border-radius);
@@ -568,6 +568,68 @@
             background-color: rgba(255, 0, 0, 0.3);
             border-color: rgba(255, 0, 0, 0.7);
         }
+        
+        .tabs-container {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .tab-button {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-bottom: -2px;
+        }
+        
+        .tab-button:hover {
+            color: rgba(255, 255, 255, 0.8);
+            border-bottom-color: rgba(255, 255, 255, 0.3);
+        }
+        
+        .tab-button.active {
+            color: var(--text-color);
+            border-bottom-color: var(--border-color);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Скрыть скроллбар справа у модального окна */
+        #configEditorModal .donation-modal-content {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+        
+        #configEditorModal .donation-modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #configEditorModal .donation-modal-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        #configEditorModal .donation-modal-content::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        
+        #configEditorModal .donation-modal-content::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
 <body data-page="tools">
@@ -600,11 +662,11 @@
                 <h1>Инструменты</h1>
             </div>
             
-            <div class="tool-section">
-                <h2>cfge</h2>
-                <button id="openConfigInjectorModal" class="tool-button">
-                    Инжектор конфигов
-                </button>
+            <div class="tool-section clickable" id="openConfigEditorModal">
+                <h2>Config Editor</h2>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                    Редактирование конфигов
+                </p>
             </div>
             
             <div class="tool-section clickable" id="openSkyboxModal">
@@ -613,6 +675,14 @@
                     Конвертация 360° панорамы (equirectangular) в Quake 3 skybox faces
                 </p>
             </div>
+            
+            <div class="tool-section clickable" id="openQ3GFXModal">
+                <h2>Q3GFX</h2>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                    Создание цветных ников для Quake 3 (VQ3, OSP, CPMA)
+                </p>
+            </div>
+            
         </div>
     </main>
 
@@ -626,12 +696,16 @@
         </div>
     </div>
 
-    <!-- Config Injector Modal -->
-    <div class="donation-modal" id="configInjectorModal">
-        <div class="donation-modal-content" style="max-width: 1200px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto;">
-            <button class="donation-modal-close" id="closeConfigInjectorModal">&times;</button>
-            <h3 style="text-align: center;">Инжектор конфигов</h3>
-            <div class="cfg-injector-container" style="background-color: rgba(255, 255, 255, 0.05); border: 2px solid var(--border-color); border-radius: var(--border-radius); padding: var(--spacing-lg);">
+    <!-- Config Editor Modal -->
+    <div class="donation-modal" id="configEditorModal">
+        <div class="donation-modal-content" style="max-width: 1200px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto; overflow-x: hidden;">
+            <button class="donation-modal-close" id="closeConfigEditorModal">&times;</button>
+            <div style="position: relative; margin-bottom: var(--spacing-sm);">
+                <h3 style="text-align: center; margin: 0;">Config Editor</h3>
+                <button id="clearConfigEditorButton" class="sort-button" style="position: absolute; right: var(--spacing-lg); top: 50%; transform: translateY(-50%); display: none;">Очистить</button>
+            </div>
+            
+            <div class="cfg-injector-container" style="background-color: rgba(255, 255, 255, 0.05); border: 2px solid var(--border-color); border-radius: var(--border-radius); padding: var(--spacing-md);">
                 <div class="file-selectors">
                     <div class="file-selector">
                         <label for="sourceFiles">Исходные файлы</label>
@@ -760,12 +834,26 @@
         </div>
     </div>
 
+    <!-- Q3GFX Modal -->
+    <div class="donation-modal" id="q3gfxModal">
+        <div class="donation-modal-content" style="max-width: 1200px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto; padding: var(--spacing-sm);">
+            <button class="donation-modal-close" id="closeQ3GFXModal">&times;</button>
+            <h3 style="text-align: center; margin-top: 0; margin-bottom: var(--spacing-sm);">Q3 GFX Tool</h3>
+            <div id="q3gfxContent"></div>
+        </div>
+    </div>
+
+
     <script src="/scripts/jszip.min.js?v=1.3"></script>
     <script src="/scripts/language-manager.js?v=1.3"></script>
     <script src="/scripts/navigation.js?v=1.3"></script>
+    <script src="/scripts/change-tracker.js?v=1.0"></script>
     <script src="/scripts/cfg-injector.js?v=1.3"></script>
     <script src="/scripts/cfge-modal.js?v=1.3"></script>
     <script src="/scripts/skybox-modal.js?v=1.3"></script>
+    <script src="/scripts/tga.js?v=1.4"></script>
+    <script src="/scripts/q3gfx.js?v=2.4"></script>
+    <script src="/scripts/q3gfx-modal.js?v=1.3"></script>
     
     <!-- Simple Analytics - 100% privacy-first analytics -->
     <script data-collect-dnt="true" async src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
