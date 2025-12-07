@@ -351,21 +351,30 @@
         const prefix = prefixMatch ? prefixMatch[1] : '';
         const commandPart = prefix ? lineWithoutComment.substring(prefixMatch[0].length) : lineWithoutComment;
         
-        // Find command name (first word)
-        const nameMatch = commandPart.match(/^(\S+)[\s\t]+/);
-        if (!nameMatch) {
-            // If we can't parse, fall back to reconstruction
-            const cmdObj = { value: newValue, hasQuotes: newHasQuotes, prefix: prefix };
-            return reconstructCommandLine(
-                cmdObj,
-                commandName || commandPart.trim(),
-                leadingWhitespace,
-                comment
-            );
-        }
+        // Find command name (first word, may be directly followed by quote/value without space)
+        let nameMatch = commandPart.match(/^(\S+)[\s\t]+/);
+        let parsedCommandName, afterCommandName;
         
-        const parsedCommandName = nameMatch[1];
-        const afterCommandName = commandPart.substring(nameMatch[0].length);
+        if (!nameMatch) {
+            // Try to match command name directly followed by quote or value (no space)
+            const noSpaceMatch = commandPart.match(/^(\S+?)(["']|$)/);
+            if (noSpaceMatch && noSpaceMatch[1]) {
+                parsedCommandName = noSpaceMatch[1];
+                afterCommandName = commandPart.substring(parsedCommandName.length);
+            } else {
+                // If we can't parse, fall back to reconstruction
+                const cmdObj = { value: newValue, hasQuotes: newHasQuotes, prefix: prefix };
+                return reconstructCommandLine(
+                    cmdObj,
+                    commandName || commandPart.trim(),
+                    leadingWhitespace,
+                    comment
+                );
+            }
+        } else {
+            parsedCommandName = nameMatch[1];
+            afterCommandName = commandPart.substring(nameMatch[0].length);
+        }
         
         // Find where the old value starts and ends
         let oldValueStart = 0;
@@ -386,8 +395,13 @@
         }
         
         // Extract whitespace before and after value
-        const beforeValue = afterCommandName.substring(0, oldValueStart);
+        let beforeValue = afterCommandName.substring(0, oldValueStart);
         const afterValue = afterCommandName.substring(oldValueEnd);
+        
+        // Ensure there's at least one space before value (fix cases where there was no space)
+        if (!beforeValue || beforeValue.trim().length === 0) {
+            beforeValue = ' ';
+        }
         
         // Format new value
         const needsQuotes = newHasQuotes !== undefined ? newHasQuotes : (newValue.includes(' ') || newValue === '');
@@ -440,6 +454,7 @@
             const keyStr = keyWasQuoted ? `"${keyPart}"` : keyPart;
             commandPart = `${displayCommandName} ${keyStr} ${valueStr}`;
         } else {
+            // Always add space between command name and value
             commandPart = `${displayCommandName} ${valueStr}`;
         }
         
@@ -773,69 +788,72 @@
         const prefix = prefixMatch ? prefixMatch[1] : '';
         const commandPart = prefix ? line.substring(prefixMatch[0].length) : line;
         
-        // Find command name (first word, can be tab-separated)
-        const nameMatch = commandPart.match(/^(\S+)[\s\t]+/);
+        // Find command name (first word, can be tab-separated or directly followed by quote/value)
+        // Handle cases like: "seta name"value"" or "seta name value"
+        let nameMatch = commandPart.match(/^(\S+)[\s\t]+/);
+        let commandName, commandValue;
+        
         if (!nameMatch) {
-            return null;
+            // Try to match command name directly followed by quote or value (no space)
+            // Example: seta name"value" or seta namevalue
+            const noSpaceMatch = commandPart.match(/^(\S+?)(["']|$)/);
+            if (noSpaceMatch && noSpaceMatch[1]) {
+                commandName = noSpaceMatch[1];
+                commandValue = commandPart.substring(commandName.length);
+            } else {
+                // Try to extract first word as command name
+                const firstWordMatch = commandPart.match(/^(\S+)/);
+                if (firstWordMatch) {
+                    commandName = firstWordMatch[1];
+                    commandValue = commandPart.substring(commandName.length);
+                } else {
+                    return null;
+                }
+            }
+        } else {
+            commandName = nameMatch[1];
+            commandValue = commandPart.substring(nameMatch[0].length).trim();
         }
         
-        const commandName = nameMatch[1];
-        let commandValue = commandPart.substring(nameMatch[0].length).trim();
+        // Clean up commandValue - remove leading whitespace if any
+        commandValue = commandValue.trim();
         
         // Handle quoted values - need to handle nested quotes properly
+        // Also handle cases where value might be duplicated (take only first occurrence)
         let hasQuotes = false;
         if (commandValue.length > 0) {
-            // Check if value starts and ends with matching quotes
+            // Check if value starts with quotes
             const firstChar = commandValue[0];
-            const lastChar = commandValue[commandValue.length - 1];
             
-            if ((firstChar === '"' && lastChar === '"') || (firstChar === "'" && lastChar === "'")) {
-                // Count quotes to see if they're properly matched (not nested)
-                let quoteCount = 0;
-                let inQuotes = false;
-                let currentQuote = null;
-                
-                for (let i = 0; i < commandValue.length; i++) {
-                    const char = commandValue[i];
-                    if ((char === '"' || char === "'") && (i === 0 || commandValue[i - 1] !== '\\')) {
-                        if (!inQuotes) {
-                            inQuotes = true;
-                            currentQuote = char;
-                            quoteCount++;
-                        } else if (char === currentQuote) {
-                            inQuotes = false;
-                            currentQuote = null;
-                            quoteCount++;
-                        }
+            if (firstChar === '"' || firstChar === "'") {
+                // Find matching closing quote
+                let quoteEnd = -1;
+                for (let i = 1; i < commandValue.length; i++) {
+                    if (commandValue[i] === firstChar && commandValue[i - 1] !== '\\') {
+                        quoteEnd = i;
+                        break;
                     }
                 }
                 
-                // If we have even number of matching quotes, it's a simple quoted value
-                // Otherwise, it might have nested quotes
-                if (quoteCount % 2 === 0 && !inQuotes) {
-                    // Simple case: remove outer quotes
+                if (quoteEnd !== -1) {
+                    // Extract only the first quoted value (ignore duplicates)
+                    commandValue = commandValue.substring(0, quoteEnd + 1);
+                    // Remove outer quotes
                     commandValue = commandValue.slice(1, -1);
                     hasQuotes = true;
                 } else {
-                    // Complex case with nested quotes
-                    // Try to remove outer quotes if first and last chars are matching quotes
-                    // and the result doesn't start/end with the same quote type
-                    if (firstChar === lastChar) {
-                        const withoutOuter = commandValue.slice(1, -1);
-                        const newFirst = withoutOuter.length > 0 ? withoutOuter[0] : '';
-                        const newLast = withoutOuter.length > 0 ? withoutOuter[withoutOuter.length - 1] : '';
-                        // Remove outer quotes if result doesn't start/end with same quote (meaning outer quotes were removed)
-                        if (newFirst !== firstChar && newLast !== lastChar) {
-                            commandValue = withoutOuter;
-                            hasQuotes = true;
-                        } else {
-                            // Keep as is - outer quotes are needed
-                            hasQuotes = true;
-                        }
-                    } else {
-                        // Different quote types at start/end - keep as is
-                        hasQuotes = true;
+                    // No closing quote found - treat as unquoted
+                    // Take only first word if there are multiple values
+                    const firstValueMatch = commandValue.match(/^([^\s]+)/);
+                    if (firstValueMatch) {
+                        commandValue = firstValueMatch[1];
                     }
+                }
+            } else {
+                // Unquoted value - take only first word if there are multiple values
+                const firstValueMatch = commandValue.match(/^([^\s]+)/);
+                if (firstValueMatch) {
+                    commandValue = firstValueMatch[1];
                 }
             }
         }
@@ -849,6 +867,9 @@
             let key = '';
             let keyLength = 0;
             let keyWasQuoted = false;
+            
+            // Trim leading whitespace
+            commandValue = commandValue.trim();
             
             // Check if key starts with quotes (but not if the key itself IS a quote)
             const firstChar = commandValue[0];
@@ -878,7 +899,7 @@
                     }
                 }
             } else {
-                // Unquoted key
+                // Unquoted key - extract first word (up to space or end)
                 const keyMatch = commandValue.match(/^([^\s]+)/);
                 if (keyMatch) {
                     key = keyMatch[1];
@@ -888,8 +909,47 @@
             
             if (key) {
                 finalCommandName = `bind_${key}`;
-                // Remove key from value
-                commandValue = commandValue.substring(keyLength).trim();
+                // Remove key from value and trim
+                let remainingValue = commandValue.substring(keyLength).trim();
+                
+                // Handle case where value might be duplicated (e.g., "+forward" "+forward")
+                // Take only the first value
+                if (remainingValue.length > 0) {
+                    // Check if remaining value starts with quotes
+                    const remFirstChar = remainingValue[0];
+                    if (remFirstChar === '"' || remFirstChar === "'") {
+                        // Find matching quote
+                        let remQuoteEnd = -1;
+                        for (let i = 1; i < remainingValue.length; i++) {
+                            if (remainingValue[i] === remFirstChar && remainingValue[i - 1] !== '\\') {
+                                remQuoteEnd = i;
+                                break;
+                            }
+                        }
+                        if (remQuoteEnd !== -1) {
+                            // Extract only the first quoted value
+                            remainingValue = remainingValue.substring(0, remQuoteEnd + 1);
+                        }
+                    } else {
+                        // Unquoted value - take first word only
+                        const firstValueMatch = remainingValue.match(/^([^\s]+)/);
+                        if (firstValueMatch) {
+                            remainingValue = firstValueMatch[1];
+                        }
+                    }
+                }
+                
+                commandValue = remainingValue;
+                // Update hasQuotes based on final value
+                if (commandValue.length > 0) {
+                    const valFirst = commandValue[0];
+                    const valLast = commandValue[commandValue.length - 1];
+                    hasQuotes = (valFirst === '"' && valLast === '"') || (valFirst === "'" && valLast === "'");
+                    if (hasQuotes) {
+                        commandValue = commandValue.slice(1, -1);
+                    }
+                }
+                
                 // Store if key was quoted for later reconstruction
                 return {
                     name: finalCommandName,
@@ -1459,12 +1519,16 @@
                 }
             }
             
-            // Build output content
+            // Build output content with grouping by prefix
             const outputLines = [];
             const addedCommands = new Set();
             
-            // First, process existing structure - modify values in place
-            for (const item of targetStructure) {
+            // Track last position of each category/prefix for grouping new commands
+            const lastCategoryPosition = new Map(); // category -> last line index
+            
+            // First, process existing structure - modify values in place and track category positions
+            for (let i = 0; i < targetStructure.length; i++) {
+                const item = targetStructure[i];
                 if (item.isCommand && item.commandName) {
                     const cmd = targetCommands.get(item.commandName);
                     if (cmd && cmd.lineIndex !== undefined && cmd.lineIndex >= 0) {
@@ -1473,6 +1537,12 @@
                         const newLine = replaceValueInLine(originalLine, cmd.value, cmd.hasQuotes, item.commandName);
                         outputLines.push(newLine);
                         addedCommands.add(item.commandName);
+                        
+                        // Track category position for grouping new commands
+                        const category = getCommandCategory(item.commandName, cmd.prefix);
+                        if (category) {
+                            lastCategoryPosition.set(category, outputLines.length - 1);
+                        }
                     } else if (!cmd) {
                         // Command was removed or ignored - keep original line as is
                         outputLines.push(item.line);
@@ -1486,16 +1556,91 @@
                 }
             }
             
-            // Add new commands that weren't in target
+            // Group new commands by category and insert them after the last command of the same category
+            const newCommandsByCategory = new Map(); // category -> array of [name, cmd]
+            const newCommandsWithoutCategory = []; // commands without category
+            
+            // First, collect new commands and group them by category
             for (const [name, cmd] of targetCommands) {
                 if (!addedCommands.has(name)) {
-                    const commandLine = reconstructCommandLine(cmd, name);
-                    outputLines.push(commandLine);
+                    const category = getCommandCategory(name, cmd.prefix);
+                    if (category) {
+                        if (!newCommandsByCategory.has(category)) {
+                            newCommandsByCategory.set(category, []);
+                        }
+                        newCommandsByCategory.get(category).push([name, cmd]);
+                    } else {
+                        newCommandsWithoutCategory.push([name, cmd]);
+                    }
                 }
             }
             
+            // Sort new commands within each category alphabetically
+            for (const [category, commands] of newCommandsByCategory) {
+                commands.sort((a, b) => {
+                    const nameA = a[0].toLowerCase();
+                    const nameB = b[0].toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+            }
+            
+            // Sort commands without category
+            newCommandsWithoutCategory.sort((a, b) => {
+                const nameA = a[0].toLowerCase();
+                const nameB = b[0].toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            
+            // Build insertion map: line index -> array of commands to insert after that line
+            const insertions = new Map(); // line index -> array of command lines
+            
+            // Insert commands after their category's last position
+            for (const [category, commands] of newCommandsByCategory) {
+                const insertAfterIndex = lastCategoryPosition.has(category) 
+                    ? lastCategoryPosition.get(category) 
+                    : -1; // -1 means insert at end
+                
+                const commandLines = commands.map(([name, cmd]) => 
+                    reconstructCommandLine(cmd, name)
+                );
+                
+                if (!insertions.has(insertAfterIndex)) {
+                    insertions.set(insertAfterIndex, []);
+                }
+                insertions.get(insertAfterIndex).push(...commandLines);
+            }
+            
+            // Add commands without category at the end
+            if (newCommandsWithoutCategory.length > 0) {
+                const commandLines = newCommandsWithoutCategory.map(([name, cmd]) => 
+                    reconstructCommandLine(cmd, name)
+                );
+                if (!insertions.has(-1)) {
+                    insertions.set(-1, []);
+                }
+                insertions.get(-1).push(...commandLines);
+            }
+            
+            // Build final output with insertions
+            const finalOutput = [];
+            for (let i = 0; i < outputLines.length; i++) {
+                finalOutput.push(outputLines[i]);
+                
+                // Insert new commands after this line if there are any
+                if (insertions.has(i)) {
+                    const commandsToInsert = insertions.get(i);
+                    finalOutput.push(...commandsToInsert);
+                }
+            }
+            
+            // Add remaining commands that should go at the end (index -1)
+            if (insertions.has(-1)) {
+                const commandsToInsert = insertions.get(-1);
+                finalOutput.push(...commandsToInsert);
+            }
+            
             // Create output file
-            const outputContent = outputLines.join('\n');
+            const outputContent = finalOutput.join('\n');
             const targetFileName = targetFile.name;
             const baseName = targetFileName.replace(/\.(cfg|txt)$/i, '');
             const extension = targetFileName.match(/\.(cfg|txt)$/i)?.[1] || 'cfg';
