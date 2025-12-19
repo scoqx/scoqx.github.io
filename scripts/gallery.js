@@ -513,7 +513,14 @@ class Gallery {
         
         // Загружаем превью батчами по 20 параллельно для быстрой загрузки
         const batchSize = 20;
-        const originalPromises = [];
+        
+        // Инициализируем загрузчик для галереи (батч 3)
+        if (window.imageLoader) {
+            window.imageLoader.setBatchSize(3);
+        }
+        
+        // Собираем все оригинальные изображения для фоновой загрузки
+        const originalImages = [];
         
         for (let i = 0; i < this.images.length; i += batchSize) {
             const batch = [];
@@ -521,22 +528,22 @@ class Gallery {
             // Создаем батч превью
             for (let j = i; j < i + batchSize && j < this.images.length; j++) {
                 batch.push(this.createThumbnailAsync(this.images[j], j, container));
-                
-                // Параллельно начинаем загружать оригиналы в фоне
-                const img = new Image();
-                img.src = this.images[j].src; // Предзагрузка оригиналов в фоне
-                originalPromises.push(new Promise((resolve) => {
-                    img.onload = resolve;
-                    img.onerror = resolve; // Продолжаем даже при ошибке
-                }));
+                originalImages.push(this.images[j].src);
             }
             
             // Загружаем батч превью параллельно
             await Promise.all(batch);
         }
         
-        // Загружаем оригиналы параллельно, но не ждем их завершения
-        Promise.all(originalPromises);
+        // После загрузки всех превью, начинаем фоновую загрузку оригиналов
+        // Сначала батч 3, затем после загрузки всех превью - батч 10
+        if (window.imageLoader && originalImages.length > 0) {
+            // Добавляем все изображения в очередь по порядку
+            window.imageLoader.addBatchToQueue(originalImages);
+            
+            // Устанавливаем флаг, что все превью загружены (для переключения на батч 10)
+            window.imageLoader.setAllThumbnailsLoaded();
+        }
     }
     
     async createThumbnailAsync(image, index, container) {
