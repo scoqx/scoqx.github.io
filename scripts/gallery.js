@@ -292,7 +292,6 @@ class Gallery {
             const optimizedImg = document.createElement('img');
             optimizedImg.alt = image.title;
             optimizedImg.className = 'thumbnail-img loading';
-            optimizedImg.loading = 'lazy';
             optimizedImg.src = thumbnailSrc; // Используем thumbnail путь напрямую
             
             // Счетчик попыток загрузки (thumbnail = 1, оригинал = 2)
@@ -512,25 +511,29 @@ class Gallery {
         
         const totalImages = this.images.length;
         
-        // Загружаем превью и параллельно начинаем загружать оригиналы по порядку
-        const thumbnailPromises = [];
+        // Загружаем превью батчами по 20 параллельно для быстрой загрузки
+        const batchSize = 20;
         const originalPromises = [];
         
-        this.images.forEach((image, index) => {
-            // Загружаем превью
-            thumbnailPromises.push(this.createThumbnailAsync(image, index, container));
+        for (let i = 0; i < this.images.length; i += batchSize) {
+            const batch = [];
             
-            // Параллельно начинаем загружать оригиналы по порядку (1, 2, 3...)
-            const img = new Image();
-            img.src = image.src; // Предзагрузка оригиналов в фоне
-            originalPromises.push(new Promise((resolve) => {
-                img.onload = resolve;
-                img.onerror = resolve; // Продолжаем даже при ошибке
-            }));
-        });
-        
-        // Ждем загрузки всех превью (оригиналы загружаются параллельно)
-        await Promise.all(thumbnailPromises);
+            // Создаем батч превью
+            for (let j = i; j < i + batchSize && j < this.images.length; j++) {
+                batch.push(this.createThumbnailAsync(this.images[j], j, container));
+                
+                // Параллельно начинаем загружать оригиналы в фоне
+                const img = new Image();
+                img.src = this.images[j].src; // Предзагрузка оригиналов в фоне
+                originalPromises.push(new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.onerror = resolve; // Продолжаем даже при ошибке
+                }));
+            }
+            
+            // Загружаем батч превью параллельно
+            await Promise.all(batch);
+        }
         
         // Загружаем оригиналы параллельно, но не ждем их завершения
         Promise.all(originalPromises);
@@ -548,8 +551,7 @@ class Gallery {
             const optimizedImg = document.createElement('img');
             optimizedImg.alt = image.title;
             optimizedImg.className = 'thumbnail-img loading';
-            optimizedImg.loading = 'lazy';
-            optimizedImg.src = thumbnailSrc; // Используем thumbnail путь напрямую
+            optimizedImg.src = thumbnailSrc; // Используем thumbnail путь напрямую (загружаем немедленно)
             
             // Счетчик попыток загрузки (thumbnail = 1, оригинал = 2)
             let loadAttempts = 1;

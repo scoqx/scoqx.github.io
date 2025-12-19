@@ -113,8 +113,7 @@ function createScreenshotElement(screenshot, index) {
     const optimizedImg = document.createElement('img');
     optimizedImg.alt = screenshot.alt;
     optimizedImg.className = 'screenshot-img loading';
-    optimizedImg.loading = 'lazy';
-    optimizedImg.src = screenshot.src; // Используем thumbnail путь напрямую
+    optimizedImg.src = screenshot.src; // Используем thumbnail путь напрямую (загружаем немедленно)
     
     // Добавляем data-original-src для fullscreen (оригинальное изображение)
     optimizedImg.setAttribute('data-original-src', screenshot.originalSrc || screenshot.src);
