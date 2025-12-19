@@ -291,6 +291,43 @@
         return resultBuffer;
     }
     
+    // Change pitch of audio buffer using playbackRate
+    // pitchShift: positive values = higher pitch, negative = lower pitch
+    // pitchShift is in semitones (e.g., 1 = one semitone up, -1 = one semitone down)
+    // Note: This changes both pitch and speed. For pitch-only change, time-stretching would be needed.
+    async function changePitch(audioBuffer, pitchShift) {
+        // Convert semitones to playback rate multiplier
+        // Each semitone is a factor of 2^(1/12) ≈ 1.059463
+        const playbackRate = Math.pow(2, pitchShift / 12);
+        
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const originalLength = audioBuffer.length;
+        
+        // Calculate new length based on playback rate
+        const newLength = Math.ceil(originalLength / playbackRate);
+        
+        // Create offline context
+        const offlineContext = new OfflineAudioContext(
+            numberOfChannels,
+            newLength,
+            sampleRate
+        );
+        
+        const source = offlineContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.playbackRate.value = playbackRate;
+        source.connect(offlineContext.destination);
+        source.start(0);
+        
+        const renderedBuffer = await offlineContext.startRendering();
+        
+        // If we want to maintain original duration, we need to resample
+        // For now, we'll keep the new duration (which changes speed)
+        // To maintain duration, we'd need time-stretching algorithm
+        return renderedBuffer;
+    }
+    
     // WAV Editor tool HTML content
     function getWavEditorToolHTML(lang) {
         const isRu = lang === 'ru';
@@ -892,6 +929,57 @@
           <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px;">${isRu ? 'Имена частей:' : 'Part names:'}</div>
         </div>
       </div>
+      
+      <div class="wav-editor-pitch-controls" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+        <div class="wav-editor-control-row">
+          <label>${isRu ? 'Питч:' : 'Pitch:'}</label>
+          <button class="wav-editor-btn" id="pitchBtn">${isRu ? 'Питч' : 'Pitch'}</button>
+        </div>
+        
+        <div id="pitchOptions" style="display: none; margin-top: 8px;">
+          <div class="wav-editor-control-row">
+            <label>${isRu ? 'Количество файлов:' : 'Number of files:'}</label>
+            <input type="number" id="pitchFilesCount" class="wav-editor-time-input" value="4" min="1" max="20" step="1" style="width: 80px;" />
+          </div>
+          
+          <div class="wav-editor-control-row" style="margin-top: 8px;">
+            <label>${isRu ? 'Шаг питча (полутонов):' : 'Pitch step (semitones):'}</label>
+            <input type="number" id="pitchStep" class="wav-editor-time-input" value="1" min="0.1" max="12" step="0.1" style="width: 80px;" />
+          </div>
+          
+          <div class="wav-editor-control-row" style="margin-top: 8px;">
+            <label>${isRu ? 'Направление:' : 'Direction:'}</label>
+            <select id="pitchDirection" class="wav-editor-time-input" style="width: 120px;">
+              <option value="up">${isRu ? 'Вверх' : 'Up'}</option>
+              <option value="down">${isRu ? 'Вниз' : 'Down'}</option>
+            </select>
+          </div>
+          
+          <div class="wav-editor-control-row" style="margin-top: 8px;">
+            <button class="wav-editor-btn wav-editor-btn-primary" id="generatePitchBtn">${isRu ? 'Сгенерировать' : 'Generate'}</button>
+            <button class="wav-editor-btn" id="cancelPitchBtn">${isRu ? 'Отмена' : 'Cancel'}</button>
+          </div>
+          
+          <div id="pitchFilesNames" style="display: none; margin-top: 12px;">
+            <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px;">${isRu ? 'Имена файлов:' : 'File names:'}</div>
+          </div>
+          
+          <div id="pitchDownloadSection" style="display: none; margin-top: 12px;">
+            <div class="wav-editor-filename-control" style="margin-top: 8px;">
+              <label>${isRu ? 'Имя PK3:' : 'PK3 name:'}</label>
+              <input type="text" id="pitchPk3Filename" class="wav-editor-filename-input" value="pitch_sounds.pk3" placeholder="sounds.pk3" />
+            </div>
+            <div class="wav-editor-filename-control" style="margin-top: 8px;">
+              <label>${isRu ? 'Путь в PK3:' : 'Path in PK3:'}</label>
+              <input type="text" id="pitchPk3Path" class="wav-editor-filename-input" value="sound/" placeholder="sound/" />
+            </div>
+            
+            <div class="wav-editor-control-row" style="margin-top: 8px;">
+              <button class="wav-editor-btn wav-editor-btn-success" id="downloadPitchBtn">${isRu ? 'Скачать все' : 'Download all'}</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <div class="wav-editor-export-options" id="exportOptions" style="display: none;">
@@ -940,6 +1028,7 @@
     let splitMarkers = []; // Array of split marker positions (in seconds)
     let draggedMarkerIndex = -1; // Index of marker being dragged, -1 if none
     let splitParts = []; // Array of split parts after splitting: [{buffer, name, startTime, endTime}]
+    let pitchFiles = []; // Array of pitch-shifted files: [{buffer, name, pitchShift}]
     
     // IndexedDB for state persistence
     const DB_NAME = 'wavEditorDB';
@@ -2690,6 +2779,285 @@
                     }
                 } catch (error) {
                     showStatus('Error exporting WAV: ' + error.message, 'error');
+                    console.error(error);
+                }
+            });
+        }
+        
+        // Pitch controls
+        const pitchBtn = document.getElementById('pitchBtn');
+        const pitchOptions = document.getElementById('pitchOptions');
+        const generatePitchBtn = document.getElementById('generatePitchBtn');
+        const cancelPitchBtn = document.getElementById('cancelPitchBtn');
+        const downloadPitchBtn = document.getElementById('downloadPitchBtn');
+        const pitchFilesCountInput = document.getElementById('pitchFilesCount');
+        const pitchStepInput = document.getElementById('pitchStep');
+        const pitchDirectionSelect = document.getElementById('pitchDirection');
+        const pitchPk3FilenameInput = document.getElementById('pitchPk3Filename');
+        const pitchPk3PathInput = document.getElementById('pitchPk3Path');
+        
+        if (pitchBtn && pitchOptions) {
+            pitchBtn.addEventListener('click', () => {
+                if (!hasActiveFile()) {
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus(isRu ? 'Загрузите файл для редактирования' : 'Load a file to edit', 'error');
+                    return;
+                }
+                
+                const file = getActiveFile();
+                if (!file || !file.currentBuffer) return;
+                
+                const selectionDuration = file.selectionEnd - file.selectionStart;
+                if (selectionDuration <= 0) {
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus(isRu ? 'Выделите участок для питча' : 'Select a segment for pitch', 'error');
+                    return;
+                }
+                
+                pitchOptions.style.display = 'block';
+            });
+        }
+        
+        if (cancelPitchBtn && pitchOptions) {
+            cancelPitchBtn.addEventListener('click', () => {
+                pitchOptions.style.display = 'none';
+                const pitchFilesNames = document.getElementById('pitchFilesNames');
+                const pitchDownloadSection = document.getElementById('pitchDownloadSection');
+                if (pitchFilesNames) pitchFilesNames.style.display = 'none';
+                if (pitchDownloadSection) pitchDownloadSection.style.display = 'none';
+                pitchFiles = [];
+            });
+        }
+        
+        if (generatePitchBtn && pitchFilesCountInput && pitchStepInput && pitchDirectionSelect) {
+            generatePitchBtn.addEventListener('click', async () => {
+                if (!hasActiveFile()) {
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus(isRu ? 'Загрузите файл для редактирования' : 'Load a file to edit', 'error');
+                    return;
+                }
+                
+                const file = getActiveFile();
+                if (!file || !file.currentBuffer) return;
+                
+                const selectionDuration = file.selectionEnd - file.selectionStart;
+                if (selectionDuration <= 0) {
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus(isRu ? 'Выделите участок для питча' : 'Select a segment for pitch', 'error');
+                    return;
+                }
+                
+                try {
+                    const numFiles = parseInt(pitchFilesCountInput.value) || 4;
+                    if (numFiles < 1 || numFiles > 20) {
+                        const lang = getLanguage();
+                        const isRu = lang === 'ru';
+                        showStatus(isRu ? 'Количество файлов должно быть от 1 до 20' : 'Number of files must be between 1 and 20', 'error');
+                        return;
+                    }
+                    
+                    const pitchStep = parseFloat(pitchStepInput.value) || 1;
+                    if (pitchStep <= 0 || pitchStep > 12) {
+                        const lang = getLanguage();
+                        const isRu = lang === 'ru';
+                        showStatus(isRu ? 'Шаг питча должен быть от 0.1 до 12 полутонов' : 'Pitch step must be between 0.1 and 12 semitones', 'error');
+                        return;
+                    }
+                    
+                    const direction = pitchDirectionSelect.value;
+                    
+                    // Extract selected segment
+                    const segmentBuffer = extractSegment(file.currentBuffer, file.selectionStart, file.selectionEnd);
+                    
+                    // Get base filename
+                    const baseName = file.name.replace(/\.[^/.]+$/, '');
+                    
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus(isRu ? 'Генерация файлов с питчем...' : 'Generating pitch files...', 'info');
+                    
+                    // Generate pitch-shifted files
+                    pitchFiles = [];
+                    for (let i = 0; i < numFiles; i++) {
+                        let pitchShift = 0;
+                        if (direction === 'up') {
+                            pitchShift = i * pitchStep;
+                        } else {
+                            pitchShift = -i * pitchStep;
+                        }
+                        
+                        let pitchShiftedBuffer;
+                        if (pitchShift === 0) {
+                            // No pitch change for first file
+                            pitchShiftedBuffer = segmentBuffer;
+                        } else {
+                            pitchShiftedBuffer = await changePitch(segmentBuffer, pitchShift);
+                        }
+                        
+                        const defaultName = `${baseName}_pitch${i + 1}.wav`;
+                        pitchFiles.push({
+                            buffer: pitchShiftedBuffer,
+                            name: defaultName,
+                            pitchShift: pitchShift
+                        });
+                    }
+                    
+                    // Show names input UI
+                    showPitchFilesNamesUI();
+                    
+                    // Show download section
+                    const pitchDownloadSection = document.getElementById('pitchDownloadSection');
+                    if (pitchDownloadSection) {
+                        pitchDownloadSection.style.display = 'block';
+                    }
+                    
+                    showStatus((isRu ? 'Сгенерировано ' : 'Generated ') + pitchFiles.length + (isRu ? ' файлов с питчем' : ' pitch files'), 'success');
+                } catch (error) {
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus((isRu ? 'Ошибка генерации питча: ' : 'Error generating pitch: ') + error.message, 'error');
+                    console.error(error);
+                }
+            });
+        }
+        
+        function showPitchFilesNamesUI() {
+            const namesContainer = document.getElementById('pitchFilesNames');
+            if (!namesContainer) return;
+            
+            const lang = getLanguage();
+            const isRu = lang === 'ru';
+            
+            namesContainer.style.display = 'block';
+            namesContainer.innerHTML = '<div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 8px;">' + 
+                (isRu ? 'Имена файлов:' : 'File names:') + '</div>';
+            
+            pitchFiles.forEach((pitchFile, index) => {
+                const row = document.createElement('div');
+                row.className = 'wav-editor-control-row';
+                row.style.marginTop = '6px';
+                
+                const label = document.createElement('label');
+                const pitchShiftText = pitchFile.pitchShift === 0 ? '0' : (pitchFile.pitchShift > 0 ? '+' : '') + pitchFile.pitchShift.toFixed(1);
+                label.textContent = `${isRu ? 'Файл' : 'File'} ${index + 1} (${pitchShiftText}${isRu ? ' полутонов' : ' semitones'}):`;
+                label.style.minWidth = '150px';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'wav-editor-filename-input';
+                input.value = pitchFile.name;
+                input.style.flex = '1';
+                input.addEventListener('change', (e) => {
+                    pitchFiles[index].name = e.target.value || pitchFile.name;
+                });
+                
+                // Add play button
+                const playBtn = document.createElement('button');
+                playBtn.className = 'wav-editor-playback-btn';
+                playBtn.textContent = '▶';
+                playBtn.title = isRu ? 'Прослушать' : 'Play';
+                playBtn.style.marginLeft = '8px';
+                playBtn.addEventListener('click', () => {
+                    // Stop any current playback
+                    stopPlayback();
+                    // Play this pitch file
+                    playAudioBuffer(pitchFile.buffer);
+                });
+                
+                row.appendChild(label);
+                row.appendChild(input);
+                row.appendChild(playBtn);
+                namesContainer.appendChild(row);
+            });
+        }
+        
+        if (downloadPitchBtn) {
+            downloadPitchBtn.addEventListener('click', async () => {
+                if (pitchFiles.length === 0) {
+                    const lang = getLanguage();
+                    const isRu = lang === 'ru';
+                    showStatus(isRu ? 'Нет файлов для скачивания' : 'No files to download', 'error');
+                    return;
+                }
+                
+                const lang = getLanguage();
+                const isRu = lang === 'ru';
+                
+                if (typeof JSZip === 'undefined') {
+                    showStatus(isRu ? 'JSZip не загружен' : 'JSZip not loaded', 'error');
+                    return;
+                }
+                
+                try {
+                    showStatus(isRu ? 'Создание PK3 архива...' : 'Creating PK3 archive...', 'info');
+                    
+                    // Get PK3 filename and path
+                    let pk3Filename = 'pitch_sounds.pk3';
+                    if (pitchPk3FilenameInput && pitchPk3FilenameInput.value.trim()) {
+                        pk3Filename = pitchPk3FilenameInput.value.trim();
+                        if (!pk3Filename.toLowerCase().endsWith('.pk3')) {
+                            pk3Filename += '.pk3';
+                        }
+                    }
+                    
+                    let pk3Path = 'sound/';
+                    if (pitchPk3PathInput && pitchPk3PathInput.value.trim()) {
+                        pk3Path = pitchPk3PathInput.value.trim();
+                        if (!pk3Path.endsWith('/')) {
+                            pk3Path += '/';
+                        }
+                    }
+                    
+                    // Create zip archive
+                    const zip = new JSZip();
+                    
+                    // Process each pitch file
+                    for (const pitchFile of pitchFiles) {
+                        let exportBuffer = pitchFile.buffer;
+                        
+                        // Always convert to mono for Quake 3
+                        exportBuffer = convertToMono(exportBuffer);
+                        
+                        // Always resample to 22050 Hz for Quake 3
+                        if (exportBuffer.sampleRate !== 22050) {
+                            exportBuffer = await resampleAudioBuffer(exportBuffer, 22050);
+                        }
+                        
+                        // Convert to WAV
+                        const wav = audioBufferToWav(exportBuffer);
+                        
+                        // Get filename from pitch file name
+                        let filename = pitchFile.name;
+                        if (!filename.toLowerCase().endsWith('.wav')) {
+                            filename += '.wav';
+                        }
+                        
+                        zip.file(pk3Path + filename, wav);
+                    }
+                    
+                    // Generate PK3 file
+                    zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }).then((pk3Blob) => {
+                        // Download PK3
+                        const url = URL.createObjectURL(pk3Blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = pk3Filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        showStatus((isRu ? 'PK3 экспортирован успешно с ' : 'PK3 exported successfully with ') + pitchFiles.length + (isRu ? ' файлами' : ' files'), 'success');
+                    }).catch((error) => {
+                        showStatus((isRu ? 'Ошибка создания PK3: ' : 'Error creating PK3: ') + error.message, 'error');
+                        console.error(error);
+                    });
+                } catch (error) {
+                    showStatus((isRu ? 'Ошибка скачивания: ' : 'Error downloading: ') + error.message, 'error');
                     console.error(error);
                 }
             });
