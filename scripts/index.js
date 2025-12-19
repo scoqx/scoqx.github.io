@@ -467,6 +467,12 @@ function openSupportModal() {
     if (modal) {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        // Update URL hash
+        if (history.pushState) {
+            history.pushState(null, null, '#support');
+        } else {
+            window.location.hash = '#support';
+        }
     }
 }
 
@@ -475,6 +481,12 @@ function closeSupportModal() {
     if (modal) {
         modal.classList.remove('active');
         document.body.style.overflow = '';
+        // Remove URL hash
+        if (history.pushState) {
+            history.pushState(null, null, window.location.pathname + window.location.search);
+        } else {
+            window.location.hash = '';
+        }
     }
 }
 
@@ -564,6 +576,23 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeSupportModalBtn) {
         closeSupportModalBtn.addEventListener('click', () => closeSupportModal());
     }
+    
+    // Check URL hash on page load
+    if (window.location.hash === '#support') {
+        openSupportModal();
+    }
+    
+    // Listen for hash changes (back/forward buttons)
+    window.addEventListener('hashchange', function() {
+        if (window.location.hash === '#support') {
+            openSupportModal();
+        } else {
+            const supportModal = document.getElementById('supportModal');
+            if (supportModal && supportModal.classList.contains('active')) {
+                closeSupportModal();
+            }
+        }
+    });
     if (closeCardModal) {
         closeCardModal.addEventListener('click', () => closeModal('cardModal'));
     }
