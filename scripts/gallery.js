@@ -37,33 +37,37 @@ class Gallery {
                 const data = await response.json();
                 console.log('Loaded config:', data);
                 
-                // Add images from JSON
-                const jsonImages = data.images.sort((a, b) => a.order - b.order).map(img => ({
-                    ...img,
-                    src: img.src.startsWith('/') ? img.src : '/' + img.src
-                }));
+                // Add images from JSON with thumbnail paths
+                const jsonImages = data.images.sort((a, b) => a.order - b.order).map(img => {
+                    const originalSrc = img.src.startsWith('/') ? img.src : '/' + img.src;
+                    // Извлекаем имя файла из пути (например, из /images/1.jpg получаем 1)
+                    const fileName = originalSrc.split('/').pop();
+                    const fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+                    // Создаем путь к превью (всегда .jpg)
+                    const thumbnailSrc = `/images/thumbnails/${fileNameWithoutExt}.jpg`;
+                    return {
+                        ...img,
+                        src: originalSrc,
+                        thumbnailSrc: thumbnailSrc
+                    };
+                });
                 this.images = [...jsonImages];
-                console.log('Processed JSON images:', this.images);
             } else {
-                console.log('No config file found, using fallback images');
                 // Fallback to a few known images if no config
                 this.images = [
-                    { src: '/images/1.jpg', title: 'Image 1', description: 'Description 1', order: 1 },
-                    { src: '/images/2.jpg', title: 'Image 2', description: 'Description 2', order: 2 },
-                    { src: '/images/3.jpg', title: 'Image 3', description: 'Description 3', order: 3 }
+                    { src: '/images/1.jpg', thumbnailSrc: '/images/thumbnails/1.jpg', title: 'Image 1', description: 'Description 1', order: 1 },
+                    { src: '/images/2.jpg', thumbnailSrc: '/images/thumbnails/2.jpg', title: 'Image 2', description: 'Description 2', order: 2 },
+                    { src: '/images/3.jpg', thumbnailSrc: '/images/thumbnails/3.jpg', title: 'Image 3', description: 'Description 3', order: 3 }
                 ];
             }
         } catch (error) {
-            console.log('Error loading config, using fallback images');
             // Fallback to a few known images if error
             this.images = [
-                { src: '/images/1.jpg', title: 'Image 1', description: 'Description 1', order: 1 },
-                { src: '/images/2.jpg', title: 'Image 2', description: 'Description 2', order: 2 },
-                { src: '/images/3.jpg', title: 'Image 3', description: 'Description 3', order: 3 }
+                { src: '/images/1.jpg', thumbnailSrc: '/images/thumbnails/1.jpg', title: 'Image 1', description: 'Description 1', order: 1 },
+                { src: '/images/2.jpg', thumbnailSrc: '/images/thumbnails/2.jpg', title: 'Image 2', description: 'Description 2', order: 2 },
+                { src: '/images/3.jpg', thumbnailSrc: '/images/thumbnails/3.jpg', title: 'Image 3', description: 'Description 3', order: 3 }
             ];
         }
-        
-        console.log(`Total images loaded: ${this.images.length}`);
     }
     
     showLoadingState() {
@@ -153,13 +157,11 @@ class Gallery {
     
     renderMainImage() {
         if (this.images.length === 0) {
-            console.log('No images loaded');
             this.showNoImagesMessage();
             return;
         }
         
         const image = this.images[this.currentIndex];
-        console.log('Rendering image:', image);
         
         const mainImage = document.getElementById('mainImage');
         const imageTitle = document.getElementById('imageTitle');
@@ -186,7 +188,6 @@ class Gallery {
             };
             
             img.onerror = () => {
-                console.error('Failed to load image:', image.src);
                 mainImage.classList.remove('loading');
                 this.hideLoadingSpinner(imageContainer);
                 this.showImageError(imageContainer, image.title);
@@ -284,13 +285,18 @@ class Gallery {
             const thumbnail = document.createElement('div');
             thumbnail.className = `thumbnail ${index === this.currentIndex ? 'active' : ''}`;
             
-            // Создаем оптимизированное изображение для миниатюры
-            const optimizedImg = window.thumbnailOptimizer.createOptimizedImageElement(
-                image.src, 
-                image.title, 
-                'small', 
-                'thumbnail-img'
-            );
+            // Используем превью вместо оригинального изображения
+            const thumbnailSrc = image.thumbnailSrc || image.src;
+            
+            // Создаем изображение для миниатюры (используем thumbnail напрямую)
+            const optimizedImg = document.createElement('img');
+            optimizedImg.alt = image.title;
+            optimizedImg.className = 'thumbnail-img loading';
+            optimizedImg.loading = 'lazy';
+            optimizedImg.src = thumbnailSrc; // Используем thumbnail путь напрямую
+            
+            // Счетчик попыток загрузки (thumbnail = 1, оригинал = 2)
+            let loadAttempts = 1;
             
             // Add loading state to thumbnail
             optimizedImg.classList.add('loading');
@@ -302,8 +308,15 @@ class Gallery {
             };
             
             optimizedImg.onerror = () => {
+                // Если thumbnail не найден и это первая попытка, пытаемся загрузить оригинальное изображение
+                if (loadAttempts === 1 && image.src && optimizedImg.src !== image.src) {
+                    loadAttempts = 2;
+                    optimizedImg.src = image.src;
+                    return; // Попробуем загрузить оригинал
+                }
+                
+                // Если уже две попытки не удались (thumbnail + оригинал), прекращаем и показываем placeholder
                 optimizedImg.classList.remove('loading');
-                // Show placeholder for failed thumbnails
                 optimizedImg.style.background = '#333';
                 optimizedImg.style.display = 'flex';
                 optimizedImg.style.alignItems = 'center';
@@ -456,12 +469,10 @@ class Gallery {
     saveViewMode() {
         const mode = this.isThumbnailMode ? 'thumbnail' : 'main';
         localStorage.setItem('galleryViewMode', mode);
-        console.log('Saving view mode:', mode);
     }
     
     loadViewMode() {
         const savedMode = localStorage.getItem('galleryViewMode');
-        console.log('Loading view mode:', savedMode);
         return savedMode === 'thumbnail';
     }
     
@@ -499,26 +510,30 @@ class Gallery {
         
         container.innerHTML = '';
         
-        // Load thumbnails in batches for better performance
-        const batchSize = 15; // Increased batch size for faster loading
         const totalImages = this.images.length;
         
-        console.log(`🔄 Loading ${totalImages} thumbnails in batches of ${batchSize}`);
+        // Загружаем превью и параллельно начинаем загружать оригиналы по порядку
+        const thumbnailPromises = [];
+        const originalPromises = [];
         
-        for (let i = 0; i < totalImages; i += batchSize) {
-            const batch = this.images.slice(i, i + batchSize);
+        this.images.forEach((image, index) => {
+            // Загружаем превью
+            thumbnailPromises.push(this.createThumbnailAsync(image, index, container));
             
-            // Create thumbnails for this batch (no delay between batches)
-            const batchPromises = batch.map((image, batchIndex) => {
-                const index = i + batchIndex;
-                return this.createThumbnailAsync(image, index, container);
-            });
-            
-            // Wait for this batch to complete before loading next
-            await Promise.all(batchPromises);
-        }
+            // Параллельно начинаем загружать оригиналы по порядку (1, 2, 3...)
+            const img = new Image();
+            img.src = image.src; // Предзагрузка оригиналов в фоне
+            originalPromises.push(new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve; // Продолжаем даже при ошибке
+            }));
+        });
         
-        console.log('✅ All thumbnails loaded');
+        // Ждем загрузки всех превью (оригиналы загружаются параллельно)
+        await Promise.all(thumbnailPromises);
+        
+        // Загружаем оригиналы параллельно, но не ждем их завершения
+        Promise.all(originalPromises);
     }
     
     async createThumbnailAsync(image, index, container) {
@@ -526,13 +541,18 @@ class Gallery {
             const thumbnail = document.createElement('div');
             thumbnail.className = `thumbnail ${index === this.currentIndex ? 'active' : ''}`;
             
-            // Создаем оптимизированное изображение для миниатюры
-            const optimizedImg = window.thumbnailOptimizer.createOptimizedImageElement(
-                image.src, 
-                image.title, 
-                'small', 
-                'thumbnail-img'
-            );
+            // Используем превью вместо оригинального изображения
+            const thumbnailSrc = image.thumbnailSrc || image.src;
+            
+            // Создаем изображение для миниатюры (используем thumbnail напрямую)
+            const optimizedImg = document.createElement('img');
+            optimizedImg.alt = image.title;
+            optimizedImg.className = 'thumbnail-img loading';
+            optimizedImg.loading = 'lazy';
+            optimizedImg.src = thumbnailSrc; // Используем thumbnail путь напрямую
+            
+            // Счетчик попыток загрузки (thumbnail = 1, оригинал = 2)
+            let loadAttempts = 1;
             
             // Add loading state to thumbnail
             optimizedImg.classList.add('loading');
@@ -545,8 +565,15 @@ class Gallery {
             };
             
             optimizedImg.onerror = () => {
+                // Если thumbnail не найден и это первая попытка, пытаемся загрузить оригинальное изображение
+                if (loadAttempts === 1 && image.src && optimizedImg.src !== image.src) {
+                    loadAttempts = 2;
+                    optimizedImg.src = image.src;
+                    return; // Попробуем загрузить оригинал
+                }
+                
+                // Если уже две попытки не удались (thumbnail + оригинал), прекращаем и показываем placeholder
                 optimizedImg.classList.remove('loading');
-                // Show placeholder for failed thumbnails
                 optimizedImg.style.background = '#333';
                 optimizedImg.style.display = 'flex';
                 optimizedImg.style.alignItems = 'center';

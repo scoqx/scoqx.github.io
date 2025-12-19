@@ -6,6 +6,7 @@
     <title>OSP2-BE - Инструменты</title>
     <link rel="icon" href="/assets/blender_180.png" type="image/png">
     <link rel="stylesheet" href="/styles/style.css?v=1.3">
+    <!-- <link rel="stylesheet" href="/scripts/font-maker/font-maker.css?v=1.0"> -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -27,6 +28,11 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
+            font-size: 0;
+        }
+        
+        .tools-container > * {
+            font-size: 1rem;
         }
         
         .tools-header {
@@ -45,19 +51,48 @@
         }
         
         .tool-section {
-            margin-bottom: var(--spacing-xl);
-            padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md) var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+            margin-right: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-sm);
             background-color: rgba(255, 255, 255, 0.05);
             border: 2px solid var(--border-color);
             border-radius: var(--border-radius);
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: space-between;
+            vertical-align: top;
+            width: calc(33.333% - var(--spacing-md));
+            min-width: 250px;
+            height: 100px;
+            box-sizing: border-box;
         }
         
+        @media (max-width: 900px) {
+            .tool-section {
+                width: calc(50% - var(--spacing-md));
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .tool-section {
+                width: 100%;
+                margin-right: 0;
+            }
+        }
         
         .tool-section h2 {
-            font-size: 1.5rem;
-            margin: 0 0 var(--spacing-sm) 0;
+            font-size: 1.1rem;
+            margin: 0;
             padding: 0;
             color: var(--text-color);
+            flex-shrink: 0;
+        }
+        
+        .tool-section p {
+            margin: 0;
+            flex-grow: 1;
+            display: flex;
+            align-items: flex-start;
         }
         
         .cfg-injector-container {
@@ -664,17 +699,33 @@
             
             <div class="tool-section clickable" id="openConfigEditorModal">
                 <h2>Config Editor</h2>
-                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">
                     Редактирование конфигов
                 </p>
             </div>
             
             <div class="tool-section clickable" id="openSkyboxModal">
                 <h2>Q3 SKYBOX TOOL</h2>
-                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">
                     Конвертация 360° панорамы (equirectangular) в Quake 3 skybox faces
                 </p>
             </div>
+            
+            <!-- Font Maker - временно отключен -->
+            <!-- <div class="tool-section clickable" id="openFontMakerModal">
+                <h2>OSP2 Font Maker</h2>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">
+                    Конвертер TTF и OTF шрифтов в bitmap шрифты для Quake 3 OSP2 BE
+                </p>
+            </div> -->
+            
+            <!-- WAV Editor - временно отключен -->
+            <!-- <div class="tool-section clickable" id="openWavEditorModal">
+                <h2>Редактор WAV</h2>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">
+                    Редактор аудио и конвертер в формат WAV для Quake 3 Arena
+                </p>
+            </div> -->
             
         </div>
     </main>
@@ -688,6 +739,26 @@
             </div>
         </div>
     </div>
+
+    <!-- Font Maker Modal - временно отключен -->
+    <!-- <div class="donation-modal" id="fontMakerModal">
+        <div class="donation-modal-content" style="max-width: 1400px; width: 98%; text-align: left; max-height: 90vh; overflow-y: auto; padding: 0;">
+            <button class="donation-modal-close" id="closeFontMakerModal">&times;</button>
+            <div id="fontMakerToolContent" style="padding: 18px 20px 16px;">
+                <!- Content will be loaded here ->
+            </div>
+        </div>
+    </div> -->
+
+    <!-- WAV Editor Modal - временно отключен -->
+    <!-- <div class="donation-modal" id="wavEditorModal">
+        <div class="donation-modal-content" style="max-width: 1200px; width: 95%; text-align: left; max-height: 90vh; overflow-y: auto; padding: 0;">
+            <button class="donation-modal-close" id="closeWavEditorModal">&times;</button>
+            <div id="wavEditorToolContent" style="padding: 18px 20px 16px;">
+                <!- Content will be loaded here ->
+            </div>
+        </div>
+    </div> -->
 
     <!-- Config Editor Modal -->
     <div class="donation-modal" id="configEditorModal">
@@ -834,6 +905,15 @@
     <script src="/scripts/cfg-injector.js?v=1.3"></script>
     <script src="/scripts/cfge-modal.js?v=1.3"></script>
     <script src="/scripts/skybox-modal.js?v=1.3"></script>
+    <!-- Font Maker scripts - временно отключены -->
+    <!-- <script src="/scripts/font-maker/state.js?v=1.0"></script>
+    <script src="/scripts/font-maker/render.js?v=1.0"></script>
+    <script src="/scripts/font-maker/loader.js?v=1.0"></script>
+    <script src="/scripts/font-maker/preview.js?v=1.0"></script>
+    <script src="/scripts/font-maker/app.js?v=1.0"></script>
+    <script src="/scripts/font-maker-modal.js?v=1.0"></script> -->
+    <!-- WAV Editor script - временно отключен -->
+    <!-- <script src="/scripts/wav-editor-modal.js?v=1.0"></script> -->
     <script src="/scripts/tga.js?v=1.4"></script>
     
     <!-- Simple Analytics - 100% privacy-first analytics -->

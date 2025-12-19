@@ -16,16 +16,14 @@ class FullscreenModule {
     preloadImages() {
         if (!this.gallery.images || this.gallery.images.length === 0) return;
         
-        console.log('🔄 Preloading fullscreen images...');
         this.gallery.images.forEach((image, index) => {
             if (!this.imageCache.has(image.src)) {
                 const img = new Image();
                 img.onload = () => {
                     this.imageCache.set(image.src, true);
-                    console.log(`✅ Preloaded image ${index + 1}/${this.gallery.images.length}:`, image.src);
                 };
                 img.onerror = () => {
-                    console.warn(`❌ Failed to preload image:`, image.src);
+                    // Failed to preload
                 };
                 img.src = image.src;
             }
@@ -126,7 +124,6 @@ class FullscreenModule {
                 fullscreenImage.classList.remove('loading');
                 fullscreenImage.classList.add('loaded');
                 this.hideLoadingSpinner(overlay);
-                console.log('⚡ Fast load from cache:', image.src);
                 return;
             }
             
@@ -144,7 +141,6 @@ class FullscreenModule {
             // Set up image loading
             const img = new Image();
             img.onload = () => {
-                console.log('Fullscreen image loaded:', image.src);
                 // Cache the image
                 this.imageCache.set(image.src, true);
                 // Only set src after image is fully loaded
@@ -156,7 +152,6 @@ class FullscreenModule {
             };
             
             img.onerror = () => {
-                console.error('Failed to load fullscreen image:', image.src);
                 fullscreenImage.classList.remove('loading');
                 this.hideLoadingSpinner(overlay);
                 this.showImageError(overlay, image.title);

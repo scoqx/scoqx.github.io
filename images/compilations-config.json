@@ -10,6 +10,14 @@
   "elite": {
     "count": 6,
     "extension": "png"
+  },
+  "anime-bubble-gum": {
+    "count": 8,
+    "extension": "png"
+  },
+  "dark-project": {
+    "count": 8,
+    "extension": "jpg"
   }
 }
 

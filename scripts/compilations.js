@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const n8mareContainer = document.getElementById('n8mare-screenshots');
     const runoContainer = document.getElementById('runo-screenshots');
     const eliteContainer = document.getElementById('elite-screenshots');
+    const animeBubbleGumContainer = document.getElementById('anime-bubble-gum-screenshots');
+    const darkProjectContainer = document.getElementById('dark-project-screenshots');
     
     // Load screenshots asynchronously in batches
     const loadPromises = [];
@@ -32,45 +34,61 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadPromises.push(loadCompilationScreenshotsAsync('elite', eliteContainer, compilationsConfig.elite));
     }
     
+    if (animeBubbleGumContainer && compilationsConfig['anime-bubble-gum']) {
+        loadPromises.push(loadCompilationScreenshotsAsync('anime-bubble-gum', animeBubbleGumContainer, compilationsConfig['anime-bubble-gum']));
+    }
+    
+    if (darkProjectContainer && compilationsConfig['dark-project']) {
+        loadPromises.push(loadCompilationScreenshotsAsync('dark-project', darkProjectContainer, compilationsConfig['dark-project']));
+    }
+    
     // Wait for all screenshots to load
     await Promise.all(loadPromises);
 });
 
 async function loadCompilationScreenshotsAsync(compilationName, container, config) {
-    console.log(`🔄 Loading ${compilationName} screenshots asynchronously`);
-    
     const maxImages = config.count;
     const extension = config.extension;
     
-    // Load screenshots in batches for better performance
-    const batchSize = 3; // Load 3 screenshots at a time
+    // Загружаем превью батчами по 20 параллельно
+    const batchSize = 20;
+    const originalPromises = [];
     
     for (let i = 1; i <= maxImages; i += batchSize) {
         const batch = [];
         
-        // Create batch of screenshots to load
+        // Создаем батч превью
         for (let j = i; j < i + batchSize && j <= maxImages; j++) {
             batch.push(createScreenshotAsync(compilationName, j, extension, container));
+            
+            // Параллельно начинаем загружать оригиналы в фоне
+            const originalPath = `/images/${compilationName}/${j}.${extension}`;
+            const img = new Image();
+            img.src = originalPath; // Предзагрузка оригиналов в фоне
+            originalPromises.push(new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve; // Продолжаем даже при ошибке
+            }));
         }
         
-        // Wait for this batch to complete
+        // Загружаем батч превью параллельно
         await Promise.all(batch);
-        
-        // Small delay between batches
-        if (i + batchSize <= maxImages) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
     }
     
-    console.log(`✅ ${compilationName} screenshots loaded`);
+    // Загружаем оригиналы параллельно, но не ждем их завершения
+    Promise.all(originalPromises);
 }
 
 async function createScreenshotAsync(compilationName, index, extension, container) {
     return new Promise((resolve) => {
-        const imagePath = `/images/${compilationName}/${index}.${extension}`;
+        // Thumbnail path for display in cards (из папки thumbnails)
+        const thumbnailPath = `/images/${compilationName}/thumbnails/${index}.jpg`;
+        // Original path for fullscreen view
+        const originalPath = `/images/${compilationName}/${index}.${extension}`;
         
         const screenshot = {
-            src: imagePath,
+            src: thumbnailPath,
+            originalSrc: originalPath,
             alt: `${compilationName} screenshot ${index}`,
             index: index
         };
@@ -91,16 +109,18 @@ function createScreenshotElement(screenshot, index) {
     const spinner = document.createElement('div');
     spinner.className = 'loading-spinner';
     
-    // Создаем оптимизированное изображение для скриншота
-    const optimizedImg = window.thumbnailOptimizer.createOptimizedImageElement(
-        screenshot.src, 
-        screenshot.alt, 
-        'small', 
-        'screenshot-img'
-    );
+    // Создаем изображение для скриншота (используем thumbnail напрямую)
+    const optimizedImg = document.createElement('img');
+    optimizedImg.alt = screenshot.alt;
+    optimizedImg.className = 'screenshot-img loading';
+    optimizedImg.loading = 'lazy';
+    optimizedImg.src = screenshot.src; // Используем thumbnail путь напрямую
     
-    // Добавляем data-original-src для поиска
-    optimizedImg.setAttribute('data-original-src', screenshot.src);
+    // Добавляем data-original-src для fullscreen (оригинальное изображение)
+    optimizedImg.setAttribute('data-original-src', screenshot.originalSrc || screenshot.src);
+    
+    // Счетчик попыток загрузки (thumbnail = 1, оригинал = 2)
+    let loadAttempts = 1;
     
     // Add loading state to screenshot
     optimizedImg.classList.add('loading');
@@ -113,6 +133,15 @@ function createScreenshotElement(screenshot, index) {
     };
     
     optimizedImg.onerror = () => {
+        // Если thumbnail не найден и это первая попытка, пытаемся загрузить оригинальное изображение
+        const originalSrc = optimizedImg.getAttribute('data-original-src');
+        if (loadAttempts === 1 && originalSrc && optimizedImg.src !== originalSrc) {
+            loadAttempts = 2;
+            optimizedImg.src = originalSrc;
+            return; // Попробуем загрузить оригинал
+        }
+        
+        // Если уже две попытки не удались (thumbnail + оригинал), прекращаем и показываем placeholder
         optimizedImg.classList.remove('loading');
         spinner.remove(); // Remove spinner on error
         // Show placeholder for failed screenshots
@@ -133,12 +162,12 @@ function createScreenshotElement(screenshot, index) {
     screenshotDiv.insertBefore(spinner, screenshotDiv.firstChild);
     screenshotDiv.insertBefore(optimizedImg, screenshotDiv.firstChild);
     
-    // Add click to open in fullscreen
+    // Add click to open in fullscreen (используем оригинальное изображение)
     screenshotDiv.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        console.log('Screenshot clicked:', screenshot.src, index);
-        openScreenshotFullscreen(screenshot.src, index);
+        const originalSrc = screenshot.originalSrc || screenshot.src;
+        openScreenshotFullscreen(originalSrc, index);
     });
     
     return screenshotDiv;
@@ -149,8 +178,6 @@ let currentScreenshots = [];
 let currentScreenshotIndex = 0;
 
 function openScreenshotFullscreen(imageSrc, index) {
-    console.log('Opening fullscreen for:', imageSrc, index);
-    
     // Get all screenshots from the current compilation
     // Try to find by exact src first, then by data attribute or class
     let screenshotImg = document.querySelector('.screenshot-item img[src="' + imageSrc + '"]');
@@ -172,8 +199,6 @@ function openScreenshotFullscreen(imageSrc, index) {
     }
     
     if (!screenshotImg) {
-        console.log('No screenshot image found for:', imageSrc);
-        console.log('Available images:', Array.from(document.querySelectorAll('.screenshot-item img')).map(img => img.src));
         return;
     }
     
@@ -254,11 +279,9 @@ function openScreenshotFullscreen(imageSrc, index) {
     const fullscreenImage = document.getElementById('screenshotFullscreenImage');
     if (fullscreenImage) {
         fullscreenImage.src = imageSrc;
-        console.log('Fullscreen image set to:', imageSrc);
     }
     
     overlay.classList.remove('hidden');
-    console.log('Fullscreen overlay shown');
 }
 
 function navigateScreenshot(direction) {

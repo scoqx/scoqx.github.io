@@ -1795,14 +1795,19 @@ code {
    Compilations Styles
    ========================================================================== */
 
+body[data-page="compilations"] .main-content {
+    padding-top: 10px;
+}
+
 .compilations-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: var(--spacing-xl);
+    padding: 0 var(--spacing-xl) var(--spacing-xl);
 }
 
 .compilations-title {
     text-align: center;
+    margin-top: 0;
     margin-bottom: var(--spacing-xl);
     font-size: 2.5rem;
     color: var(--text-color);
@@ -1817,14 +1822,14 @@ code {
 /* Optimize grid for wide screens */
 @media (min-width: 1440px) {
     .compilations-grid {
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
         gap: calc(var(--spacing-xl) * 1.5);
     }
 }
 
 @media (min-width: 1920px) {
     .compilations-grid {
-        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(650px, 1fr));
         gap: calc(var(--spacing-xl) * 2);
     }
 }
@@ -1883,12 +1888,13 @@ code {
 
 .compilation-author a {
     color: var(--button-bg);
-    text-decoration: none;
-    transition: var(--transition);
+    text-decoration: underline;
 }
 
 .compilation-author a:hover {
-    color: var(--border-color);
+    color: #000000;
+    text-shadow: 0 0 8px #ffffff;
+    text-decoration: none;
 }
 
 .compilation-header .download-button {
