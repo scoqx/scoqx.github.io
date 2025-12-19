@@ -46,18 +46,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     await Promise.all(loadPromises);
 });
 
-// Глобальный объект для хранения загрузчиков сборок
-window.compilationLoaders = window.compilationLoaders || {};
-
 async function loadCompilationScreenshotsAsync(compilationName, container, config) {
     const maxImages = config.count;
     const extension = config.extension;
     
     // Загружаем превью батчами по 20 параллельно
     const batchSize = 20;
-    
-    // Собираем все оригинальные изображения для фоновой загрузки
-    const originalImages = [];
+    const originalPromises = [];
     
     for (let i = 1; i <= maxImages; i += batchSize) {
         const batch = [];
@@ -66,30 +61,22 @@ async function loadCompilationScreenshotsAsync(compilationName, container, confi
         for (let j = i; j < i + batchSize && j <= maxImages; j++) {
             batch.push(createScreenshotAsync(compilationName, j, extension, container));
             
-            // Сохраняем путь к оригиналу для фоновой загрузки
+            // Параллельно начинаем загружать оригиналы в фоне
             const originalPath = `/images/${compilationName}/${j}.${extension}`;
-            originalImages.push(originalPath);
+            const img = new Image();
+            img.src = originalPath; // Предзагрузка оригиналов в фоне
+            originalPromises.push(new Promise((resolve) => {
+                img.onload = resolve;
+                img.onerror = resolve; // Продолжаем даже при ошибке
+            }));
         }
         
         // Загружаем батч превью параллельно
         await Promise.all(batch);
     }
     
-    // После загрузки всех превью, начинаем фоновую загрузку оригиналов
-    // В сборках: батч 1, порядок с первой в каждой сборке
-    if (originalImages.length > 0) {
-        // Создаем отдельный загрузчик для этой сборки с батч 1
-        if (!window.compilationLoaders[compilationName]) {
-            window.compilationLoaders[compilationName] = new ImageLoader();
-            window.compilationLoaders[compilationName].setBatchSize(1);
-            window.compilationLoaders[compilationName].setMaxBatchSize(1);
-        }
-        
-        const compilationLoader = window.compilationLoaders[compilationName];
-        
-        // Добавляем все изображения в очередь по порядку (с первой)
-        compilationLoader.addBatchToQueue(originalImages);
-    }
+    // Загружаем оригиналы параллельно, но не ждем их завершения
+    Promise.all(originalPromises);
 }
 
 async function createScreenshotAsync(compilationName, index, extension, container) {
@@ -225,13 +212,6 @@ function openScreenshotFullscreen(imageSrc, index) {
         if (screenshotItem) {
             screenshotItem.classList.add('active');
         }
-        
-        // Добавляем в приоритетную очередь загрузки для фуллскрина
-        // Находим загрузчик для текущей сборки
-        const compilationName = currentCard.querySelector('.screenshots-grid')?.id?.replace('-screenshots', '');
-        if (compilationName && window.compilationLoaders && window.compilationLoaders[compilationName]) {
-            window.compilationLoaders[compilationName].addToQueue(imageSrc, true);
-        }
     }
     
     const screenshotItems = currentCard.querySelectorAll('.screenshot-item img');
@@ -315,25 +295,9 @@ function navigateScreenshot(direction) {
         currentScreenshotIndex = 0;
     }
     
-    const newImageSrc = currentScreenshots[currentScreenshotIndex];
-    
-    // Добавляем в приоритетную очередь загрузки для фуллскрина
-    // Находим загрузчик для текущей сборки
-    const screenshotImg = document.querySelector('.screenshot-item img[data-original-src="' + newImageSrc + '"]') ||
-                          document.querySelector('.screenshot-item img[src*="' + newImageSrc.split('/').pop() + '"]');
-    if (screenshotImg) {
-        const currentCard = screenshotImg.closest('.compilation-card');
-        if (currentCard && window.compilationLoaders) {
-            const compilationName = currentCard.querySelector('.screenshots-grid')?.id?.replace('-screenshots', '');
-            if (compilationName && window.compilationLoaders[compilationName]) {
-                window.compilationLoaders[compilationName].addToQueue(newImageSrc, true);
-            }
-        }
-    }
-    
     const fullscreenImage = document.getElementById('screenshotFullscreenImage');
     if (fullscreenImage) {
-        fullscreenImage.src = newImageSrc;
+        fullscreenImage.src = currentScreenshots[currentScreenshotIndex];
     }
     
     // Update active screenshot in the grid

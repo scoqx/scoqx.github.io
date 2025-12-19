@@ -14,9 +14,20 @@ class FullscreenModule {
     }
     
     preloadImages() {
-        // Предзагрузка теперь управляется через imageLoader
-        // Этот метод оставлен для совместимости, но не выполняет активную загрузку
-        // Загрузка происходит через renderThumbnailsAsync в Gallery
+        if (!this.gallery.images || this.gallery.images.length === 0) return;
+        
+        this.gallery.images.forEach((image, index) => {
+            if (!this.imageCache.has(image.src)) {
+                const img = new Image();
+                img.onload = () => {
+                    this.imageCache.set(image.src, true);
+                };
+                img.onerror = () => {
+                    // Failed to preload
+                };
+                img.src = image.src;
+            }
+        });
     }
     
     createFullscreenHTML() {
@@ -105,11 +116,8 @@ class FullscreenModule {
         const overlay = document.getElementById('fullscreenOverlay');
         
         if (fullscreenImage && image && overlay) {
-            // Проверяем, загружено ли изображение в загрузчике
-            const isLoadedInLoader = window.imageLoader && window.imageLoader.isLoaded(image.src);
-            
             // Check if image is already cached
-            if (this.imageCache.has(image.src) || isLoadedInLoader) {
+            if (this.imageCache.has(image.src)) {
                 // Image is preloaded, show immediately
                 fullscreenImage.src = image.src;
                 fullscreenImage.alt = image.title;
@@ -118,14 +126,6 @@ class FullscreenModule {
                 this.hideLoadingSpinner(overlay);
                 return;
             }
-            
-            // Добавляем в приоритетную очередь загрузки
-            if (window.imageLoader) {
-                window.imageLoader.addToQueue(image.src, true);
-            }
-            
-            // Предзагружаем соседние изображения
-            this.preloadAdjacentImages();
             
             // Clear old image immediately to prevent flicker
             fullscreenImage.src = '';
@@ -158,29 +158,6 @@ class FullscreenModule {
             };
             
             img.src = image.src;
-        }
-    }
-    
-    /**
-     * Предзагрузка соседних изображений
-     */
-    preloadAdjacentImages() {
-        if (!this.gallery.images || this.gallery.images.length === 0) return;
-        if (!window.imageLoader) return;
-        
-        // Предзагружаем предыдущее и следующее изображение
-        const prevIndex = this.currentIndex > 0 ? this.currentIndex - 1 : this.gallery.images.length - 1;
-        const nextIndex = this.currentIndex < this.gallery.images.length - 1 ? this.currentIndex + 1 : 0;
-        
-        const prevImage = this.gallery.images[prevIndex];
-        const nextImage = this.gallery.images[nextIndex];
-        
-        if (prevImage && !window.imageLoader.isLoaded(prevImage.src)) {
-            window.imageLoader.addToQueue(prevImage.src, true);
-        }
-        
-        if (nextImage && !window.imageLoader.isLoaded(nextImage.src)) {
-            window.imageLoader.addToQueue(nextImage.src, true);
         }
     }
     
