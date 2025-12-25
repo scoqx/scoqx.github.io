@@ -57,6 +57,7 @@ html, body {
   width: 100%;
   max-width: 100vw;
   user-select: none;
+  overflow: hidden;
 }
 
 .nav-container {
@@ -68,6 +69,8 @@ html, body {
     margin: 0 auto;
     padding: 0 var(--spacing-md);
     user-select: none;
+    position: relative;
+    z-index: 2;
 }
 
 .nav-logo {
@@ -2544,4 +2547,29 @@ html[lang="en"] .crypto-address.copied::after {
 
 .preview-added {
     color: #66ff66;
+}
+
+/* ==========================================================================
+   Navigation Snow Effect
+   ========================================================================== */
+
+.nav-snow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.nav-snowflake {
+    position: absolute;
+    background-color: #ffffff;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform, opacity;
+    box-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
+    transition: none;
 }
