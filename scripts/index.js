@@ -392,11 +392,11 @@ function initializeChangelogSearch() {
     });
 }
 
-// Load version from version.json
+// Load version from assets/version.txt
 async function loadVersion() {
     try {
         console.log('🔍 Loading version...');
-        const response = await fetch('/version.json?v=' + Date.now(), {
+        const response = await fetch('/assets/version.txt?v=' + Date.now(), {
             cache: 'no-cache',
             headers: {
                 'Cache-Control': 'no-cache'
@@ -404,12 +404,12 @@ async function loadVersion() {
         });
         
         if (response.ok) {
-            const data = await response.json();
+            const version = (await response.text()).trim();
             const versionEl = document.getElementById('version-text');
             
-            if (versionEl && data.version) {
-                versionEl.textContent = data.version;
-                console.log('✅ Version loaded:', data.version);
+            if (versionEl && version) {
+                versionEl.textContent = version;
+                console.log('✅ Version loaded:', version);
             }
         } else {
             console.log('⚠️ Version file not found, using default');
