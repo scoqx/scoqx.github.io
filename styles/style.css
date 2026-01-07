@@ -367,15 +367,35 @@ body[data-page="index"] .logo-link {
     font-weight: bold;
     font-size: 0.9rem;
     transition: var(--transition);
-    display: inline-block;
+    display: block;
+    width: 100%;
+    text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-sm);
+    box-sizing: border-box;
+}
+
+.download-card .download-button:last-child {
+    margin-bottom: 0;
 }
 
 .download-card .download-button:hover {
     background: var(--border-color);
     color: var(--primary-bg);
     box-shadow: 0 4px 15px rgba(255, 255, 255, 0.5);
+}
+
+.download-card .download-button-so {
+    background: #363636;
+    color: var(--text-color);
+    border-color: #000000;
+}
+
+.download-card .download-button-so:hover {
+    background: #fdfdfd;
+    color: #000000;
+    box-shadow: 0 4px 15px rgba(136, 136, 136, 0.5);
 }
 
 .clear-cache-button {
