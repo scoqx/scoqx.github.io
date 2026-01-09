@@ -380,6 +380,10 @@ body[data-page="index"] .logo-link {
     margin-bottom: 0;
 }
 
+.download-card .download-button-split:last-child {
+    margin-bottom: 0;
+}
+
 .download-card .download-button:hover {
     background: var(--border-color);
     color: var(--primary-bg);
