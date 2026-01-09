@@ -398,6 +398,55 @@ body[data-page="index"] .logo-link {
     box-shadow: 0 4px 15px rgba(136, 136, 136, 0.5);
 }
 
+/* Двойная кнопка для .dll и .so */
+.download-button-split {
+    display: flex;
+    width: 100%;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+    margin-bottom: var(--spacing-sm);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    transition: var(--transition);
+}
+
+.download-button-split:hover {
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.5);
+}
+
+.download-button-split .split-button-left,
+.download-button-split .split-button-right {
+    flex: 1;
+    background: #363636;
+    color: var(--text-color);
+    padding: calc(var(--spacing-sm) * 0.3) calc(var(--spacing-md) * 0.3);
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-sizing: border-box;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.download-button-split .split-button-left {
+    border-right: 1px solid var(--border-color);
+}
+
+.download-button-split .split-button-right {
+    border-left: 1px solid var(--border-color);
+}
+
+.download-button-split .split-button-left:hover,
+.download-button-split .split-button-right:hover {
+    background: #fdfdfd;
+    color: #000000;
+}
+
 .clear-cache-button {
     background: #000000;
     color: white;
