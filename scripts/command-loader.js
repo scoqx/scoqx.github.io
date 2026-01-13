@@ -106,13 +106,26 @@ async function loadConfig() {
     }
 
     // --- Закомментированная команда ---
-    const commentedCommandMatch = line.match(/^\/\/\s*([/+/-][\w]+)(?:\s+"([^"]*)")?\s*\/\/(.*)$/);
+    // Формат: // /команда [аргументы] // описание
+    // Используем нежадное совпадение до \s+// чтобы захватить команду и аргументы
+    const commentedCommandMatch = line.match(/^\/\/\s*([/+/-].*?)\s+\/\/(.*)$/);
     if (commentedCommandMatch) {
-      const [, name, value, desc] = commentedCommandMatch;
+      const [, fullCommand, desc] = commentedCommandMatch;
+      // Разделяем команду и аргументы
+      const trimmedCommand = fullCommand.trim();
+      const commandParts = trimmedCommand.split(/\s+/);
+      const name = commandParts[0];
+      let args = commandParts.length > 1 ? commandParts.slice(1).join(' ') : null;
+      
+      // Убираем кавычки из значения, если они есть (чтобы избежать двойных кавычек при отображении)
+      if (args && args.startsWith('"') && args.endsWith('"')) {
+        args = args.slice(1, -1);
+      }
+      
       current = {
         type: "command",
         name,
-        value: value || null,
+        value: args || null,
         description: desc.trim(),
       };
       entries.push(current);
@@ -120,13 +133,25 @@ async function loadConfig() {
     }
 
     // --- Активная команда ---
-    const activeCommandMatch = line.match(/^([/+/-][\w]+)(?:\s+"([^"]*)")?\s*\/\/(.*)$/);
+    // Формат: /команда [аргументы] // описание
+    const activeCommandMatch = line.match(/^([/+/-].*?)\s+\/\/(.*)$/);
     if (activeCommandMatch) {
-      const [, name, value, desc] = activeCommandMatch;
+      const [, fullCommand, desc] = activeCommandMatch;
+      // Разделяем команду и аргументы
+      const trimmedCommand = fullCommand.trim();
+      const commandParts = trimmedCommand.split(/\s+/);
+      const name = commandParts[0];
+      let args = commandParts.length > 1 ? commandParts.slice(1).join(' ') : null;
+      
+      // Убираем кавычки из значения, если они есть (чтобы избежать двойных кавычек при отображении)
+      if (args && args.startsWith('"') && args.endsWith('"')) {
+        args = args.slice(1, -1);
+      }
+      
       current = {
         type: "command",
         name,
-        value: value || null,
+        value: args || null,
         description: desc.trim(),
       };
       entries.push(current);
@@ -134,7 +159,8 @@ async function loadConfig() {
     }
 
     // --- Продолжение описания ---
-    if (/^\/\/\s*/.test(line)) {
+    // Обрабатываем только если это не похоже на команду (не начинается с /, + или - после //)
+    if (/^\/\/\s*/.test(line) && !/^\/\/\s*[\/+\-]/.test(line)) {
       if (current && current.description) {
         current.description += " " + line.replace(/^\/\/\s*/, "").trim();
       }
