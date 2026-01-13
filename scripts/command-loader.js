@@ -72,7 +72,9 @@ async function loadConfig() {
   const entries = [];
   let current = null;
 
-  for (let rawLine of lines) {
+  // Пропускаем первые 14 строк (заголовок с ASCII-артом)
+  for (let i = 14; i < lines.length; i++) {
+    const rawLine = lines[i];
     let line = rawLine.trim();
 
     if (line === "") continue;
