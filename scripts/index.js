@@ -649,3 +649,23 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
+
+// Installation section toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const installationToggle = document.getElementById('installationToggle');
+    const installationContent = document.querySelector('.installation-content');
+
+    if (installationToggle && installationContent) {
+        installationToggle.addEventListener('click', function() {
+            const isHidden = installationContent.classList.contains('hidden');
+
+            if (isHidden) {
+                installationContent.classList.remove('hidden');
+                installationToggle.classList.add('active');
+            } else {
+                installationContent.classList.add('hidden');
+                installationToggle.classList.remove('active');
+            }
+        });
+    }
+});

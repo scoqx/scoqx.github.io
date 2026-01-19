@@ -10,6 +10,7 @@
     --border-color: #ffffff;
     
   --font-family: Arial, sans-serif;
+    --spacing-xs: 4px;
     --spacing-sm: 8px;
     --spacing-md: 16px;
     --spacing-lg: 24px;
@@ -967,6 +968,20 @@ code {
     
     .thumbnails-container {
         max-height: 350px;
+    }
+}
+
+/* ==========================================================================
+   Installation Section Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .installation-toggle {
+        padding: var(--spacing-sm);
+    }
+
+    .installation-toggle h3 {
+        font-size: 1rem;
     }
 }
 
@@ -2645,4 +2660,97 @@ html[lang="en"] .crypto-address.copied::after {
     will-change: transform, opacity;
     box-shadow: 0 0 2px rgba(255, 255, 255, 0.8);
     transition: none;
+}
+
+/* ==========================================================================
+   Installation Section (Collapsible)
+   ========================================================================== */
+
+.installation-section {
+    margin-top: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.installation-toggle {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    padding: var(--spacing-md);
+    color: var(--text-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    transition: var(--transition);
+    text-align: left;
+}
+
+.installation-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.installation-toggle h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.toggle-icon {
+    font-size: 0.8rem;
+    transition: var(--transition);
+    color: var(--text-color);
+}
+
+.installation-toggle.active .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.installation-content {
+    padding: var(--spacing-md);
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.installation-content:not(.hidden) {
+    max-height: 500px;
+    padding: var(--spacing-md);
+}
+
+.installation-content ol {
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.installation-content ul {
+    margin: 0 0 0 var(--spacing-md);
+}
+
+.installation-content li {
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.5;
+    padding-left: var(--spacing-sm);
+}
+
+.installation-content code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+/* Стили ссылок в секции установки */
+.installation-content a {
+    color: var(--text-color);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.installation-content a:hover {
+    color: #000000;
+    text-shadow: 0 0 8px #ffffff;
+    text-decoration: none;
 }
