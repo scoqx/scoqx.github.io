@@ -318,6 +318,11 @@ body[data-page="index"] .logo-link {
     text-decoration: none;
 }
 
+.contact-info .contact-row a:hover img {
+    filter: brightness(1.2) contrast(1.1);
+    box-shadow: 0 0 8px #ffffff, inset 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
 .donate-button {
     background: var(--button-bg);
     color: var(--button-text);
