@@ -302,6 +302,30 @@ body[data-page="index"] .logo-link {
   object-fit: contain;
 }
 
+/* Email link next to author */
+.contact-email {
+    display: inline-flex;
+    align-items: center;
+}
+
+.contact-email-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    text-decoration: underline;
+}
+
+.contact-email-text {
+    display: none; /* shown on mobile */
+}
+
+.contact-email-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
 
 /* Общий стиль для всех ссылок на главной странице */
 .contact-info .contact-row a,
@@ -1021,8 +1045,40 @@ code {
     }
     
     .content-container {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
         gap: calc(var(--spacing-lg) * 0.3);
+    }
+
+    /* Home page mobile order: intro -> downloads -> installation */
+    .text-section {
+        display: contents;
+    }
+
+    .home-intro {
+        order: 1;
+    }
+
+    .download-section {
+        order: 2;
+        width: 100%;
+    }
+
+    .installation-section {
+        order: 3;
+        margin-top: 0;
+    }
+
+    /* Put email link on its own line on mobile */
+    .contact-email {
+        flex-basis: 100%;
+        width: 100%;
+        margin-top: 2px;
+    }
+
+    .contact-email-text {
+        display: inline;
     }
     
     .download-section {
