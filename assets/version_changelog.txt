@@ -7,4 +7,4 @@ TEAMTASKS:
   * +ttwheel visual improvements
 + cg_altRail 0/1
 * cg_enemyLightningColor fixed
-* cg_bestats_style 2 fix
+* cg_bestats_style 2 visual fix
