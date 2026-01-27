@@ -1951,6 +1951,14 @@ body[data-page="compilations"] .main-content {
     padding-top: 10px;
 }
 
+body[data-page="credits"] .main-content {
+    padding-top: var(--spacing-sm);
+}
+
+body[data-page="credits"] .credits-container {
+    padding-top: var(--spacing-sm);
+}
+
 .compilations-container {
     max-width: 1400px;
     margin: 0 auto;
