@@ -103,6 +103,10 @@
             flex: 1;
             min-height: 0;
         }
+        .credits-grid .credits-section {
+            display: flex;
+            flex-direction: column;
+        }
     </style>
 </head>
 <body data-page="credits">
@@ -134,26 +138,20 @@
             <div class="credits-category">
                 <h2 class="credits-category-title">OSP2-BE</h2>
                 <div class="credits-grid">
-                    <div class="credits-left-col">
-                        <section class="credits-section">
-                            <h3>Вклад в проект</h3>
-                            <p>В OSP2-BE включён код из следующих модов и проектов Quake:</p>
-                            <ul>
-                                <li><strong>OSP2</strong>: <a href="https://github.com/snems/OSP2" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-                                <li><strong>baseq3a</strong>: <a href="https://github.com/ec-/baseq3a" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-                                <li><strong>XQ3E Engine</strong>: <a href="https://github.com/xq3e/engine" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-                                <li><strong>Unlagged Mod от Nail Toronto</strong></li>
-                                <li><strong>Ratmod</strong>: <a href="https://github.com/rdntcntrl/ratoa_gamecode" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-                                <li><strong>Nemesis</strong>: <a href="https://github.com/dledmonds/quake3-nemesis-1.16n" target="_blank" rel="noopener noreferrer">GitHub</a></li>
-                            </ul>
-                        </section>
-                        <section class="credits-section credits-thanks">
-                            <h3>Вклад сообщества</h3>
-                            <p>Snems, Kr3m, Mirage, Mus1n, MrX, Zenx, Tuborg, Meta</p>
-                        </section>
-                    </div>
+                    <section class="credits-section credits-contributions">
+                        <h3>Вклад в проект</h3>
+                        <p>В OSP2-BE включён код из следующих модов и проектов Quake:</p>
+                        <ul>
+                            <li><strong>OSP2</strong>: <a href="https://github.com/snems/OSP2" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                            <li><strong>baseq3a</strong>: <a href="https://github.com/ec-/baseq3a" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                            <li><strong>XQ3E Engine</strong>: <a href="https://github.com/xq3e/engine" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                            <li><strong>Unlagged Mod от Nail Toronto</strong></li>
+                            <li><strong>Ratmod</strong>: <a href="https://github.com/rdntcntrl/ratoa_gamecode" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                            <li><strong>Nemesis</strong>: <a href="https://github.com/dledmonds/quake3-nemesis-1.16n" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+                        </ul>
+                    </section>
 
-                    <section class="credits-section">
+                    <section class="credits-section credits-resources">
                         <h3>Ресурсы</h3>
                         <h4>Иконки</h4>
                         <p><strong>Источник:</strong> <a href="https://www.flaticon.com" target="_blank" rel="noopener noreferrer">Flaticon.com</a></p>
@@ -163,6 +161,16 @@
                         <p><strong>Источник:</strong> <a href="https://playmorepromode.com/" target="_blank" rel="noopener noreferrer">CPMA (Challenge ProMode Arena)</a></p>
 
                         <p class="note">Оригинальные авторы отдельных элементов не указаны; иконки подвергались редактированию, звуки — конвертации.</p>
+                    </section>
+
+                    <section class="credits-section credits-thanks">
+                        <h3>Вклад сообщества</h3>
+                        <p>Snems, Kr3m, Mirage, Mus1n, MrX, Zenx, Tuborg, Meta</p>
+                    </section>
+
+                    <section class="credits-section credits-financial">
+                        <h3>Финансовые спонсоры</h3>
+                        <p>enq3, Maked, Анонимный игрок #1</p>
                     </section>
                 </div>
             </div>
