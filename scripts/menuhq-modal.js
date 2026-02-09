@@ -27,8 +27,20 @@
   .menuhq-tool-app h1 span { color: var(--accent); }
   .menuhq-tool-app .subtitle { font-size: .8rem; color: rgba(255,255,255,0.7); margin-bottom: 12px; }
   .menuhq-tool-app .menuhq-small-warning { display: none; margin-bottom: 12px; padding: 8px 0; font-size: .85rem; color: #f44; line-height: 1.4; }
-  .menuhq-tool-app .layout { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); gap: 14px; }
-  @media (max-width: 700px) { .menuhq-tool-app .layout { grid-template-columns: 1fr; } }
+  .menuhq-tool-app .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 700px) {
+    .menuhq-tool-app .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  .menuhq-tool-app .layout-preview {
+    display: flex;
+    flex-direction: column;
+  }
   .menuhq-tool-app #menuhqDropzone {
     position: relative; min-height: 280px; border-radius: 16px;
     border: 1px dashed rgba(255,255,255,0.25); background: var(--black);
@@ -51,6 +63,53 @@
   .menuhq-tool-app .menuhq-mode-group label { display: flex; align-items: center; gap: 4px; margin: 0; }
   .menuhq-tool-app .menuhq-mode-group input[type=radio] { accent-color: var(--accent); }
   .menuhq-tool-app .menuhq-controls small { font-size: .72rem; color: rgba(255,255,255,0.6); }
+  .menuhq-tool-app .menuhq-note { font-size: .72rem; color: rgba(255,255,255,0.5); margin-left: 4px; }
+  .menuhq-tool-app .menuhq-preview-header {
+    display: flex;
+    justify-content: stretch;
+    align-items: center;
+    margin-bottom: 6px;
+    /* Фиксированная высота, чтобы превью не прыгало
+       при появлении/скрытии кнопки загрузки */
+    min-height: 30px;
+  }
+  .menuhq-tool-app .menuhq-upload-btn {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.4);
+    background: rgba(255,255,255,0.04);
+    color: var(--white);
+    font-size: .8rem;
+    cursor: pointer;
+    width: 100%;
+    display: none;
+  }
+  .menuhq-tool-app .menuhq-upload-btn.visible {
+    display: block;
+  }
+  .menuhq-tool-app .menuhq-upload-btn:hover {
+    border-color: var(--accent);
+    background: rgba(138,43,226,0.25);
+  }
+  .menuhq-tool-app .menuhq-aspect-btn {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: transparent;
+    color: var(--white);
+    font-size: .8rem;
+    cursor: pointer;
+    min-width: 52px;
+    text-align: center;
+  }
+  .menuhq-tool-app .menuhq-aspect-btn:hover {
+    border-color: var(--accent);
+    background: rgba(138,43,226,0.15);
+  }
+  .menuhq-tool-app .menuhq-aspect-btn.active {
+    border-color: var(--accent);
+    background: rgba(138,43,226,0.35);
+  }
   .menuhq-tool-app #menuhqBuildBtn {
     border-radius: 999px; border: 1px solid var(--accent); background: #000; color: #fff;
     padding: 8px 14px; font-size: .8rem; cursor: pointer; text-transform: uppercase; letter-spacing: .08em;
@@ -74,16 +133,24 @@
   <div id="menuhqSmallImageWarning" class="menuhq-small-warning" role="alert"></div>
 
   <div class="layout">
-    <div id="menuhqDropzone" tabindex="0">
-      <canvas id="menuhqPreviewCanvas"></canvas>
-      <div class="menuhq-drop-hint" id="menuhqHint">
-        <strong>${isRu ? 'Клик / Перетащить / Ctrl+V' : 'Click / Drop / Ctrl+V'}</strong>
-        <div>${isRu ? 'Поддерживаются: JPG, PNG, TGA, WebP.' : 'Supported: JPG, PNG, TGA, WebP.'}</div>
+    <div class="layout-preview">
+      <div class="menuhq-preview-header">
+        <button id="menuhqUploadBtn" type="button" class="menuhq-upload-btn">
+          ${isRu ? 'Загрузить новую' : 'Upload new'}
+        </button>
       </div>
+      <div id="menuhqDropzone" tabindex="0">
+        <canvas id="menuhqPreviewCanvas"></canvas>
+        <div class="menuhq-drop-hint" id="menuhqHint">
+          <strong>${isRu ? 'Клик / Перетащить / Ctrl+V' : 'Click / Drop / Ctrl+V'}</strong>
+          <div>${isRu ? 'Поддерживаются: JPG, PNG, TGA, WebP.' : 'Supported: JPG, PNG, TGA, WebP.'}</div>
+        </div>
+      </div>
+      <div id="menuhqStatus" class="menuhq-status"></div>
     </div>
     <div class="menuhq-controls">
       <div>
-        <label>${isRu ? 'Режим' : 'Mode'}</label>
+        <label>${isRu ? 'Режим' : 'Mode'} <span class="menuhq-note">(ui_menuHQ)</span></label>
         <div class="menuhq-mode-group">
           <label><input type="radio" name="menuhqMode" value="1" checked> ${isRu ? '1 (HD) — 4 части' : '1 (HD) — 4 parts'}</label>
           <label><input type="radio" name="menuhqMode" value="2"> ${isRu ? '2 (4K+) — 24 части' : '2 (4K+) — 24 parts'}</label>
@@ -91,12 +158,33 @@
         <small>${isRu ? 'HD: до 2048×2048. 4K+: до 6144×4096.' : 'HD: up to 2048×2048. 4K+: up to 6144×4096.'}</small>
       </div>
       <div>
+        <label>${isRu ? 'Изображение' : 'Image'} <span class="menuhq-note">(ui_menuBgStyle)</span></label>
+        <div class="menuhq-mode-group">
+          <label><input type="radio" name="menuhqImageType" value="logo" checked> Logo</label>
+          <label><input type="radio" name="menuhqImageType" value="nologo"> Nologo</label>
+        </div>
+        <small>${isRu
+          ? 'Logo — первая страница в меню<br>Nologo — везде кроме главной страницы'
+          : 'Logo — first page in the menu<br>Nologo — everywhere except main menu'}</small>
+      </div>
+      <div>
+        <label>${isRu ? 'Соотношение сторон (необязательно)' : 'Aspect ratio (optional)'}</label>
+        <div class="menuhq-mode-group">
+          <button type="button" class="menuhq-aspect-btn" data-aspect="16:9">16:9</button>
+          <button type="button" class="menuhq-aspect-btn" data-aspect="16:10">16:10</button>
+          <button type="button" class="menuhq-aspect-btn" data-aspect="4:3">4:3</button>
+          <button type="button" class="menuhq-aspect-btn" data-aspect="5:4">5:4</button>
+        </div>
+        <small>${isRu
+          ? 'Позволяет обрезать кадр до выбранных пропорций перед обработкой.'
+          : 'Crops the frame to the chosen aspect ratio before processing.'}</small>
+      </div>
+      <div>
         <button id="menuhqBuildBtn" type="button" disabled>${isRu ? 'Создать pk3' : 'Build pk3'}</button>
         <small style="display:block; margin-top:4px;">${isRu ? 'Создаёт zz-menuHQ-{имя}.pk3' : 'Creates zz-menuHQ-{name}.pk3'}</small>
       </div>
     </div>
   </div>
-  <div id="menuhqStatus"></div>
 </div>
 
 <canvas id="menuhqWorkCanvas" style="display:none"></canvas>
@@ -127,6 +215,8 @@
   const statusEl = document.getElementById('menuhqStatus');
   const previewWorkCanvas = document.createElement('canvas');
   const previewWorkCtx = previewWorkCanvas.getContext('2d');
+  const uploadBtn = document.getElementById('menuhqUploadBtn');
+  const aspectButtons = Array.from(document.querySelectorAll('.menuhq-aspect-btn'));
 
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -136,9 +226,79 @@
   let currentFileName = '';
   let currentFileExt = '.png';
 
+  let currentAspectKey = null; // e.g. "16:9"
+  let cropRect = null; // { x, y, width, height } in normalized [0..1] coords
+  let isDraggingCrop = false;
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragStartRectX = 0;
+  let dragStartRectY = 0;
+
   function getMode() {
     const r = document.querySelector('input[name="menuhqMode"]:checked');
     return r ? parseInt(r.value, 10) : 1;
+  }
+
+  function getImageType() {
+    const r = document.querySelector('input[name="menuhqImageType"]:checked');
+    return r ? r.value : 'logo';
+  }
+
+  function updateAspectButtonsUI() {
+    aspectButtons.forEach(btn => {
+      const key = btn.getAttribute('data-aspect');
+      if (key && key === currentAspectKey) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  function recomputeCropRectForCurrentImage() {
+    if (!currentImage || !currentAspectKey) {
+      cropRect = null;
+      return;
+    }
+    const parts = currentAspectKey.split(':');
+    const rw = parseFloat(parts[0]);
+    const rh = parseFloat(parts[1]);
+    if (!rw || !rh) {
+      cropRect = null;
+      return;
+    }
+    const imgW = currentImage.w;
+    const imgH = currentImage.h;
+    const targetRatio = rw / rh;
+    const imgRatio = imgW / imgH;
+
+    let widthNorm;
+    let heightNorm;
+    let xNorm;
+    let yNorm;
+
+    if (imgRatio > targetRatio) {
+      // Crop left/right
+      heightNorm = 1;
+      const cropWidthPx = imgH * targetRatio;
+      widthNorm = cropWidthPx / imgW;
+      xNorm = (1 - widthNorm) / 2;
+      yNorm = 0;
+    } else {
+      // Crop top/bottom
+      widthNorm = 1;
+      const cropHeightPx = imgW / targetRatio;
+      heightNorm = cropHeightPx / imgH;
+      xNorm = 0;
+      yNorm = (1 - heightNorm) / 2;
+    }
+
+    cropRect = {
+      x: xNorm,
+      y: yNorm,
+      width: widthNorm,
+      height: heightNorm
+    };
   }
 
   function getExt(path) {
@@ -148,9 +308,9 @@
   }
 
   function getOutputFormat(ext) {
-    if (ext === '.jpg' || ext === '.jpeg') return { mime: 'image/jpeg', ext: '.jpg', quality: 0.95 };
+    if (ext === '.jpg' || ext === '.jpeg') return { mime: 'image/jpeg', ext: '.jpg', quality: 1 };
     if (ext === '.png') return { mime: 'image/png', ext: '.png', quality: 1 };
-    if (ext === '.webp') return { mime: 'image/webp', ext: '.webp', quality: 0.95 };
+    if (ext === '.webp') return { mime: 'image/webp', ext: '.webp', quality: 1 };
     return { mime: 'image/png', ext: '.png', quality: 1 };
   }
 
@@ -161,12 +321,45 @@
     return dot >= 0 ? base.slice(0, dot) : base;
   }
 
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', () => {
+      fileInput.value = '';
+      fileInput.click();
+    });
+  }
+
+  aspectButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-aspect');
+      if (!key) return;
+      if (currentAspectKey === key) {
+        // Toggle off
+        currentAspectKey = null;
+        cropRect = null;
+        updateAspectButtonsUI();
+        drawPreview();
+        return;
+      }
+      currentAspectKey = key;
+      if (currentImage) {
+        recomputeCropRectForCurrentImage();
+      } else {
+        cropRect = null;
+      }
+      updateAspectButtonsUI();
+      drawPreview();
+    });
+  });
+
   fileInput.addEventListener('change', () => {
     const f = fileInput.files[0];
     if (f) loadImage(f);
   });
 
   dropzone.addEventListener('click', () => {
+    // После загрузки изображения клик по превью больше не открывает диалог,
+    // чтобы не мешать работе с рамкой обрезки.
+    if (currentImage) return;
     fileInput.value = '';
     fileInput.click();
   });
@@ -217,7 +410,15 @@
       workCtx.clearRect(0, 0, img.width, img.height);
       workCtx.drawImage(img, 0, 0);
       currentImage = { w: img.width, h: img.height };
+      if (currentAspectKey) {
+        recomputeCropRectForCurrentImage();
+      } else {
+        cropRect = null;
+      }
       drawPreview();
+      if (uploadBtn) {
+        uploadBtn.classList.add('visible');
+      }
       statusEl.textContent = (lang === 'ru' ? 'Загружено ' : 'Loaded ') + img.width + '×' + img.height + (lang === 'ru' ? '.' : '.');
       const smallWarning = document.getElementById('menuhqSmallImageWarning');
       if (smallWarning) {
@@ -265,10 +466,90 @@
     previewCanvas.height = Math.round(sh * scale);
     previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
     previewCtx.drawImage(sourceCanvas, 0, 0, sw, sh, 0, 0, previewCanvas.width, previewCanvas.height);
+
+    // Draw crop frame overlay (if any)
+    if (cropRect && currentAspectKey) {
+      const rx = cropRect.x * previewCanvas.width;
+      const ry = cropRect.y * previewCanvas.height;
+      const rw = cropRect.width * previewCanvas.width;
+      const rh = cropRect.height * previewCanvas.height;
+
+      // Dim outside area slightly
+      previewCtx.save();
+      previewCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      previewCtx.beginPath();
+      previewCtx.rect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewCtx.rect(rx, ry, rw, rh);
+      previewCtx.fill('evenodd');
+
+      // Frame
+      previewCtx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      previewCtx.lineWidth = 2;
+      previewCtx.setLineDash([6, 4]);
+      previewCtx.strokeRect(rx + 1, ry + 1, rw - 2, rh - 2);
+      previewCtx.restore();
+    }
   }
 
   window.addEventListener('resize', () => {
     if (currentImage) drawPreview();
+  });
+
+  previewCanvas.addEventListener('mousedown', e => {
+    if (!cropRect || !currentAspectKey) return;
+    e.stopPropagation();
+    const rect = previewCanvas.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const rx = cropRect.x * previewCanvas.width;
+    const ry = cropRect.y * previewCanvas.height;
+    const rw = cropRect.width * previewCanvas.width;
+    const rh = cropRect.height * previewCanvas.height;
+
+    if (px >= rx && px <= rx + rw && py >= ry && py <= ry + rh) {
+      isDraggingCrop = true;
+      dragStartX = px;
+      dragStartY = py;
+      dragStartRectX = cropRect.x;
+      dragStartRectY = cropRect.y;
+      e.preventDefault();
+    }
+  });
+
+  previewCanvas.addEventListener('click', e => {
+    // До загрузки изображения клики должны доходить до dropzone,
+    // после загрузки — не мешать работе рамки/обрезки.
+    if (!currentImage) return;
+    e.stopPropagation();
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (!isDraggingCrop || !cropRect || !currentAspectKey) return;
+    const rect = previewCanvas.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+
+    const dxNorm = (px - dragStartX) / previewCanvas.width;
+    const dyNorm = (py - dragStartY) / previewCanvas.height;
+
+    let newX = dragStartRectX + dxNorm;
+    let newY = dragStartRectY + dyNorm;
+
+    // Clamp within [0, 1 - width/height]
+    newX = Math.min(Math.max(newX, 0), 1 - cropRect.width);
+    newY = Math.min(Math.max(newY, 0), 1 - cropRect.height);
+
+    cropRect.x = newX;
+    cropRect.y = newY;
+    drawPreview();
+  });
+
+  window.addEventListener('mouseup', () => {
+    isDraggingCrop = false;
+  });
+
+  previewCanvas.addEventListener('mouseleave', () => {
+    isDraggingCrop = false;
   });
 
   function canvasPartToBlob(sourceCanvas, sx, sy, sw, sh, mime, quality) {
@@ -282,18 +563,22 @@
     });
   }
 
-  function buildShaderMode1(ext) {
+  function buildShaderMode1(ext, imageType) {
     let s = '';
     for (let i = 1; i <= 4; i++) {
-      s += 'menuback_' + i + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map textures/sfx/logo_HQ' + i + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
+      const shaderName = imageType === 'nologo' ? 'menubacknologo_' + i : 'menuback_' + i;
+      const textureName = imageType === 'nologo' ? 'menubacknologo_' + i : 'logo_HQ' + i;
+      s += shaderName + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map ' + TEX_DIR + '/' + textureName + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
     }
     return s.replace(/\\\\n/g, String.fromCharCode(10));
   }
 
-  function buildShaderMode2(ext) {
+  function buildShaderMode2(ext, imageType) {
     let s = '';
     for (let i = 1; i <= 24; i++) {
-      s += 'menuback' + i + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map textures/sfx/logoHQ' + i + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
+      const shaderName = imageType === 'nologo' ? 'menubacknologo' + i : 'menuback' + i;
+      const textureName = imageType === 'nologo' ? 'menubacknologo' + i : 'logoHQ' + i;
+      s += shaderName + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map ' + TEX_DIR + '/' + textureName + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
     }
     return s.replace(/\\\\n/g, String.fromCharCode(10));
   }
@@ -333,7 +618,24 @@
       return;
     }
     const mode = getMode();
-    const buildCanvas = getBuildCanvas(mode);
+    const imageType = getImageType();
+    const baseCanvas = getBuildCanvas(mode);
+
+    // Apply cropping (if any) in normalized coordinates
+    let buildCanvas = baseCanvas;
+    if (cropRect && currentAspectKey) {
+      const sx = Math.round(cropRect.x * baseCanvas.width);
+      const sy = Math.round(cropRect.y * baseCanvas.height);
+      const sw = Math.round(cropRect.width * baseCanvas.width);
+      const sh = Math.round(cropRect.height * baseCanvas.height);
+      const cropped = document.createElement('canvas');
+      cropped.width = sw;
+      cropped.height = sh;
+      const cctx = cropped.getContext('2d');
+      cctx.drawImage(baseCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
+      buildCanvas = cropped;
+    }
+
     const w = buildCanvas.width;
     const h = buildCanvas.height;
     const fmt = getOutputFormat(currentFileExt);
@@ -356,11 +658,16 @@
         const qw = x1 - x0;
         const qh = y1 - y0;
         const blob = await canvasPartToBlob(buildCanvas, x0, y0, qw, qh, fmt.mime, fmt.quality);
-        const arcname = TEX_DIR + '/logo_HQ' + (i + 1) + ext;
+        const index = i + 1;
+        const textureName = imageType === 'nologo' ? 'menubacknologo_' + index : 'logo_HQ' + index;
+        const arcname = TEX_DIR + '/' + textureName + ext;
         zip.file(arcname, blob, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
       }
-      const shader = buildShaderMode1(ext);
-      zip.file(SHADER_PATH_MODE1, shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
+      const shader = buildShaderMode1(ext, imageType);
+      const shaderPathMode1 = (SHADER_PATH_MODE1.endsWith('.shader')
+        ? SHADER_PATH_MODE1.replace('.shader', imageType === 'nologo' ? '_nologo.shader' : '_logo.shader')
+        : SHADER_PATH_MODE1 + (imageType === 'nologo' ? '_nologo.shader' : '_logo.shader'));
+      zip.file(shaderPathMode1, shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
     } else {
       const ROWS = 4;
       const COLS = 6;
@@ -376,11 +683,15 @@
         const pw = x1 - x0;
         const ph = y1 - y0;
         const blob = await canvasPartToBlob(buildCanvas, x0, y0, pw, ph, fmt.mime, fmt.quality);
-        const arcname = TEX_DIR + '/logoHQ' + partNum + ext;
+        const textureName = imageType === 'nologo' ? 'menubacknologo' + partNum : 'logoHQ' + partNum;
+        const arcname = TEX_DIR + '/' + textureName + ext;
         zip.file(arcname, blob, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
       }
-      const shader = buildShaderMode2(ext);
-      zip.file(SHADER_PATH_MODE2, shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
+      const shader = buildShaderMode2(ext, imageType);
+      const shaderPathMode2 = (SHADER_PATH_MODE2.endsWith('.shader')
+        ? SHADER_PATH_MODE2.replace('.shader', imageType === 'nologo' ? '_nologo.shader' : '_logo.shader')
+        : SHADER_PATH_MODE2 + (imageType === 'nologo' ? '_nologo.shader' : '_logo.shader'));
+      zip.file(shaderPathMode2, shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
     }
 
     try {
