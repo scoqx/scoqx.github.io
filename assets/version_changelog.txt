@@ -8,3 +8,5 @@
 + ui_selectionColor
 + menu/art/menu/art/font2_propNew.tga
 + ui_serverNameThemeColor
++ ui_menuDarken
+
