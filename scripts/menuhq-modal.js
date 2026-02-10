@@ -117,7 +117,7 @@
 
 <div class="menuhq-tool-app">
   <div class="menuhq-title-row">
-    <h1>Menu Background Maker</h1>
+    <h1><span>Menu</span> Background Maker</h1>
   </div>
   <p class="subtitle">
     ${isRu ? 'Готовый пак с фоном меню (одна текстура до 4096×4096, сжатие при необходимости)' : 'Ready pack with menu background (single texture up to 4096×4096, resize when needed)'}
