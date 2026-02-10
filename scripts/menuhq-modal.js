@@ -1,15 +1,11 @@
-// MenuHQ Maker Modal — image split into 4 or 24 parts -> pk3 (Quake menu collage).
-// Logic 1:1 from OSP2BE_MenuHQ_Maker.cpp, implemented in JS.
+// Menu Background Maker Modal — single menu background image -> pk3 (Quake accepts up to 4096×4096).
+// No slicing; only resize if image exceeds 4096; optional aspect-ratio crop.
 
 (function() {
     'use strict';
 
-    const MAX_SIDE_MODE1 = 2048;   // Mode 1: 4 parts (2x2)
-    const MAX_WIDTH_MODE2 = 6144;  // Mode 2: 24 parts (4 rows x 6 cols)
-    const MAX_HEIGHT_MODE2 = 4096;
+    const MAX_SIDE = 4096;  // Quake limit; scale down only if larger
     const TEX_DIR = 'textures/sfx';
-    const SHADER_PATH_MODE1 = 'scripts/menu_HQ.shader';
-    const SHADER_PATH_MODE2 = 'scripts/menuHQ.shader';
 
     function getLanguage() {
         return window.location.pathname.includes('/ru/') ? 'ru' : 'en';
@@ -26,7 +22,6 @@
   .menuhq-tool-app h1 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 4px; }
   .menuhq-tool-app h1 span { color: var(--accent); }
   .menuhq-tool-app .subtitle { font-size: .8rem; color: rgba(255,255,255,0.7); margin-bottom: 12px; }
-  .menuhq-tool-app .menuhq-small-warning { display: none; margin-bottom: 12px; padding: 8px 0; font-size: .85rem; color: #f44; line-height: 1.4; }
   .menuhq-tool-app .layout {
     display: grid;
     grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr);
@@ -118,19 +113,15 @@
   .menuhq-tool-app #menuhqBuildBtn:disabled { opacity: .45; cursor: not-allowed; }
   .menuhq-tool-app #menuhqStatus { margin-top: 8px; font-size: .78rem; color: rgba(255,255,255,0.75); white-space: pre-wrap; }
   .menuhq-tool-app .menuhq-title-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
-  .menuhq-tool-app .menuhq-title-link { font-size: .85rem; font-weight: normal; color: rgba(255,255,255,0.7); text-decoration: none; }
-  .menuhq-tool-app .menuhq-title-link:hover { color: var(--accent); text-decoration: underline; }
 </style>
 
 <div class="menuhq-tool-app">
   <div class="menuhq-title-row">
-    <h1><span>MenuHQ</span> Maker</h1>
-    <a href="https://github.com/scoqx/OSP2BE_MenuHQ_Maker" target="_blank" rel="noopener noreferrer" class="menuhq-title-link">Desktop Version</a>
+    <h1>Menu Background Maker</h1>
   </div>
   <p class="subtitle">
-    ${isRu ? 'Подготовка HD/4K фона меню для OSP2-BE — с автоматическим сжатием при необходимости' : 'HD/4K menu background for OSP2-BE — with automatic resizing when needed'}
+    ${isRu ? 'Готовый пак с фоном меню (одна текстура до 4096×4096, сжатие при необходимости)' : 'Ready pack with menu background (single texture up to 4096×4096, resize when needed)'}
   </p>
-  <div id="menuhqSmallImageWarning" class="menuhq-small-warning" role="alert"></div>
 
   <div class="layout">
     <div class="layout-preview">
@@ -150,22 +141,14 @@
     </div>
     <div class="menuhq-controls">
       <div>
-        <label>${isRu ? 'Режим' : 'Mode'} <span class="menuhq-note">(ui_menuHQ)</span></label>
-        <div class="menuhq-mode-group">
-          <label><input type="radio" name="menuhqMode" value="1" checked> ${isRu ? '1 (HD) — 4 части' : '1 (HD) — 4 parts'}</label>
-          <label><input type="radio" name="menuhqMode" value="2"> ${isRu ? '2 (4K+) — 24 части' : '2 (4K+) — 24 parts'}</label>
-        </div>
-        <small>${isRu ? 'HD: до 2048×2048. 4K+: до 6144×4096.' : 'HD: up to 2048×2048. 4K+: up to 6144×4096.'}</small>
-      </div>
-      <div>
         <label>${isRu ? 'Изображение' : 'Image'} <span class="menuhq-note">(ui_menuBgStyle)</span></label>
         <div class="menuhq-mode-group">
           <label><input type="radio" name="menuhqImageType" value="logo" checked> Logo</label>
           <label><input type="radio" name="menuhqImageType" value="nologo"> Nologo</label>
         </div>
         <small>${isRu
-          ? 'Logo — первая страница в меню<br>Nologo — везде кроме главной страницы'
-          : 'Logo — first page in the menu<br>Nologo — everywhere except main menu'}</small>
+          ? 'Logo — шейдер menuback (главная страница)<br>Nologo — шейдер menubacknologo (остальные)'
+          : 'Logo — shader menuback (main menu)<br>Nologo — shader menubacknologo (other pages)'}</small>
       </div>
       <div>
         <label>${isRu ? 'Соотношение сторон (необязательно)' : 'Aspect ratio (optional)'}</label>
@@ -181,7 +164,7 @@
       </div>
       <div>
         <button id="menuhqBuildBtn" type="button" disabled>${isRu ? 'Создать pk3' : 'Build pk3'}</button>
-        <small style="display:block; margin-top:4px;">${isRu ? 'Создаёт zz-menuHQ-{имя}.pk3' : 'Creates zz-menuHQ-{name}.pk3'}</small>
+        <small style="display:block; margin-top:4px;">${isRu ? 'Создаёт zz-menuHQ-{имя}.pk3 (текстура + шейдер)' : 'Creates zz-menuHQ-{name}.pk3 (texture + shader)'}</small>
       </div>
     </div>
   </div>
@@ -193,13 +176,9 @@
 
     const menuhqToolJS = `
 (function() {
-  const MAX_SIDE_MODE1 = ${MAX_SIDE_MODE1};
-  const MAX_WIDTH_MODE2 = ${MAX_WIDTH_MODE2};
-  const MAX_HEIGHT_MODE2 = ${MAX_HEIGHT_MODE2};
+  const MAX_SIDE = ${MAX_SIDE};
   const PREVIEW_MAX_SIDE = 2048;
   const TEX_DIR = '${TEX_DIR}';
-  const SHADER_PATH_MODE1 = '${SHADER_PATH_MODE1}';
-  const SHADER_PATH_MODE2 = '${SHADER_PATH_MODE2}';
 
   function getLanguage() {
     return window.location.pathname.indexOf('/ru/') >= 0 ? 'ru' : 'en';
@@ -233,11 +212,6 @@
   let dragStartY = 0;
   let dragStartRectX = 0;
   let dragStartRectY = 0;
-
-  function getMode() {
-    const r = document.querySelector('input[name="menuhqMode"]:checked');
-    return r ? parseInt(r.value, 10) : 1;
-  }
 
   function getImageType() {
     const r = document.querySelector('input[name="menuhqImageType"]:checked');
@@ -420,18 +394,6 @@
         uploadBtn.classList.add('visible');
       }
       statusEl.textContent = (lang === 'ru' ? 'Загружено ' : 'Loaded ') + img.width + '×' + img.height + (lang === 'ru' ? '.' : '.');
-      const smallWarning = document.getElementById('menuhqSmallImageWarning');
-      if (smallWarning) {
-        if (img.width <= 1024 && img.height <= 1024) {
-          smallWarning.textContent = lang === 'ru'
-            ? 'Изображение 1024×1024 или меньше. Подготовка не имеет смысла — такое изображение проще использовать напрямую'
-            : 'Image is 1024×1024 or smaller. Preparation is unnecessary — such an image is easier to use directly.';
-          smallWarning.style.display = 'block';
-        } else {
-          smallWarning.textContent = '';
-          smallWarning.style.display = 'none';
-        }
-      }
       buildBtn.disabled = false;
       hint.style.display = 'none';
       if (window.ChangeTracker) window.ChangeTracker.markChanges('menuhq');
@@ -563,43 +525,20 @@
     });
   }
 
-  function buildShaderMode1(ext, imageType) {
-    let s = '';
-    for (let i = 1; i <= 4; i++) {
-      const shaderName = imageType === 'nologo' ? 'menubacknologo_' + i : 'menuback_' + i;
-      const textureName = imageType === 'nologo' ? 'menubacknologo_' + i : 'logo_HQ' + i;
-      s += shaderName + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map ' + TEX_DIR + '/' + textureName + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
-    }
+  function buildShader(ext, imageType) {
+    const shaderName = imageType === 'nologo' ? 'menubacknologo' : 'menuback';
+    const textureName = shaderName;
+    const s = shaderName + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map ' + TEX_DIR + '/' + textureName + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
     return s.replace(/\\\\n/g, String.fromCharCode(10));
   }
 
-  function buildShaderMode2(ext, imageType) {
-    let s = '';
-    for (let i = 1; i <= 24; i++) {
-      const shaderName = imageType === 'nologo' ? 'menubacknologo' + i : 'menuback' + i;
-      const textureName = imageType === 'nologo' ? 'menubacknologo' + i : 'logoHQ' + i;
-      s += shaderName + '\\n{\\n\\tnopicmip\\n\\tnomipmaps\\n         {\\n                map ' + TEX_DIR + '/' + textureName + ext + '\\n                rgbgen identity\\n        }        \\n}\\n';
-    }
-    return s.replace(/\\\\n/g, String.fromCharCode(10));
-  }
-
-  function getBuildCanvas(mode) {
+  function getBuildCanvas() {
     let w = workCanvas.width;
     let h = workCanvas.height;
-    if (mode === 1) {
-      if (w > MAX_SIDE_MODE1 || h > MAX_SIDE_MODE1) {
-        const scale = MAX_SIDE_MODE1 / Math.max(w, h);
-        w = Math.max(1, Math.round(w * scale));
-        h = Math.max(1, Math.round(h * scale));
-      }
-    } else {
-      if (w > MAX_WIDTH_MODE2 || h > MAX_HEIGHT_MODE2) {
-        const scaleW = MAX_WIDTH_MODE2 / w;
-        const scaleH = MAX_HEIGHT_MODE2 / h;
-        const scale = Math.min(scaleW, scaleH);
-        w = Math.max(1, Math.round(w * scale));
-        h = Math.max(1, Math.round(h * scale));
-      }
+    if (w > MAX_SIDE || h > MAX_SIDE) {
+      const scale = MAX_SIDE / Math.max(w, h);
+      w = Math.max(1, Math.round(w * scale));
+      h = Math.max(1, Math.round(h * scale));
     }
     if (w === workCanvas.width && h === workCanvas.height) {
       return workCanvas;
@@ -617,9 +556,8 @@
       statusEl.textContent = getLanguage() === 'ru' ? 'Ошибка: загрузите изображение.' : 'Error: load an image.';
       return;
     }
-    const mode = getMode();
     const imageType = getImageType();
-    const baseCanvas = getBuildCanvas(mode);
+    const baseCanvas = getBuildCanvas();
 
     // Apply cropping (if any) in normalized coordinates
     let buildCanvas = baseCanvas;
@@ -636,10 +574,9 @@
       buildCanvas = cropped;
     }
 
-    const w = buildCanvas.width;
-    const h = buildCanvas.height;
     const fmt = getOutputFormat(currentFileExt);
     const ext = fmt.ext;
+    const shaderName = imageType === 'nologo' ? 'menubacknologo' : 'menuback';
     const base = baseNameNoExt(currentFileName) || 'image';
     const pk3Name = 'zz-menuHQ-' + base + '.pk3';
     const lang = getLanguage();
@@ -647,52 +584,10 @@
 
     const zip = new JSZip();
 
-    if (mode === 1) {
-      const halfW = Math.floor(w / 2);
-      const halfH = Math.floor(h / 2);
-      for (let i = 0; i < 4; i++) {
-        const x0 = (i % 2) ? halfW : 0;
-        const y0 = (i < 2) ? 0 : halfH;
-        const x1 = x0 + halfW;
-        const y1 = y0 + halfH;
-        const qw = x1 - x0;
-        const qh = y1 - y0;
-        const blob = await canvasPartToBlob(buildCanvas, x0, y0, qw, qh, fmt.mime, fmt.quality);
-        const index = i + 1;
-        const textureName = imageType === 'nologo' ? 'menubacknologo_' + index : 'logo_HQ' + index;
-        const arcname = TEX_DIR + '/' + textureName + ext;
-        zip.file(arcname, blob, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
-      }
-      const shader = buildShaderMode1(ext, imageType);
-      const shaderPathMode1 = (SHADER_PATH_MODE1.endsWith('.shader')
-        ? SHADER_PATH_MODE1.replace('.shader', imageType === 'nologo' ? '_nologo.shader' : '_logo.shader')
-        : SHADER_PATH_MODE1 + (imageType === 'nologo' ? '_nologo.shader' : '_logo.shader'));
-      zip.file(shaderPathMode1, shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
-    } else {
-      const ROWS = 4;
-      const COLS = 6;
-      const partW = Math.floor(w / COLS);
-      const partH = Math.floor(h / ROWS);
-      for (let partNum = 1; partNum <= 24; partNum++) {
-        const row = Math.floor((partNum - 1) / COLS);
-        const col = (partNum - 1) % COLS;
-        const x0 = col * partW;
-        const y0 = row * partH;
-        const x1 = col === COLS - 1 ? w : x0 + partW;
-        const y1 = row === ROWS - 1 ? h : y0 + partH;
-        const pw = x1 - x0;
-        const ph = y1 - y0;
-        const blob = await canvasPartToBlob(buildCanvas, x0, y0, pw, ph, fmt.mime, fmt.quality);
-        const textureName = imageType === 'nologo' ? 'menubacknologo' + partNum : 'logoHQ' + partNum;
-        const arcname = TEX_DIR + '/' + textureName + ext;
-        zip.file(arcname, blob, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
-      }
-      const shader = buildShaderMode2(ext, imageType);
-      const shaderPathMode2 = (SHADER_PATH_MODE2.endsWith('.shader')
-        ? SHADER_PATH_MODE2.replace('.shader', imageType === 'nologo' ? '_nologo.shader' : '_logo.shader')
-        : SHADER_PATH_MODE2 + (imageType === 'nologo' ? '_nologo.shader' : '_logo.shader'));
-      zip.file(shaderPathMode2, shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
-    }
+    const blob = await canvasPartToBlob(buildCanvas, 0, 0, buildCanvas.width, buildCanvas.height, fmt.mime, fmt.quality);
+    zip.file(TEX_DIR + '/' + shaderName + ext, blob, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
+    const shader = buildShader(ext, imageType);
+    zip.file('scripts/' + shaderName + '.shader', shader, { compression: 'DEFLATE', compressionOptions: { level: 9 } });
 
     try {
       const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 9 } });
