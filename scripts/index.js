@@ -392,31 +392,54 @@ function initializeChangelogSearch() {
     });
 }
 
-// Load version from assets/version.txt
+// Parse first line of version_changelog.txt: "DD.MM.YYYY be vX.XX" -> { version: "be-X.XX", date: "DD.MM.YYYY" }
+function parseVersionChangelogLine(line) {
+    const m = line.match(/^(\d{2}\.\d{2}\.\d{4})\s+be\s+v(.+)$/);
+    if (!m) return { version: '', date: '' };
+    return { version: 'be-' + m[2].trim(), date: m[1] };
+}
+
+// Load version and date from version_changelog.txt inside zz-osp-pak8be.pk3 (zip)
 async function loadVersion() {
+    const versionEl = document.getElementById('version-text');
+    const dateEl = document.getElementById('version-date');
     try {
-        console.log('🔍 Loading version...');
-        const response = await fetch('/assets/version.txt?v=' + Date.now(), {
+        console.log('🔍 Loading version from pk3...');
+        if (typeof JSZip === 'undefined') {
+            if (versionEl) versionEl.textContent = 'version not found';
+            if (dateEl) dateEl.style.display = 'none';
+            return;
+        }
+        const response = await fetch('/assets/zz-osp-pak8be.pk3?v=' + Date.now(), {
             cache: 'no-cache',
-            headers: {
-                'Cache-Control': 'no-cache'
-            }
+            headers: { 'Cache-Control': 'no-cache' }
         });
-        
-        if (response.ok) {
-            const version = (await response.text()).trim();
-            const versionEl = document.getElementById('version-text');
-            
-            if (versionEl && version) {
-                versionEl.textContent = version;
-                console.log('✅ Version loaded:', version);
-            }
-        } else {
-            console.log('⚠️ Version file not found, using default');
+        if (!response.ok) throw new Error('pk3 fetch failed');
+        const arrayBuffer = await response.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        let file = zip.file('version_changelog.txt');
+        if (!file) {
+            const path = Object.keys(zip.files).find(p => p.toLowerCase().endsWith('version_changelog.txt'));
+            file = path ? zip.files[path] : null;
+        }
+        if (!file) throw new Error('version_changelog.txt not found in pk3');
+        const text = (await file.async('string')).trim();
+        const firstLine = text.split(/\r?\n/)[0]?.trim() || '';
+        const parsed = parseVersionChangelogLine(firstLine);
+        const version = parsed.version;
+        const date = parsed.date;
+        if (versionEl) {
+            versionEl.textContent = version || 'version not found';
+            if (version) console.log('✅ Version loaded from pk3:', version);
+        }
+        if (dateEl) {
+            dateEl.textContent = date;
+            dateEl.style.display = date ? '' : 'none';
         }
     } catch (error) {
-        console.error('Error loading version:', error);
-        // Keep default version if loading fails
+        console.error('Error loading version from pk3:', error);
+        if (versionEl) versionEl.textContent = 'version not found';
+        if (dateEl) dateEl.style.display = 'none';
     }
 }
 

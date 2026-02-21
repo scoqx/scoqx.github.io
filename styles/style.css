@@ -513,7 +513,7 @@ body[data-page="index"] .logo-link {
 
 .download-title {
     font-size: 18px;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     color: var(--text-color);
     display: flex;
     align-items: center;
@@ -532,8 +532,20 @@ body[data-page="index"] .logo-link {
 
 .version-text {
     font-size: 16px;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 0;
     color: var(--text-color);
+}
+
+.version-date {
+    font-size: 14px;
+    margin-top: 2px;
+    margin-bottom: var(--spacing-md);
+    color: var(--text-muted, #888);
+}
+
+/* Отступ до кнопок, когда после заголовка только версия (OSP2), без даты */
+.download-card p:only-of-type.version-text {
+    margin-bottom: var(--spacing-md);
 }
 
 .download-button {
