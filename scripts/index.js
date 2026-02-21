@@ -399,29 +399,17 @@ function parseVersionChangelogLine(line) {
     return { version: 'be-' + m[2].trim(), date: m[1] };
 }
 
-// Load version and date from version_changelog.txt inside zz-osp-pak8be.pk3 (zip)
+// Load version and date from assets/version_changelog.txt (первая строка: "DD.MM.YYYY be vX.XX")
 async function loadVersion() {
     const versionEl = document.getElementById('version-text');
     const dateEl = document.getElementById('version-date');
-    if (typeof JSZip === 'undefined') {
-        if (dateEl) dateEl.style.display = 'none';
-        return;
-    }
     try {
-        const response = await fetch('/assets/zz-osp-pak8be.pk3?v=' + Date.now(), {
+        const response = await fetch('/assets/version_changelog.txt?v=' + Date.now(), {
             cache: 'no-cache',
             headers: { 'Cache-Control': 'no-cache' }
         });
-        if (!response.ok) throw new Error('pk3 fetch failed');
-        const arrayBuffer = await response.arrayBuffer();
-        const zip = await JSZip.loadAsync(arrayBuffer);
-        let file = zip.file('version_changelog.txt');
-        if (!file) {
-            const path = Object.keys(zip.files).find(p => p.toLowerCase().endsWith('version_changelog.txt'));
-            file = path ? zip.files[path] : null;
-        }
-        if (!file) throw new Error('version_changelog.txt not found in pk3');
-        const text = (await file.async('string')).trim();
+        if (!response.ok) throw new Error('version_changelog.txt not found');
+        const text = (await response.text()).trim();
         const firstLine = text.split(/\r?\n/)[0]?.trim() || '';
         const parsed = parseVersionChangelogLine(firstLine);
         const version = parsed.version;
