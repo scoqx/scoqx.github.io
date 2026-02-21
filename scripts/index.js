@@ -403,13 +403,11 @@ function parseVersionChangelogLine(line) {
 async function loadVersion() {
     const versionEl = document.getElementById('version-text');
     const dateEl = document.getElementById('version-date');
+    if (typeof JSZip === 'undefined') {
+        if (dateEl) dateEl.style.display = 'none';
+        return;
+    }
     try {
-        console.log('🔍 Loading version from pk3...');
-        if (typeof JSZip === 'undefined') {
-            if (versionEl) versionEl.textContent = 'version not found';
-            if (dateEl) dateEl.style.display = 'none';
-            return;
-        }
         const response = await fetch('/assets/zz-osp-pak8be.pk3?v=' + Date.now(), {
             cache: 'no-cache',
             headers: { 'Cache-Control': 'no-cache' }
@@ -428,54 +426,55 @@ async function loadVersion() {
         const parsed = parseVersionChangelogLine(firstLine);
         const version = parsed.version;
         const date = parsed.date;
+        if (versionEl) versionEl.textContent = version || '—';
+        if (dateEl) {
+            dateEl.textContent = date;
+            dateEl.style.display = date ? '' : 'none';
+        }
+    } catch (_) {
+        if (versionEl) versionEl.textContent = '—';
+        if (dateEl) dateEl.style.display = 'none';
+    }
+}
+
+// Load OSP2 version from GitHub (cg_local.h) and date from latest release
+async function loadOSP2Version() {
+    const versionEl = document.getElementById('version-text-osp2');
+    const dateEl = document.getElementById('version-date-osp2');
+    try {
+        const [versionResponse, releasesResponse] = await Promise.all([
+            fetch('https://api.github.com/repos/snems/OSP2/contents/code/cgame/cg_local.h?ref=master', { cache: 'no-cache' }),
+            fetch('https://api.github.com/repos/snems/OSP2/releases/latest', { cache: 'no-cache' })
+        ]);
+        let version = '';
+        let date = '';
+        if (versionResponse.ok) {
+            const data = await versionResponse.json();
+            const text = atob(data.content.replace(/\s/g, ''));
+            const versionMatch = text.match(/#define\s+OSP_VERSION\s+"([^"]+)"/);
+            if (versionMatch && versionMatch[1]) version = versionMatch[1];
+        }
+        if (releasesResponse.ok) {
+            const release = await releasesResponse.json();
+            if (release.published_at) {
+                const d = new Date(release.published_at);
+                date = d.getDate().toString().padStart(2, '0') + '.' + (d.getMonth() + 1).toString().padStart(2, '0') + '.' + d.getFullYear();
+            }
+        }
         if (versionEl) {
-            versionEl.textContent = version || 'version not found';
-            if (version) console.log('✅ Version loaded from pk3:', version);
+            versionEl.textContent = version || '—';
+            versionEl.classList.toggle('version-text-standalone', !date);
         }
         if (dateEl) {
             dateEl.textContent = date;
             dateEl.style.display = date ? '' : 'none';
         }
-    } catch (error) {
-        console.error('Error loading version from pk3:', error);
-        if (versionEl) versionEl.textContent = 'version not found';
-        if (dateEl) dateEl.style.display = 'none';
-    }
-}
-
-// Load OSP2 version from GitHub
-async function loadOSP2Version() {
-    try {
-        console.log('🔍 Loading OSP2 version...');
-        // Use GitHub API to avoid CORS issues
-        const response = await fetch('https://api.github.com/repos/snems/OSP2/contents/code/cgame/cg_local.h?ref=master', {
-            cache: 'no-cache'
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            // Decode base64 content
-            const text = atob(data.content.replace(/\s/g, ''));
-            // Parse version from #define OSP_VERSION "version"
-            const versionMatch = text.match(/#define\s+OSP_VERSION\s+"([^"]+)"/);
-            
-            if (versionMatch && versionMatch[1]) {
-                const version = versionMatch[1];
-                const versionEl = document.getElementById('version-text-osp2');
-                
-                if (versionEl) {
-                    versionEl.textContent = version;
-                    console.log('✅ OSP2 version loaded:', version);
-                }
-            } else {
-                console.log('⚠️ OSP2 version not found in file');
-            }
-        } else {
-            console.log('⚠️ OSP2 version file not found, using default');
+    } catch (_) {
+        if (versionEl) {
+            versionEl.textContent = '—';
+            versionEl.classList.add('version-text-standalone');
         }
-    } catch (error) {
-        console.error('Error loading OSP2 version:', error);
-        // Keep default version if loading fails
+        if (dateEl) dateEl.style.display = 'none';
     }
 }
 

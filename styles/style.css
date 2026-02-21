@@ -543,8 +543,8 @@ body[data-page="index"] .logo-link {
     color: var(--text-muted, #888);
 }
 
-/* Отступ до кнопок, когда после заголовка только версия (OSP2), без даты */
-.download-card p:only-of-type.version-text {
+/* Отступ до кнопок, когда после версии нет даты (OSP2) */
+.download-card .version-text.version-text-standalone {
     margin-bottom: var(--spacing-md);
 }
 
