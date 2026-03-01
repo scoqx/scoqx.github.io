@@ -379,6 +379,13 @@ body[data-page="index"] .logo-link {
   min-width: 250px;
 }
 
+/* Турнир и OSP2-BE — две карточки друг под другом */
+.download-cards-equal {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
 .download-card {
     background-color: #111111;
     border: 2px solid var(--border-color);
@@ -412,6 +419,44 @@ body[data-page="index"] .logo-link {
 
 .download-card .download-button-split:last-child {
     margin-bottom: 0;
+}
+
+/* Двойная кнопка в карточке — тот же стиль, что и .download-button */
+.download-card .download-button-split .split-button-left,
+.download-card .download-button-split .split-button-right {
+    background: var(--button-bg);
+    color: var(--button-text);
+}
+
+.download-card .download-button-split .split-button-left:hover,
+.download-card .download-button-split .split-button-right:hover {
+    background: var(--border-color);
+    color: var(--primary-bg);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.5);
+}
+
+.download-card .download-button-split .split-button-left {
+    border-right: 1px solid #000;
+}
+
+.download-card .download-button-split .split-button-right {
+    border-left: 1px solid #000;
+}
+
+/* Свечение только у наведённой половины: не светить весь блок, не обрезать тень */
+.download-card .download-button-split:hover {
+    box-shadow: none;
+}
+
+.download-card .download-button-split {
+    overflow: visible;
+}
+
+.download-card .download-button-split .split-button-icon {
+    height: 2em;
+    width: auto;
+    vertical-align: middle;
+    margin-right: 0;
 }
 
 .download-card .download-button:hover {
@@ -1080,6 +1125,11 @@ code {
     .installation-section {
         order: 3;
         margin-top: 0;
+    }
+
+    .changelog-section {
+        order: 4;
+        width: 100%;
     }
 
     /* Put email link on its own line on mobile */

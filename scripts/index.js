@@ -425,28 +425,43 @@ async function loadVersion() {
     }
 }
 
-// Load OSP2 version from GitHub (cg_local.h) and date from latest release
+// OSP2: сначала наш JSON (обновляет Action раз в час), иначе jsDelivr + API
 async function loadOSP2Version() {
     const versionEl = document.getElementById('version-text-osp2');
     const dateEl = document.getElementById('version-date-osp2');
     try {
-        const [versionResponse, releasesResponse] = await Promise.all([
-            fetch('https://api.github.com/repos/snems/OSP2/contents/code/cgame/cg_local.h?ref=master', { cache: 'no-cache' }),
-            fetch('https://api.github.com/repos/snems/OSP2/releases/latest', { cache: 'no-cache' })
-        ]);
-        let version = '';
-        let date = '';
-        if (versionResponse.ok) {
-            const data = await versionResponse.json();
-            const text = atob(data.content.replace(/\s/g, ''));
-            const versionMatch = text.match(/#define\s+OSP_VERSION\s+"([^"]+)"/);
-            if (versionMatch && versionMatch[1]) version = versionMatch[1];
+        const cacheRes = await fetch('/assets/osp2-version.json?v=' + Date.now(), { cache: 'no-cache' });
+        let version = '', date = '';
+        if (cacheRes.ok) {
+            const data = await cacheRes.json();
+            version = (data.version || '').trim();
+            date = (data.date || '').trim();
         }
-        if (releasesResponse.ok) {
-            const release = await releasesResponse.json();
-            if (release.published_at) {
-                const d = new Date(release.published_at);
-                date = d.getDate().toString().padStart(2, '0') + '.' + (d.getMonth() + 1).toString().padStart(2, '0') + '.' + d.getFullYear();
+        if (!version || !date) {
+            const [rawRes, releaseRes] = await Promise.all([
+                fetch('https://cdn.jsdelivr.net/gh/snems/OSP2@master/code/cgame/cg_local.h', { cache: 'no-cache' }),
+                fetch('https://api.github.com/repos/snems/OSP2/releases/latest', { cache: 'no-cache' })
+            ]);
+            if (!version && rawRes.ok) {
+                const text = await rawRes.text();
+                const m = text.match(/#define\s+OSP_VERSION\s+"([^"]+)"/);
+                if (m && m[1]) version = m[1];
+            }
+            if (!version) {
+                const contentRes = await fetch('https://api.github.com/repos/snems/OSP2/contents/code/cgame/cg_local.h?ref=master', { cache: 'no-cache' });
+                if (contentRes.ok) {
+                    const data = await contentRes.json();
+                    const text = atob((data.content || '').replace(/\s/g, ''));
+                    const m = text.match(/#define\s+OSP_VERSION\s+"([^"]+)"/);
+                    if (m && m[1]) version = m[1];
+                }
+            }
+            if (!date && releaseRes.ok) {
+                const release = await releaseRes.json();
+                if (release.published_at) {
+                    const d = new Date(release.published_at);
+                    date = d.getDate().toString().padStart(2, '0') + '.' + (d.getMonth() + 1).toString().padStart(2, '0') + '.' + d.getFullYear();
+                }
             }
         }
         if (versionEl) {

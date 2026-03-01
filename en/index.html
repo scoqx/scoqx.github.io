@@ -113,10 +113,48 @@
                         </p>
                     </div>
                 </div>
+
+                <section class="changelog-section">
+                    <div class="changelog-header">
+                        <h2 class="changelog-title">Changelog</h2>
+                        <button id="changelog-search-toggle" class="changelog-search-toggle" title="Search">
+                            <img src="/assets/search.png" alt="Search" class="search-icon">
+                        </button>
+                        <!-- Search Section -->
+                        <div class="changelog-search-section hidden">
+                            <div class="search-container">
+                                <input type="text" id="changelog-search" class="search-input" placeholder="Search changelog...">
+                                <button id="clear-changelog-search" class="clear-search-btn" title="Clear search">×</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="changelog-container">
+                        <pre id="changelog-content" class="changelog-content"></pre>
+                    </div>
+                </section>
             </div>
 
             <div class="download-section">
-                <div class="download-card">
+                <div class="download-cards-equal">
+                    <div class="download-card">
+                        <h3 class="download-title">Q3MSK SuperCup 2026 FreezeTag 4v4</h3>
+                        <p class="version-text" style="margin-bottom: var(--spacing-sm);">
+                            April 4, 2026, 17:00 MSK / 15:00 CET<br>
+                            Prize pool: 5000₽ (~65$) + Donations
+                        </p>
+                        <p class="version-date" style="margin-bottom: var(--spacing-sm); font-size: 0.9rem;">
+                            Organizers — Dentist, Zoti.<br>
+                            Classic FreezeTag 4v4, unlag, premade teams.
+                        </p>
+                        <p class="version-date" style="margin-bottom: var(--spacing-sm); font-size: 0.85rem;">Tournament-approved mod versions can be downloaded below.</p>
+                        <a class="download-button" href="https://discord.gg/S64p9tYSuZ" target="_blank" rel="noopener noreferrer">Registration: Discord «RZD CUP»</a>
+                        <a class="download-button" href="https://drive.google.com/file/d/1IJLzAunScHFg9DEJMALAqsnXhz33fuE_/view?usp=drive_link" target="_blank" rel="noopener noreferrer">More details</a>
+                        <div class="download-button-split" style="margin-top: var(--spacing-sm);">
+                            <a class="split-button-left" href="https://github.com/snems/OSP2/releases/download/Tournament0426/OSP2-latest.zip" target="_blank" rel="noopener noreferrer" download><img src="/assets/blender_180_osp2.png" alt="" class="split-button-icon"> OSP2</a>
+                            <a class="split-button-right" href="/assets/q3msk_supercup_2026/zz-osp-pak8be.pk3" target="_blank" download><img src="/assets/blender_180.png" alt="" class="split-button-icon"> OSP2-BE</a>
+                        </div>
+                    </div>
+                    <div class="download-card">
                     <h3 class="download-title">
                         <img src="/assets/blender_180.png" alt="OSP2-BE icon" class="download-title-icon">
                         OSP2-BE
@@ -126,6 +164,7 @@
                     <a class="download-button" id="downloadBtn" href="/assets/zz-osp-pak8be.pk3" target="_blank">Download .pk3</a>
                     <a class="download-button" href="/assets/Updater%20OSP2-BE%20(win).zip" target="_blank">Updater</a>
                     <a class="download-button" href="/assets/osp2-be-linux.tar.gz" target="_blank">.so</a>
+                    </div>
                 </div>
                 
                 <div class="download-card" style="margin-top: var(--spacing-md);">
@@ -142,26 +181,6 @@
                 <button class="clear-cache-button" id="clearCacheBtn" onclick="clearCache()">Clear Cache</button>
             </div>
         </div>
-
-        <section class="changelog-section">
-            <div class="changelog-header">
-                <h2 class="changelog-title">Changelog</h2>
-                <button id="changelog-search-toggle" class="changelog-search-toggle" title="Search">
-                    <img src="/assets/search.png" alt="Search" class="search-icon">
-                </button>
-                <!-- Search Section -->
-                <div class="changelog-search-section hidden">
-                    <div class="search-container">
-                        <input type="text" id="changelog-search" class="search-input" placeholder="Search changelog...">
-                        <button id="clear-changelog-search" class="clear-search-btn" title="Clear search">×</button>
-                    </div>
-                </div>
-            </div>
-            <div class="changelog-container">
-                <pre id="changelog-content" class="changelog-content"></pre>
-            </div>
-        </section>
-
 
         <!-- Модальное окно DonationAlerts -->
         <div class="donation-modal" id="donationModal">
