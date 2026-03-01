@@ -115,7 +115,7 @@
             return;
         }
 
-        // Три заполнены: пересчитываем по последнему изменённому полю
+        // Три заполнены: пересчитываем то поле, которое было вычислено последним (логично при смене любого ввода)
         if (filledCount === 3 && lastChangedId) {
             if (lastChangedId === 'q3sensSens') {
                 setField(content, 'q3sensCm', K_CM360 / (dpi * sens * mYaw));
@@ -126,7 +126,11 @@
                 return;
             }
             if (lastChangedId === 'q3sensDpi') {
-                setField(content, 'q3sensSens', K_CM360 / (dpi * mYaw * cm));
+                // При смене DPI пересчитываем то, что считали последним (cm/360 или sensitivity или DPI), а не всегда sensitivity
+                var targetId = (lastComputedFieldId === 'q3sensSens' || lastComputedFieldId === 'q3sensCm' || lastComputedFieldId === 'q3sensDpi') ? lastComputedFieldId : 'q3sensSens';
+                if (targetId === 'q3sensSens') setField(content, 'q3sensSens', K_CM360 / (dpi * mYaw * cm));
+                else if (targetId === 'q3sensCm') setField(content, 'q3sensCm', K_CM360 / (dpi * sens * mYaw));
+                else setField(content, 'q3sensDpi', K_CM360 / (sens * mYaw * cm));
                 return;
             }
         }
