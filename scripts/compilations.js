@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const n8mareContainer = document.getElementById('n8mare-screenshots');
     const runoContainer = document.getElementById('runo-screenshots');
     const eliteContainer = document.getElementById('elite-screenshots');
-    const animeBubbleGumContainer = document.getElementById('anime-bubble-gum-screenshots');
     const darkProjectContainer = document.getElementById('dark-project-screenshots');
     
     // Load screenshots asynchronously in batches
@@ -33,11 +32,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (eliteContainer && compilationsConfig.elite) {
         loadPromises.push(loadCompilationScreenshotsAsync('elite', eliteContainer, compilationsConfig.elite));
     }
-    
-    if (animeBubbleGumContainer && compilationsConfig['anime-bubble-gum']) {
-        loadPromises.push(loadCompilationScreenshotsAsync('anime-bubble-gum', animeBubbleGumContainer, compilationsConfig['anime-bubble-gum']));
-    }
-    
     if (darkProjectContainer && compilationsConfig['dark-project']) {
         loadPromises.push(loadCompilationScreenshotsAsync('dark-project', darkProjectContainer, compilationsConfig['dark-project']));
     }
