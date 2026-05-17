@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>scoqx — скоро на новом домене</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050505;
+      --fg: #f5f5f5;
+      --muted: #8a8a8a;
+      --line: rgba(255, 255, 255, 0.12);
+      --glow: rgba(255, 255, 255, 0.06);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem 3rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
+      opacity: 0.45;
+    }
+
+    .bg-orb {
+      position: fixed;
+      width: min(90vw, 520px);
+      height: min(90vw, 520px);
+      border-radius: 50%;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(circle, var(--glow) 0%, transparent 65%);
+      pointer-events: none;
+      animation: pulse 8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    }
+
+    .lang {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .lang button {
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 0.45rem 0.65rem;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .lang button:hover { color: var(--fg); }
+
+    .lang button.is-active {
+      color: var(--bg);
+      background: var(--fg);
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 32rem;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-block;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1.75rem;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 600;
+      line-height: 1.25;
+      margin: 0 0 1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .lead {
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: var(--muted);
+      margin: 0 0 2rem;
+    }
+
+    .sorry {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .sorry strong {
+      color: var(--fg);
+      font-weight: 500;
+    }
+
+    footer {
+      position: fixed;
+      bottom: 1.25rem;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      z-index: 1;
+    }
+
+    [data-lang] { display: none; }
+    html[lang="ru"] [data-lang="ru"],
+    html[lang="en"] [data-lang="en"] { display: revert; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb" aria-hidden="true"></div>
+
+  <nav class="lang" aria-label="Language">
+    <button type="button" data-set-lang="ru" class="is-active">RU</button>
+    <button type="button" data-set-lang="en">EN</button>
+  </nav>
+
+  <main>
+    <p class="badge" data-lang="ru">Переезд</p>
+    <p class="badge" data-lang="en">Relocation</p>
+
+    <h1 data-lang="ru">Сайт скоро откроется на новом домене</h1>
+    <h1 data-lang="en">The site is moving to a new domain soon</h1>
+
+    <p class="lead" data-lang="ru">
+      Мы переносим проект на новый адрес. Это займёт всего несколько дней — спасибо, что остаетесь с нами.
+    </p>
+    <p class="lead" data-lang="en">
+      We’re moving the project to a new address. It will only take a few more days — thank you for staying with us.
+    </p>
+
+    <p class="sorry" data-lang="ru">
+      <strong>Извините</strong> за неудобства и пустую страницу сейчас.
+      Пожалуйста, <strong>подождите</strong> ещё немного — мы скоро вернёмся.
+    </p>
+    <p class="sorry" data-lang="en">
+      <strong>Sorry</strong> for the inconvenience and this temporary page.
+      Please <strong>bear with us</strong> a little longer — we’ll be back soon.
+    </p>
+  </main>
+
+  <footer>scoqx</footer>
+
+  <script>
+    const html = document.documentElement;
+    const langButtons = document.querySelectorAll("[data-set-lang]");
+
+    function setLang(code) {
+      html.lang = code;
+      langButtons.forEach((btn) => {
+        btn.classList.toggle("is-active", btn.dataset.setLang === code);
+      });
+      try { localStorage.setItem("scoqx-lang", code); } catch (_) {}
+    }
+
+    const saved = (() => {
+      try { return localStorage.getItem("scoqx-lang"); } catch (_) { return null; }
+    })();
+    if (saved === "en" || saved === "ru") {
+      setLang(saved);
+    } else if (navigator.language && navigator.language.startsWith("en")) {
+      setLang("en");
+    }
+
+    langButtons.forEach((btn) => {
+      btn.addEventListener("click", () => setLang(btn.dataset.setLang));
+    });
+  </script>
+</body>
+</html>
